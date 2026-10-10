@@ -513,6 +513,31 @@ input::placeholder,textarea::placeholder{color:var(--label-3)}
 .opt-row button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .cfg-note{color:var(--label-2);font-size:13.5px;margin-top:6px}
 
+/* ---------- Acceso (RFC + contraseña) ---------- */
+body.auth .sidebar,body.auth .tabbar,body.auth .foot{display:none!important}
+body.auth .app{grid-template-columns:minmax(0,1fr);padding-left:0}
+body.auth main{max-width:none;padding:0}
+.authwrap{min-height:100vh;display:grid;align-content:center;justify-items:center;gap:18px;padding:calc(24px + env(safe-area-inset-top,0px)) 18px calc(24px + env(safe-area-inset-bottom,0px));background:radial-gradient(900px 500px at 12% -10%,var(--accent-soft),transparent 60%),radial-gradient(700px 420px at 100% 110%,rgba(43,181,160,.14),transparent 60%)}
+.authcard{width:min(440px,100%);background:var(--bg);border:1px solid var(--sep);border-radius:24px;padding:30px 24px 24px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.authcard::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--accent),#2bb5a0)}
+.auth-brand{display:flex;gap:12px;align-items:center;margin-bottom:20px}
+.auth-logo{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;overflow:hidden;color:#fff;background:linear-gradient(145deg,var(--accent),#2bb5a0);flex:none}
+.auth-logo img{width:100%;height:100%;object-fit:cover}.auth-logo .g{width:24px;height:24px}
+.auth-brand b{display:block;font-size:16px;letter-spacing:-.015em;line-height:1.2}.auth-brand small{color:var(--label-2);font-size:13px}
+.authcard h1{font-size:26px;line-height:1.15;font-weight:700;letter-spacing:-.025em}
+.authcard .lede{font-size:15px;margin:6px 0 18px}
+.authcard form{display:grid;gap:14px}
+.authcard .btn.big{padding:13px 18px;font-size:16px;width:100%}
+.auth-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:14.5px}
+.auth-links button{color:var(--accent);font-weight:600}
+.auth-foot{color:var(--label-3);font-size:12.5px;text-align:center;max-width:440px}
+.pwrow{position:relative}.pwrow input{padding-right:84px}
+.showpw{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:6px 10px;font-size:13px;font-weight:600;color:var(--accent);border-radius:8px}
+.avatar-i{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,var(--accent),#2bb5a0);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+button.avatar{font:inherit;font-weight:700}
+.tmp{font-family:var(--mono);font-size:22px;letter-spacing:.06em;font-weight:700;background:var(--bg-soft);border-radius:12px;padding:14px;text-align:center;user-select:all;word-break:break-all}
+.auth-steps{display:grid;gap:14px;margin:4px 0 18px}
+
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--label);color:var(--bg);padding:11px 20px;border-radius:999px;z-index:120;font-size:15px;font-weight:500;box-shadow:var(--shadow-pop);max-width:calc(100vw - 32px);text-align:center;animation:fade .15s ease}
 @media (min-width:901px){.toast{bottom:32px}}
 .loading{display:grid;place-items:center;min-height:60vh;color:var(--label-2)}
@@ -621,6 +646,7 @@ const CONFIG_BASE = {
   telefono: "",
   privacidad: "Usaremos tus datos únicamente para atender esta solicitud y ponernos en contacto contigo.",
   pinHash: "",
+  correoAdmin: "delrivero25@gmail.com",   // recibe solicitudes de usuario y de recuperación de contraseña
   logo: "",
   horario: "",                // ej. «Lunes a viernes, 9:00 a 17:00»
   tiempoRespuesta: "3 días hábiles",
@@ -803,6 +829,7 @@ function migrar(c) {
   c = c || {};
   const base = datosEjemplo();
   const out = { formato: 2, editado: !!c.editado, actualizado: c.actualizado || hoyISO(), config: Object.assign({}, CONFIG_BASE, c.config || {}) };
+  out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && u.rfc && u.hash) : [];
   out.categorias = Array.isArray(c.categorias) ? c.categorias : base.categorias;
   out.sistemas = (Array.isArray(c.sistemas) ? c.sistemas : []).map((s) => {
     const b = sistemaBase({});
@@ -850,8 +877,7 @@ const IDB = {
 };
 
 /* ---------- Estado ---------- */
-const S = { cat: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
-try { S.admin = sessionStorage.getItem("catalogo-admin") === "1"; } catch (e) {}
+const S = { cat: null, user: null, authView: "login", authInfo: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
 
 let tGuardar = null;
 function guardarCatalogo(marcar = true) {
@@ -971,7 +997,7 @@ function navbar({ mid = "", right = "", back = true } = {}) {
   return `<div class="navbar" id="nb">${back ? `<button class="circ" data-act="back" aria-label="Volver">${glifo("back")}</button>` : ""}<div class="mid">${mid}</div>${mid ? "" : '<div class="spacer"></div>'}<div class="right">${right}</div></div>`;
 }
 function cabecera(titulo, sub = "", cuando = "") {
-  return `<header class="pagehead"><div>${cuando ? `<div class="when">${esc(cuando)}</div>` : ""}<h1 class="large-title">${esc(titulo)}</h1>${sub ? `<p class="lede">${esc(sub)}</p>` : ""}</div><a class="avatar ${S.admin ? "on" : ""}" href="#/admin" aria-label="Administración">${glifo(S.admin ? "edit" : "user")}</a></header>`;
+  return `<header class="pagehead"><div>${cuando ? `<div class="when">${esc(cuando)}</div>` : ""}<h1 class="large-title">${esc(titulo)}</h1>${sub ? `<p class="lede">${esc(sub)}</p>` : ""}</div>${S.admin ? `<a class="avatar on" href="#/admin" aria-label="Administración">${glifo("edit")}</a>` : `<button class="avatar" data-act="mi-cuenta" aria-label="Mi cuenta">${esc(iniciales(S.user && S.user.nombre))}</button>`}</header>`;
 }
 function vacio(titulo, texto, extra = "") { return `<div class="empty">${glifo("search")}<b>${esc(titulo)}</b><p>${esc(texto)}</p>${extra}</div>`; }
 const logoHtml = (c) => `<span class="ico s40" style="${colorVars("azul")}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</span>`;
@@ -984,6 +1010,283 @@ function relacionados(s, n = 6) {
   return con.concat(resto).slice(0, n);
 }
 const motivo = (s, x) => { const c = x.usos.find((u) => s.usos.includes(u)); return c ? `También sirve para ${c.toLowerCase()}` : x.subtitulo; };
+
+
+/* ---------- Cuentas y sesión (RFC + contraseña) ---------- */
+const RFC_RE = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
+const normRfc = (v) => String(v || "").trim().toUpperCase().replace(/\s+/g, "");
+const rfcOk = (v) => RFC_RE.test(normRfc(v));
+const claveOk = (p) => typeof p === "string" && p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
+const CLAVE_AYUDA = "Mínimo 8 caracteres, con letras y números.";
+const iniciales = (n) => String(n || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase() || "?";
+const hashQuery = () => { const o = {}; new URLSearchParams(location.hash.split("?")[1] || "").forEach((v, k) => (o[k] = v)); return o; };
+const nuevoSalt = () => uid("s") + Math.random().toString(36).slice(2, 10);
+function cyrb53(str) { let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16); }
+async function hashClave(pass, salt) {
+  try {
+    if (window.crypto && crypto.subtle) {
+      const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveBits"]);
+      const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: new TextEncoder().encode(salt), iterations: 120000 }, k, 256);
+      return "p1:" + [...new Uint8Array(bits)].map((x) => x.toString(16).padStart(2, "0")).join("");
+    }
+  } catch (e) { /* respaldo */ }
+  return "c1:" + cyrb53(salt + "|" + pass);
+}
+function claveTemporal() {
+  const L = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz", N = "23456789", a = new Uint32Array(10);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a); else a.forEach((_, i) => (a[i] = Math.floor(Math.random() * 4294967295)));
+  let r = ""; for (let i = 0; i < 7; i++) r += L[a[i] % L.length]; for (let i = 7; i < 10; i++) r += N[a[i] % N.length];
+  return r;
+}
+const guardarSesion = (u, recordar) => { try { (recordar ? localStorage : sessionStorage).setItem("catalogo-sesion", u.id); } catch (e) {} };
+const leerSesion = () => { try { return sessionStorage.getItem("catalogo-sesion") || localStorage.getItem("catalogo-sesion"); } catch (e) { return null; } };
+function limpiarSesion() {
+  try { sessionStorage.removeItem("catalogo-sesion"); localStorage.removeItem("catalogo-sesion"); } catch (e) {}
+  S.user = null; S.admin = false; S.drafts = {}; S.cfgDraft = null; S.authView = "login"; S.authInfo = null;
+  F.ini = null; F.sel = []; F.errs = {}; F.vals = { contactoPref: "Correo electrónico", acepto: false };
+}
+function restaurarSesion() {
+  const id = leerSesion(), u = id && S.cat.usuarios.find((x) => x.id === id && x.estado === "activo");
+  S.user = u || null; S.admin = !!u && u.rol === "admin";
+}
+function revalidarSesion() {
+  if (!S.user) return;
+  const u = S.cat.usuarios.find((x) => x.id === S.user.id && x.estado === "activo");
+  if (!u) limpiarSesion(); else { S.user = u; S.admin = u.rol === "admin"; }
+}
+const esUltimoAdmin = (u) => u.rol === "admin" && u.estado === "activo" && S.cat.usuarios.filter((x) => x.rol === "admin" && x.estado === "activo").length <= 1;
+function intentosDe(rfc) { try { return (JSON.parse(localStorage.getItem("catalogo-intentos") || "{}"))[rfc] || { n: 0, hasta: 0 }; } catch (e) { return { n: 0, hasta: 0 }; } }
+function setIntentos(rfc, v) { try { const o = JSON.parse(localStorage.getItem("catalogo-intentos") || "{}"); if (v) o[rfc] = v; else delete o[rfc]; localStorage.setItem("catalogo-intentos", JSON.stringify(o)); } catch (e) {} }
+const val = (id) => { const e = $("#" + id); return e ? e.value.trim() : ""; };
+const authErr = (t) => { const e = $("#a-err"); if (e) e.textContent = t; };
+function abrirSesion(u, recordar) {
+  S.user = u; S.admin = u.rol === "admin"; guardarSesion(u, recordar); S.authView = "login";
+  render(true); if (!u.debeCambiar) toast(`Bienvenido(a), ${u.nombre.split(" ")[0]}`);
+}
+
+async function iniciarSesion() {
+  const rfc = normRfc(val("a-rfc")), pass = $("#a-pass").value, rec = $("#a-rec") && $("#a-rec").checked;
+  authErr("");
+  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
+  if (!pass) return authErr("Escribe tu contraseña.");
+  const it = intentosDe(rfc);
+  if (it.hasta > Date.now()) return authErr(`Demasiados intentos. Vuelve a intentar en ${Math.ceil((it.hasta - Date.now()) / 60000)} min.`);
+  const u = S.cat.usuarios.find((x) => x.rfc === rfc);
+  const ok = !!u && (await hashClave(pass, u.salt)) === u.hash;
+  if (!ok) {
+    const n = (it.hasta && it.hasta <= Date.now() ? 0 : it.n) + 1;
+    setIntentos(rfc, n >= 5 ? { n: 0, hasta: Date.now() + 5 * 60000 } : { n, hasta: 0 });
+    return authErr(n >= 5 ? "Demasiados intentos. Espera 5 minutos o solicita recuperar tu contraseña." : "RFC o contraseña incorrectos.");
+  }
+  if (u.estado === "bloqueado") return authErr("Tu usuario está bloqueado. Contacta al administrador.");
+  setIntentos(rfc, null); abrirSesion(u, rec);
+}
+async function crearAdminInicial() {
+  const rfc = normRfc(val("a-rfc")), nombre = val("a-nombre"), correo = val("a-correo"), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
+  authErr("");
+  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
+  if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
+  if (!correoOk(correo)) return authErr("Escribe un correo válido.");
+  if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
+  if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
+  const salt = nuevoSalt();
+  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: "", cargo: "", telefono: "", rol: "admin", estado: "activo", salt, hash: await hashClave(p1, salt), debeCambiar: false, creado: hoyISO() };
+  S.cat.usuarios.push(u); guardarCatalogo(); abrirSesion(u, false);
+}
+async function guardarClaveObligatoria() {
+  const p1 = $("#a-pass").value, p2 = $("#a-pass2").value, u = S.user;
+  authErr("");
+  if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
+  if (p1.toUpperCase() === u.rfc) return authErr("La contraseña no puede ser tu RFC.");
+  if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
+  u.salt = nuevoSalt(); u.hash = await hashClave(p1, u.salt); u.debeCambiar = false; guardarCatalogo();
+  toast("Contraseña actualizada"); render(true);
+}
+const folioDe = (p) => `${p}-${hoyISO().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+function prepararEnvio(tipo, asunto, cuerpo, folio) {
+  const c = cfg(), para = (c.correoAdmin || c.correoDestino || "").trim();
+  S.authInfo = { tipo, asunto, cuerpo, folio, para }; S.authView = "enviado"; render(false);
+  if (para) setTimeout(() => { location.href = mailtoAdmin(S.authInfo); }, 200);
+}
+const mailtoAdmin = (i) => `mailto:${i.para}?subject=${encodeURIComponent(i.asunto)}&body=${encodeURIComponent(i.cuerpo)}`;
+function solicitarUsuario() {
+  const d = { rfc: normRfc(val("a-rfc")), nombre: val("a-nombre"), dependencia: val("a-dep"), cargo: val("a-cargo"), correo: val("a-correo"), telefono: val("a-tel") };
+  authErr("");
+  if (!rfcOk(d.rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
+  if (d.nombre.length < 3) return authErr("Escribe tu nombre completo.");
+  if (!d.dependencia) return authErr("Escribe tu dependencia.");
+  if (!d.cargo) return authErr("Escribe tu cargo.");
+  if (!correoOk(d.correo)) return authErr("Escribe un correo válido.");
+  if (d.telefono.replace(/\D/g, "").length < 8) return authErr("Escribe un teléfono de al menos 8 dígitos.");
+  if (!$("#a-acepto").checked) return authErr("Necesitamos tu aceptación para continuar.");
+  if (S.cat.usuarios.some((u) => u.rfc === d.rfc)) return authErr("Ese RFC ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
+  const folio = folioDe("USR"), q = new URLSearchParams({ nuevo: "1", rfc: d.rfc, nombre: d.nombre, correo: d.correo, dep: d.dependencia, cargo: d.cargo, tel: d.telefono }).toString();
+  const cuerpo = ["SOLICITUD DE USUARIO", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `RFC: ${d.rfc}`, `Nombre: ${d.nombre}`, `Dependencia: ${d.dependencia}`, `Cargo: ${d.cargo}`, `Correo: ${d.correo}`, `Teléfono: ${d.telefono}`, "",
+    "Para crear el usuario (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Por seguridad la contraseña no viaja por correo: el administrador asignará una contraseña temporal."].join("\n");
+  prepararEnvio("usuario", `Solicitud de usuario ${folio} · ${d.nombre}`, cuerpo, folio);
+}
+function solicitarRecuperacion() {
+  const rfc = normRfc(val("a-rfc")), correo = val("a-correo");
+  authErr("");
+  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
+  if (!correoOk(correo)) return authErr("Escribe el correo con el que te registraste.");
+  const folio = folioDe("REC"), q = new URLSearchParams({ reset: rfc, correo }).toString();
+  const cuerpo = ["RECUPERACIÓN DE CONTRASEÑA", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `RFC: ${rfc}`, `Correo indicado: ${correo}`, "",
+    "Para restablecer la contraseña (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Verifica que el correo coincida con el registrado antes de generar la contraseña temporal."].join("\n");
+  prepararEnvio("recuperacion", `Recuperación de contraseña ${folio} · ${rfc}`, cuerpo, folio);
+}
+
+function vAuth() {
+  const c = cfg(), v = S.authView, forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
+  const logo = imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas");
+  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
+    ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
+    : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
+  const rfc = (id = "a-rfc") => fld(id, "RFC", { ph: "Ej. XAXX010101000", auto: "username", extra: 'maxlength="13" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"' });
+  const err = `<div class="err" id="a-err" role="alert"></div>`;
+  let t, sub, body;
+  if (forzar) {
+    t = "Crea tu nueva contraseña"; sub = "Tu contraseña actual es temporal. Elige una nueva para continuar.";
+    body = `<form id="form-cambiar" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password" })}<span class="muted" style="font-size:12.5px;margin-top:-8px">${CLAVE_AYUDA}</span>${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit">Guardar y entrar</button></form>
+      <div class="auth-links"><button type="button" data-act="cerrar-sesion">Cerrar sesión</button></div>`;
+  } else if (!hay) {
+    t = "Crea el usuario administrador"; sub = "Es el primer acceso al catálogo. Solo el responsable del catálogo debe completar este paso.";
+    body = `<form id="form-setup" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit">Crear administrador y entrar</button></form>`;
+  } else if (v === "registro") {
+    t = "Solicitar un usuario"; sub = "Llena tus datos. Se preparará un correo para el administrador, quien te asignará una contraseña temporal.";
+    body = `<form id="form-reg" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-dep", "Dependencia u organización")}${fld("a-cargo", "Cargo")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono", { tipo: "tel", auto: "tel" })}
+      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit">Preparar solicitud</button></form>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button></div>`;
+  } else if (v === "recuperar") {
+    t = "Recuperar contraseña"; sub = "Escribe tu RFC y el correo registrado. El administrador te enviará una contraseña temporal.";
+    body = `<form id="form-rec" novalidate>${rfc()}${fld("a-correo", "Correo registrado", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${err}<button class="btn big" type="submit">Solicitar recuperación</button></form>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
+  } else if (v === "enviado" && S.authInfo) {
+    const i = S.authInfo, rec = i.tipo === "recuperacion";
+    t = "Solicitud preparada"; sub = `Folio ${i.folio}`;
+    body = `<ol class="timeline auth-steps">
+      <li><span class="n">1</span><div><b>Envía el correo</b><span>${i.para ? `Se abrió tu aplicación de correo con el mensaje dirigido a ${esc(i.para)}. Solo presiona «Enviar».` : "Copia el mensaje y envíalo al administrador del catálogo."}</span></div></li>
+      <li><span class="n">2</span><div><b>El administrador lo revisa</b><span>${rec ? "Verifica que el correo coincida con el registrado y restablece tu acceso." : "Valida tus datos y crea tu usuario."}</span></div></li>
+      <li><span class="n">3</span><div><b>Recibes tu contraseña temporal</b><span>Entra con tu RFC y esa contraseña; el sistema te pedirá crear una nueva.</span></div></li></ol>
+      ${i.para ? `<a class="btn big" href="${esc(mailtoAdmin(i))}">${glifo("correo")}Abrir correo</a>` : ""}
+      <button class="btn sec big" type="button" data-act="auth-copiar" style="margin-top:10px">${glifo("copy")}Copiar mensaje</button>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
+  } else {
+    t = "Iniciar sesión"; sub = "Entra con tu RFC y tu contraseña para consultar y solicitar sistemas.";
+    body = `<form id="form-login" novalidate>${rfc()}${fld("a-pass", "Contraseña", { pw: 1 })}
+      <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Solicitar un usuario</button></div>`;
+  }
+  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">Acceso para personal autorizado · ${esc(c.organizacion)}</p></div>`;
+}
+
+/* ---- Mi cuenta ---- */
+function abrirMiCuenta() {
+  const u = S.user; if (!u) return;
+  modal({
+    titulo: "Mi cuenta",
+    body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${S.admin ? "Administrador" : "Usuario"}</div></div></div>
+      <div class="kv"><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div>${u.correo ? `<div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div>` : ""}${u.dependencia ? `<div><span class="k">Dependencia</span><span class="v">${esc(u.dependencia)}</span></div>` : ""}${u.cargo ? `<div><span class="k">Cargo</span><span class="v">${esc(u.cargo)}</span></div>` : ""}</div>`,
+    pie: `<button class="btn sec" data-act="cambiar-pass">${glifo("candado")}Cambiar contraseña</button>${S.admin ? `<a class="btn sec" href="#/admin" data-act="cerrar-modal">${glifo("ajustes")}Administración</a>` : ""}<button class="btn danger" data-act="cerrar-sesion">Cerrar sesión</button>`
+  });
+}
+function abrirCambiarClave() {
+  cerrarModal();
+  modal({
+    titulo: "Cambiar contraseña",
+    body: `<form id="form-pass" novalidate style="display:grid;gap:12px">
+      <div class="field"><label for="pw0">Contraseña actual</label><input id="pw0" type="password" autocomplete="current-password"></div>
+      <div class="field"><label for="pw1">Nueva contraseña</label><input id="pw1" type="password" autocomplete="new-password"><span class="muted" style="font-size:12.5px">${CLAVE_AYUDA}</span></div>
+      <div class="field"><label for="pw2">Confirma la nueva contraseña</label><input id="pw2" type="password" autocomplete="new-password"></div>
+      <div class="err" id="pw-err" role="alert"></div></form>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-pass">Guardar</button>`
+  });
+}
+async function cambiarMiClave() {
+  const u = S.user, a = $("#pw0").value, n = $("#pw1").value, n2 = $("#pw2").value, er = $("#pw-err");
+  if ((await hashClave(a, u.salt)) !== u.hash) { er.textContent = "La contraseña actual no es correcta."; return; }
+  if (!claveOk(n)) { er.textContent = CLAVE_AYUDA; return; }
+  if (n.toUpperCase() === u.rfc) { er.textContent = "La contraseña no puede ser tu RFC."; return; }
+  if (n !== n2) { er.textContent = "Las contraseñas nuevas no coinciden."; return; }
+  u.salt = nuevoSalt(); u.hash = await hashClave(n, u.salt); guardarCatalogo(); cerrarModal(); toast("Contraseña actualizada");
+}
+
+/* ---- Administración de usuarios ---- */
+function vAdminUsuarios() {
+  const U = S.cat.usuarios, c = cfg();
+  post = () => {
+    const q = hashQuery(); if (!q.nuevo && !q.reset) return;
+    history.replaceState(null, "", location.pathname + location.search + "#/admin/usuarios");
+    if (q.nuevo) abrirCrearUsuario({ rfc: q.rfc, nombre: q.nombre, correo: q.correo, dep: q.dep, cargo: q.cargo, tel: q.tel });
+    else abrirReset(normRfc(q.reset), q.correo);
+  };
+  return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${U.filter((u) => u.rol === "admin").length} ${plural(U.filter((u) => u.rol === "admin").length, "administrador", "administradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
+  <div class="note info">${glifo("info")}<div>Las solicitudes de usuario y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>. Abre el enlace del correo para precargar los datos, asigna una contraseña temporal y compártela con la persona; la cambiará al entrar.</div></div>
+  <div class="list-card" style="margin-top:14px">${U.map((u) => `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
+    <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.rfc)}${u.correo ? " · " + esc(u.correo) : ""}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${u.rol === "admin" ? "acc" : ""}">${u.rol === "admin" ? "Administrador" : "Usuario"}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}${u.id === S.user.id ? '<span class="badge">Tú</span>' : ""}</small></div>
+    <div class="acts"><button class="btn sm sec" data-act="usr-reset" data-id="${esc(u.id)}">Restablecer contraseña</button>
+      <button class="btn sm ghost" data-act="usr-toggle" data-id="${esc(u.id)}" ${u.id === S.user.id ? "disabled" : ""}>${u.estado === "activo" ? "Bloquear" : "Activar"}</button>
+      <button class="btn sm ghost" data-act="usr-rol" data-id="${esc(u.id)}" ${u.id === S.user.id ? "disabled" : ""}>${u.rol === "admin" ? "Quitar admin" : "Hacer admin"}</button>
+      <button class="iconbtn bad" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${u.id === S.user.id ? "disabled" : ""}>${glifo("trash")}</button></div></div>`).join("")}</div>
+  <p class="cfg-note" style="margin-top:14px">Al descargar el catálogo para publicarlo, el archivo incluye estas cuentas (con las contraseñas cifradas). Publícalo solo en un sitio con acceso controlado.</p>`;
+}
+function abrirCrearUsuario(q) {
+  q = q || {}; cerrarModal();
+  const f = (id, l, v, o = {}) => `<div class="field ${o.full ? "full" : ""}"><label for="${id}">${l}</label><input id="${id}" type="${o.tipo || "text"}" value="${esc(v || "")}" autocomplete="off" ${o.extra || ""}></div>`;
+  modal({
+    titulo: "Crear usuario", wide: true,
+    body: `<form id="form-usr" novalidate><div class="fields">
+      ${f("uc-rfc", "RFC", q.rfc, { extra: 'maxlength="13" style="text-transform:uppercase" autocapitalize="characters"' })}${f("uc-nombre", "Nombre completo", q.nombre)}
+      ${f("uc-correo", "Correo", q.correo, { tipo: "email" })}${f("uc-tel", "Teléfono", q.tel, { tipo: "tel" })}
+      ${f("uc-dep", "Dependencia", q.dep)}${f("uc-cargo", "Cargo", q.cargo)}
+      <div class="field"><label for="uc-rol">Rol</label><select class="select" id="uc-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></div></div>
+      <div class="err" id="uc-err" role="alert" style="margin-top:10px"></div>
+      <p class="cfg-note">Se generará una contraseña temporal que la persona cambiará al entrar.</p></form>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-usr">Crear usuario</button>`
+  });
+}
+async function crearUsuarioAdmin() {
+  const er = $("#uc-err"), rfc = normRfc(val("uc-rfc")), nombre = val("uc-nombre"), correo = val("uc-correo");
+  if (!rfcOk(rfc)) { er.textContent = "Escribe un RFC válido (12 o 13 caracteres)."; return; }
+  if (S.cat.usuarios.some((u) => u.rfc === rfc)) { er.textContent = "Ya existe un usuario con ese RFC."; return; }
+  if (nombre.length < 3) { er.textContent = "Escribe el nombre completo."; return; }
+  if (!correoOk(correo)) { er.textContent = "Escribe un correo válido."; return; }
+  const temp = claveTemporal(), salt = nuevoSalt();
+  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: val("uc-dep"), cargo: val("uc-cargo"), telefono: val("uc-tel"), rol: $("#uc-rol").value === "admin" ? "admin" : "usuario", estado: "activo", salt, hash: await hashClave(temp, salt), debeCambiar: true, creado: hoyISO() };
+  S.cat.usuarios.push(u); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "creado");
+}
+function mostrarClaveTemporal(u, temp, modo) {
+  const asunto = modo === "reset" ? "Contraseña temporal del catálogo de sistemas" : "Tu usuario del catálogo de sistemas";
+  const cuerpo = [`Hola ${u.nombre},`, "", modo === "reset" ? "Se restableció tu contraseña." : "Tu usuario fue creado.", "", `Sitio: ${location.href.split("#")[0]}`, `Usuario (RFC): ${u.rfc}`, `Contraseña temporal: ${temp}`, "", "Al entrar, el sistema te pedirá crear una contraseña nueva. No compartas este mensaje."].join("\n");
+  modal({
+    titulo: modo === "reset" ? "Contraseña restablecida" : "Usuario creado",
+    body: `<p class="muted" style="margin-bottom:12px">Comparte esta contraseña temporal con ${esc(u.nombre)}. Solo se muestra ahora.</p>
+      <div class="kv"><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div></div>
+      <div class="tmp" style="margin-top:12px">${esc(temp)}</div>
+      <div style="margin-top:10px"><button class="btn ghost sm" data-act="copiar" data-v="${esc(temp)}">${glifo("copy")}Copiar contraseña</button></div>
+      <div class="note info" style="margin-top:12px">${glifo("info")}<div>La persona deberá cambiarla al iniciar sesión.</div></div>`,
+    pie: `<button class="btn sec" data-act="copiar" data-v="${esc(cuerpo)}">${glifo("copy")}Copiar mensaje</button>${u.correo ? `<a class="btn" href="mailto:${esc(u.correo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}">${glifo("correo")}Enviar por correo</a>` : `<button class="btn" data-act="cerrar-modal">Listo</button>`}`
+  });
+}
+function abrirReset(ref, correoSol) {
+  cerrarModal();
+  const u = S.cat.usuarios.find((x) => x.id === ref || x.rfc === ref);
+  if (!u) { toast("No hay un usuario con ese RFC. Puedes crearlo."); abrirCrearUsuario({ rfc: ref, correo: correoSol }); return; }
+  const coincide = correoSol ? norm(correoSol) === norm(u.correo) : null;
+  modal({
+    titulo: "Restablecer contraseña",
+    body: `<div class="kv"><div><span class="k">Nombre</span><span class="v">${esc(u.nombre)}</span></div><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div><div><span class="k">Correo registrado</span><span class="v">${esc(u.correo || "—")}</span></div>${correoSol ? `<div><span class="k">Correo de la solicitud</span><span class="v">${esc(correoSol)}</span></div>` : ""}</div>
+      ${coincide === true ? `<div class="note info" style="margin-top:12px">${glifo("check")}<div>El correo de la solicitud coincide con el registrado.</div></div>` : ""}
+      ${coincide === false ? `<div class="note warn" style="margin-top:12px">${glifo("warn")}<div><b>El correo no coincide</b> con el registrado. Confirma la identidad por otro medio antes de continuar.</div></div>` : ""}
+      <p class="muted" style="margin-top:12px">Se generará una contraseña temporal y la actual dejará de funcionar.</p>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" data-act="usr-reset-ok" data-id="${esc(u.id)}">Generar contraseña temporal</button>`
+  });
+}
+async function restablecerClave(id) {
+  const u = S.cat.usuarios.find((x) => x.id === id); if (!u) return;
+  const temp = claveTemporal(); u.salt = nuevoSalt(); u.hash = await hashClave(temp, u.salt); u.debeCambiar = true;
+  setIntentos(u.rfc, null); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "reset");
+}
 
 /* ---------- Apariencia ---------- */
 function aplicarApariencia(c) {
@@ -1005,6 +1308,11 @@ let post = null, io = null;
 const F2 = { cat: "todas", orden: "catalogo" };
 
 function render(nav) {
+  if (!S.user || S.user.debeCambiar) {
+    document.body.classList.add("auth"); cerrarLightbox(); aplicarApariencia();
+    view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); return;
+  }
+  document.body.classList.remove("auth");
   const [a, b, c] = hashParts();
   navActual = !!nav;
   post = null; if (io) { io.disconnect(); io = null; }
@@ -1053,13 +1361,13 @@ function renderChrome(a) {
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
-  $("#sidefoot").innerHTML = S.admin
-    ? `<div class="mode">Modo administrador</div><a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>`
-    : `<button class="sidenav-a" data-act="admin-entry" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14px"><span style="display:flex">${glifo("candado")}</span>Administrar catálogo</button>`;
+  $("#sidefoot").innerHTML = `<div class="mode">${esc(S.user.nombre)} · ${S.admin ? "Administrador" : "Usuario"}</div>`
+    + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
+    + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>Mi cuenta</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
   $("#tabbar").innerHTML = `<a class="rail-brand" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
-    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="admin-entry" aria-label="${S.admin ? "Panel de administración" : "Acceso de administrador"}">${glifo(S.admin ? "unlock" : "candado")}<span>${S.admin ? "Admin" : "Acceso"}</span></button>`;
+    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
   $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}</span>`;
 }
 
@@ -1217,7 +1525,7 @@ function vFicha(id) {
       ${cats.length ? `<div class="cats">${cats.map((c) => `<a href="#/categoria/${enc(c.id)}">${esc(c.nombre)}</a>`).join("")}</div>` : ""}
       ${!s.publicado ? `<div><span class="badge warn">No publicado · solo lo ves tú</span></div>` : ""}
       <div class="fhead-actions" id="mainget">${btnGet(s, "big")}${prim ? `<a class="btn2" href="${esc(urlOk(prim.url))}" target="_blank" rel="noopener noreferrer">Abrir sistema ${glifo("out")}</a>` : ""}<button class="circ" data-act="compartir" data-id="${esc(s.id)}" aria-label="Copiar enlace del sistema" style="color:var(--accent)">${glifo("share")}</button></div>
-      <div class="manage" role="group" aria-label="Gestionar este sistema"><button type="button" class="mbtn" data-act="gestionar" data-modo="info" data-id="${esc(s.id)}">${glifo("edit")}Editar información</button><button type="button" class="mbtn" data-act="gestionar" data-modo="imagen" data-id="${esc(s.id)}">${glifo("img")}Cambiar imagen</button></div>
+      ${S.admin ? `<div class="manage" role="group" aria-label="Gestionar este sistema"><button type="button" class="mbtn" data-act="gestionar" data-modo="info" data-id="${esc(s.id)}">${glifo("edit")}Editar información</button><button type="button" class="mbtn" data-act="gestionar" data-modo="imagen" data-id="${esc(s.id)}">${glifo("img")}Cambiar imagen</button></div>` : ""}
     </div></section>
   <section class="stats" aria-label="Datos del sistema">
     <div class="stat"><span class="l">${plural(n, "Dependencia", "Dependencias")}</span><b>${n}</b><span class="s">${n ? plural(n, "lo utiliza", "lo utilizan") : "aún sin registro"}</span></div>
@@ -1276,6 +1584,8 @@ function vSolicitar(id) {
     const s0 = id && byId(id);
     F.sel = s0 && (s0.publicado || S.admin) ? [id] : [];
     F.errs = {};
+    const u = S.user;
+    if (u) { const v0 = F.vals; if (!v0.nombre) v0.nombre = u.nombre || ""; if (!v0.correo) v0.correo = u.correo || ""; if (!v0.dependencia) v0.dependencia = u.dependencia || ""; if (!v0.cargo) v0.cargo = u.cargo || ""; if (!v0.telefono) v0.telefono = u.telefono || ""; }
   }
   F.sel = F.sel.filter((x) => byId(x));
   const sel = F.sel.map(byId), v = F.vals, e = F.errs;
@@ -1425,31 +1735,6 @@ async function hashPin(p) {
   try { if (window.crypto && crypto.subtle) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return "h1:" + [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); } } catch (e) {}
   let h = 5381; for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return "h0:" + (h >>> 0).toString(16);
 }
-function activarAdmin() { S.admin = true; try { sessionStorage.setItem("catalogo-admin", "1"); } catch (e) {} }
-
-function vAdminLogin() {
-  const hay = !!cfg().pinHash;
-  return `${cabecera("Administración", hay ? "Escribe tu PIN para editar el catálogo." : "Crea un PIN para proteger la edición del catálogo.")}
-  <form id="form-pin" class="card" style="max-width:420px;margin-top:22px" novalidate>
-    <div class="field"><label for="pin1">${hay ? "PIN de administrador" : "Nuevo PIN (mínimo 4 caracteres)"}</label><input id="pin1" type="password" autocomplete="${hay ? "current-password" : "new-password"}"></div>
-    ${hay ? "" : `<div class="field" style="margin-top:12px"><label for="pin2">Confirma el PIN</label><input id="pin2" type="password" autocomplete="new-password"></div>`}
-    <div class="err" id="pin-err" role="alert" style="margin-top:8px"></div>
-    <button class="btn" type="submit" style="margin-top:12px">${hay ? "Entrar" : "Crear PIN y entrar"}</button>
-  </form>
-  <p class="muted" style="max-width:58ch;margin-top:16px;font-size:14px">El PIN evita cambios accidentales desde esta página. Para una protección completa, aloja el catálogo en un sitio donde solo tu equipo pueda modificar los archivos.</p>`;
-}
-async function entrarAdmin() {
-  const hay = !!cfg().pinHash, p1 = $("#pin1").value, er = $("#pin-err");
-  if (hay) {
-    if ((await hashPin(p1)) !== cfg().pinHash) { er.textContent = "El PIN no es correcto."; $("#pin1").select(); return; }
-  } else {
-    if (p1.length < 4) { er.textContent = "El PIN debe tener al menos 4 caracteres."; return; }
-    if (p1 !== $("#pin2").value) { er.textContent = "Los PIN no coinciden."; return; }
-    cfg().pinHash = await hashPin(p1); guardarCatalogo();
-  }
-  activarAdmin(); toast("Modo administrador activado"); render(false);
-}
-
 function bannerAdmin() {
   let h = "";
   if (S.memoria) h += `<div class="note warn">${glifo("warn")}<div>Este navegador no permite guardar datos (por ejemplo, ventana privada). Tus cambios se perderán al cerrar la página. Usa «Descargar catálogo» para conservarlos.</div></div>`;
@@ -1459,13 +1744,14 @@ function bannerAdmin() {
 }
 
 function vAdmin(sub, id) {
-  if (!S.admin) return vAdminLogin();
+  if (!S.admin) return `${cabecera("Administración")}${vacio("Acceso restringido", "Esta sección es solo para administradores del catálogo.", `<a class="btn" href="#/">Ir al inicio</a>`)}`;
   if (sub === "editar") return vEditor(id);
-  const tab = sub === "categorias" || sub === "config" ? sub : "sistemas";
+  const tab = sub === "categorias" || sub === "config" || sub === "usuarios" ? sub : "sistemas";
   const cur = (k) => (tab === k ? ' aria-current="page"' : "");
   const cab = `${cabecera("Administración", "Edita lo que ven las dependencias en el catálogo.")}
-    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a><a href="#/admin/config"${cur("config")}>Configuración</a></nav><button class="btn sec sm" data-act="admin-salir">${glifo("unlock")}Salir del modo administrador</button></div>${bannerAdmin()}`;
+    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a><a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a></nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
   if (tab === "categorias") return cab + vAdminCategorias();
+  if (tab === "usuarios") return cab + vAdminUsuarios();
   if (tab === "config") return cab + vAdminConfig(id);
   const l = S.cat.sistemas;
   return cab + `<div class="admbar" style="margin-top:0"><span class="muted">${l.length} ${plural(l.length, "sistema", "sistemas")} · ${l.filter((s) => s.publicado).length} publicados</span><a class="btn" href="#/admin/editar/nuevo">${glifo("plus")}Agregar sistema</a></div>
@@ -1500,7 +1786,7 @@ function vAdminConfig(sec) {
     panel = `<section class="grp"><h2>Estado del catálogo</h2><p class="hint">Revisión rápida de lo que falta para que el catálogo funcione completo.</p><div class="card">
       ${g.correoDestino ? item("ok", "Correo de solicitudes", esc(g.correoDestino)) : item("warn", "Correo de solicitudes", "Falta definir a dónde llegan las solicitudes.", `<a class="btn sm sec" href="#/admin/config/solicitudes">Configurar</a>`)}
       ${g.endpoint ? item("ok", "Envío automático", "Activo: las solicitudes se envían sin abrir el correo.") : item("off", "Envío automático", "Opcional. Sin él, el solicitante envía el correo desde su dispositivo.")}
-      ${g.pinHash ? item("ok", "PIN de administrador", "Protege la edición del catálogo.") : item("warn", "PIN de administrador", "Aún no hay PIN.", `<a class="btn sm sec" href="#/admin/config/seguridad">Crear</a>`)}
+      ${item(S.cat.usuarios.some((x) => x.rol === "admin" && x.estado === "activo") ? "ok" : "warn", "Usuarios y accesos", `${S.cat.usuarios.length} ${plural(S.cat.usuarios.length, "usuario", "usuarios")} con acceso (RFC y contraseña).`, `<a class="btn sm sec" href="#/admin/usuarios">Administrar</a>`)}
       ${S.pub ? item(S.cat.editado ? "warn" : "ok", "Catálogo publicado", S.cat.editado ? "Tienes cambios locales sin publicar." : "La versión publicada está al día.", S.cat.editado ? `<a class="btn sm sec" href="#/admin/config/datos">Publicar</a>` : "") : item("warn", "Catálogo publicado", "Aún no hay archivo catalogo.json junto a index.html.", `<a class="btn sm sec" href="#/admin/config/datos">Cómo publicar</a>`)}
       ${ej ? item("warn", "Sistemas de ejemplo", `${ej} ${plural(ej, "sistema de ejemplo", "sistemas de ejemplo")} visibles para las dependencias.`, `<a class="btn sm sec" href="#/admin/config/datos">Quitar</a>`) : item("ok", "Contenido propio", "No hay sistemas de ejemplo.")}
     </div></section>
@@ -1512,7 +1798,8 @@ function vAdminConfig(sec) {
   } else if (sec === "solicitudes") {
     const pasos = pasosSigue(c).map(([t, d], i) => `<li><span class="n">${i + 1}</span><div><b>${esc(t)}</b><span>${esc(d)}</span></div></li>`).join("");
     panel = `<section class="grp"><h2>Recepción de solicitudes</h2><p class="hint">Define a dónde llegan las solicitudes de las dependencias y cómo se envían.</p><div class="card"><div class="fields">
-      ${f("correoDestino", "Correo que recibe las solicitudes", { tipo: "email", ph: "solicitudes@tudependencia.gob.mx", full: true, hint: "Al enviar, se abre el correo del solicitante con el mensaje ya redactado hacia esta dirección." })}
+      ${f("correoAdmin", "Correo del administrador (solicitudes de usuario y recuperación)", { tipo: "email", ph: "admin@tudependencia.gob.mx", full: true, hint: "Aquí llegan las solicitudes de nuevos usuarios y de recuperación de contraseña." })}
+      ${f("correoDestino", "Correo que recibe las solicitudes de sistemas", { tipo: "email", ph: "solicitudes@tudependencia.gob.mx", full: true, hint: "Al enviar, se abre el correo del solicitante con el mensaje ya redactado hacia esta dirección." })}
       ${f("endpoint", "Envío automático (opcional)", { tipo: "url", ph: "https://formspree.io/f/xxxxxxx", full: true, hint: "Si pegas la URL de un servicio de formularios (Formspree, Apps Script…), la solicitud se envía sin que el solicitante abra su correo." })}
       <div class="field full"><div><button type="button" class="btn sec sm" data-act="probar-correo">${glifo("correo")}Enviar correo de prueba</button></div></div>
     </div></div></section>
@@ -1530,14 +1817,11 @@ function vAdminConfig(sec) {
       <div class="swatches" role="group" aria-label="Color de acento"><button type="button" data-act="cfg-acento" data-c="" style="${colorVars("azul")}" aria-pressed="${!c.acento}" aria-label="Predeterminado"></button>${Object.keys(COLORES).filter((k) => k !== "azul").map((k) => `<button type="button" data-act="cfg-acento" data-c="${k}" style="${colorVars(k)}" aria-pressed="${c.acento === k}" aria-label="${k}"></button>`).join("")}</div>
       <p class="cfg-note">La vista se actualiza al elegir; para conservarlo, presiona «Guardar configuración».</p></div></section>` + savebar;
   } else if (sec === "seguridad") {
-    panel = `<section class="grp"><h2>PIN de administrador</h2><p class="hint">Protege la edición del catálogo en este navegador.</p><div class="card"><div class="fields">
-      <div class="field"><label for="pin-n1">Nuevo PIN</label><input id="pin-n1" type="password" autocomplete="new-password"></div>
-      <div class="field"><label for="pin-n2">Confirma el nuevo PIN</label><input id="pin-n2" type="password" autocomplete="new-password"></div>
-      <div class="field full"><div><button class="btn sec sm" data-act="cambiar-pin">Cambiar PIN</button></div></div></div></div></section>
-    <section class="grp"><h2>Sesión</h2><p class="hint">El modo administrador dura mientras la pestaña esté abierta.</p><div class="card"><button class="btn sec sm" data-act="admin-salir">${glifo("unlock")}Cerrar sesión de administrador</button>
-      <p class="cfg-note">El PIN evita cambios accidentales. Para una protección completa, aloja el catálogo donde solo tu equipo pueda modificar los archivos.</p></div></section>`;
+    panel = `<section class="grp"><h2>Mi cuenta</h2><p class="hint">Sesión iniciada como ${esc(S.user.nombre)} (${esc(S.user.rfc)}).</p><div class="card" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec sm" data-act="cambiar-pass">${glifo("candado")}Cambiar mi contraseña</button><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div></section>
+    <section class="grp"><h2>Usuarios y accesos</h2><p class="hint">Crea cuentas, restablece contraseñas y bloquea accesos.</p><div class="card"><a class="btn sec sm" href="#/admin/usuarios">Administrar usuarios</a>
+      <ul style="margin:14px 0 0;padding-left:18px;color:var(--label-2);font-size:14px;display:grid;gap:4px"><li>Se entra con RFC y contraseña (mínimo 8 caracteres, con letras y números).</li><li>Tras 5 intentos fallidos, el RFC se bloquea 5 minutos en ese dispositivo.</li><li>Las contraseñas temporales se deben cambiar al primer inicio de sesión.</li><li>Las contraseñas se guardan cifradas, nunca en texto claro.</li></ul></div></section>`;
   } else {
-    panel = `<section class="grp"><h2>Copia y publicación</h2><p class="hint">Descarga una copia, restaura una anterior o vuelve a la versión publicada.</p>
+    panel = `<section class="grp"><h2>Copia y publicación</h2><p class="hint">Descarga una copia, restaura una anterior o vuelve a la versión publicada. El archivo incluye las cuentas de usuario (con contraseñas cifradas): publícalo solo en un sitio con acceso controlado.</p>
       <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <button class="btn sec sm" data-act="exportar">${glifo("download")}Descargar catálogo</button>
         <div class="up"><input type="file" id="up-import" accept="application/json,.json" data-up="import"><label class="btn sec sm" for="up-import">${glifo("upload")}Cargar catálogo…</label></div>
@@ -1665,7 +1949,7 @@ async function importarCatalogo(file) {
     if (!catValido(j)) throw new Error("formato");
     const ok = await confirmar({ titulo: "Reemplazar el catálogo", texto: `Se cargarán ${j.sistemas.length} sistemas y reemplazarán a los actuales en este navegador.`, si: "Reemplazar", peligro: true });
     if (!ok) return;
-    S.cat = migrar(j); S.drafts = {}; S.cfgDraft = null; guardarCatalogo(); toast("Catálogo cargado"); render(false);
+    S.cat = migrar(j); S.drafts = {}; S.cfgDraft = null; guardarCatalogo(); revalidarSesion(); toast("Catálogo cargado"); render(false);
   } catch (e) { toast("Ese archivo no parece un catálogo válido."); }
 }
 function descargar(url, nombre) { const a = document.createElement("a"); a.href = url; a.download = nombre; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }
@@ -1693,32 +1977,6 @@ function guardarDraft() {
 
 
 /* ---------- Acceso rápido de administrador y cambio de imagen ---------- */
-let pinCb = null;
-function pedirPin(cb) {
-  pinCb = cb; const hay = !!cfg().pinHash;
-  modal({
-    titulo: hay ? "Acceso de administrador" : "Crea un PIN de administrador",
-    body: `<p class="muted" style="margin-bottom:14px">${hay ? "Escribe tu PIN para continuar." : "Aún no hay PIN. Crea uno (mínimo 4 caracteres) para proteger la edición del catálogo."}</p>
-      <form id="form-pin-modal" novalidate>
-        <div class="field"><label for="pm1">${hay ? "PIN de administrador" : "Nuevo PIN"}</label><input id="pm1" type="password" autocomplete="${hay ? "current-password" : "new-password"}"></div>
-        ${hay ? "" : `<div class="field" style="margin-top:10px"><label for="pm2">Confirma el PIN</label><input id="pm2" type="password" autocomplete="new-password"></div>`}
-        <div class="err" id="pm-err" role="alert" style="margin-top:8px"></div>
-        <button class="btn" type="submit" style="margin-top:12px">Continuar</button>
-      </form>`
-  });
-}
-async function confirmarPinModal() {
-  const hay = !!cfg().pinHash, p1 = $("#pm1").value, er = $("#pm-err");
-  if (hay) {
-    if ((await hashPin(p1)) !== cfg().pinHash) { er.textContent = "El PIN no es correcto."; $("#pm1").select(); return; }
-  } else {
-    if (p1.length < 4) { er.textContent = "El PIN debe tener al menos 4 caracteres."; return; }
-    if (p1 !== $("#pm2").value) { er.textContent = "Los PIN no coinciden."; return; }
-    cfg().pinHash = await hashPin(p1); guardarCatalogo();
-  }
-  activarAdmin(); cerrarModal(); toast("Modo administrador activado"); render(false);
-  const cb = pinCb; pinCb = null; if (cb) cb();
-}
 function abrirImagenSistema(id) {
   const s = byId(id); if (!s) return;
   const tieneIc = imgOk(s.icono.imagen), tienePo = imgOk(s.portada);
@@ -1805,7 +2063,7 @@ const ACT = {
   gestionar(t) {
     const id = t.dataset.id, modo = t.dataset.modo;
     const ir = () => { if (modo === "info") go("admin/editar/" + enc(id)); else abrirImagenSistema(id); };
-    if (S.admin) ir(); else pedirPin(ir);
+    if (S.admin) ir(); else toast("Solo el administrador puede editar el catálogo.");
   },
   "img-quitar"(t) {
     const s = byId(t.dataset.id); if (!s) return;
@@ -1821,7 +2079,35 @@ const ACT = {
   },
   /* administración */
   "admin-entry"() { go("admin"); },
-  "admin-salir"() { S.admin = false; try { sessionStorage.removeItem("catalogo-admin"); } catch (e) {} go(""); toast("Saliste del modo administrador"); },
+  "mi-cuenta"() { abrirMiCuenta(); },
+  "cambiar-pass"() { abrirCambiarClave(); },
+  "cerrar-sesion"() { cerrarModal(); limpiarSesion(); location.hash = "#/"; render(false); toast("Sesión cerrada"); },
+  "auth-ir"(t) { S.authView = t.dataset.v; render(false); const i = $("input", view); if (i) i.focus(); },
+  "auth-copiar"() { if (S.authInfo) copiar(`Para: ${S.authInfo.para}\nAsunto: ${S.authInfo.asunto}\n\n${S.authInfo.cuerpo}`, "Mensaje copiado"); },
+  "ver-pass"(t) { const i = $("input", t.closest(".pwrow")); if (!i) return; const ver = i.type === "password"; i.type = ver ? "text" : "password"; t.textContent = ver ? "Ocultar" : "Mostrar"; },
+  "usr-nuevo"() { abrirCrearUsuario({}); },
+  "usr-reset"(t) { abrirReset(t.dataset.id); },
+  async "usr-reset-ok"(t) { await restablecerClave(t.dataset.id); },
+  async "usr-toggle"(t) {
+    const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
+    if (u.estado === "activo" && esUltimoAdmin(u)) return toast("No puedes bloquear al único administrador activo.");
+    if (u.id === S.user.id) return toast("No puedes bloquear tu propio usuario.");
+    u.estado = u.estado === "activo" ? "bloqueado" : "activo"; guardarCatalogo(); toast(u.estado === "activo" ? "Usuario activado" : "Usuario bloqueado"); keep(() => render(false));
+  },
+  "usr-rol"(t) {
+    const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
+    if (u.rol === "admin" && esUltimoAdmin(u)) return toast("Debe existir al menos un administrador activo.");
+    if (u.id === S.user.id) return toast("No puedes cambiar tu propio rol.");
+    u.rol = u.rol === "admin" ? "usuario" : "admin"; guardarCatalogo(); toast("Rol actualizado"); keep(() => render(false));
+  },
+  async "usr-del"(t) {
+    const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
+    if (u.id === S.user.id) return toast("No puedes eliminar tu propio usuario.");
+    if (esUltimoAdmin(u)) return toast("No puedes eliminar al único administrador activo.");
+    if (!(await confirmar({ titulo: `Eliminar a ${u.nombre}`, texto: "Perderá el acceso al catálogo. Esta acción no se puede deshacer.", si: "Eliminar", peligro: true }))) return;
+    S.cat.usuarios = S.cat.usuarios.filter((x) => x.id !== u.id); guardarCatalogo(); toast("Usuario eliminado"); keep(() => render(false));
+  },
+
   "toggle-pub"(t) { const s = byId(t.dataset.id); if (!s) return; s.publicado = !s.publicado; guardarCatalogo(); toast(s.publicado ? "Sistema publicado" : "Sistema oculto"); keep(() => render(false)); },
   mover(t) { const i = S.cat.sistemas.findIndex((s) => s.id === t.dataset.id); mover(S.cat.sistemas, i, +t.dataset.d); guardarCatalogo(); keep(() => render(false)); },
   duplicar(t) { const s = byId(t.dataset.id); if (!s) return; const c = clone(s); c.id = uid("sis"); c.nombre += " (copia)"; c.publicado = false; c.destacado = false; c.archivos.forEach((a) => (a.id = uid("arc"))); const i = S.cat.sistemas.indexOf(s); S.cat.sistemas.splice(i + 1, 0, c); guardarCatalogo(); toast("Sistema duplicado (oculto)"); keep(() => render(false)); },
@@ -1848,12 +2134,6 @@ const ACT = {
     S.cat.config.tiempoRespuesta = (S.cat.config.tiempoRespuesta || "").trim(); S.cat.config.reunion = (S.cat.config.reunion || "").trim(); S.cat.config.horario = (S.cat.config.horario || "").trim();
     guardarCatalogo(); S.cfgDraft = null; aplicarApariencia(); toast("Configuración guardada"); render(false);
   },
-  async "cambiar-pin"() {
-    const a = $("#pin-n1").value, b = $("#pin-n2").value;
-    if (a.length < 4) return toast("El PIN debe tener al menos 4 caracteres.");
-    if (a !== b) return toast("Los PIN no coinciden.");
-    cfg().pinHash = await hashPin(a); guardarCatalogo(); $("#pin-n1").value = ""; $("#pin-n2").value = ""; toast("PIN actualizado");
-  },
   "quitar-logo"() { if (S.cfgDraft) { S.cfgDraft.logo = ""; keep(() => render(false)); } },
   exportar() {
     const j = JSON.stringify(Object.assign({}, S.cat, { editado: false }));
@@ -1873,7 +2153,7 @@ const ACT = {
   },
   async "descartar-local"() {
     if (!(await confirmar({ titulo: "Descartar mis cambios", texto: "Se borrarán los cambios hechos en este navegador y se usará el catálogo publicado.", si: "Descartar", peligro: true }))) return;
-    await IDB.del("catalogo"); S.cat = migrar(S.pub); S.cat.editado = false; S.drafts = {}; S.cfgDraft = null; toast("Usando el catálogo publicado"); render(false);
+    await IDB.del("catalogo"); S.cat = migrar(S.pub); S.cat.editado = false; S.drafts = {}; S.cfgDraft = null; revalidarSesion(); toast("Usando el catálogo publicado"); render(false);
   },
 
   /* editor */
@@ -1942,8 +2222,13 @@ document.addEventListener("change", (e) => {
 document.addEventListener("submit", (e) => {
   const f = e.target;
   if (f.id === "form-sol") { e.preventDefault(); enviarSolicitud(); }
-  else if (f.id === "form-pin") { e.preventDefault(); entrarAdmin(); }
-  else if (f.id === "form-pin-modal") { e.preventDefault(); confirmarPinModal(); }
+  else if (f.id === "form-login") { e.preventDefault(); iniciarSesion(); }
+  else if (f.id === "form-setup") { e.preventDefault(); crearAdminInicial(); }
+  else if (f.id === "form-cambiar") { e.preventDefault(); guardarClaveObligatoria(); }
+  else if (f.id === "form-reg") { e.preventDefault(); solicitarUsuario(); }
+  else if (f.id === "form-rec") { e.preventDefault(); solicitarRecuperacion(); }
+  else if (f.id === "form-usr") { e.preventDefault(); crearUsuarioAdmin(); }
+  else if (f.id === "form-pass") { e.preventDefault(); cambiarMiClave(); }
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { if ($("#lb")) cerrarLightbox(); else if ($("#modal")) { if (confFin) confFin(false); else cerrarModal(); } }
@@ -1976,6 +2261,7 @@ async function boot() {
   if (local && local.editado && catValido(local)) S.cat = migrar(local);
   else if (pub) { S.cat = migrar(pub); S.cat.editado = false; }
   else S.cat = migrar(datosEjemplo());
+  restaurarSesion();
   window.addEventListener("hashchange", () => render(true));
   render(true);
 }
