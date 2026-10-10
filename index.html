@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catálogo de Sistemas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2352b0ff'/%3E%3Cstop offset='1' stop-color='%230a60ea'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23a)'/%3E%3Crect x='17' y='17' width='13' height='13' rx='3.5' fill='%23fff'/%3E%3Ccircle cx='41' cy='23.5' r='6.5' fill='%23fff' opacity='.78'/%3E%3Crect x='17' y='34' width='13' height='13' rx='3.5' fill='%23fff' opacity='.78'/%3E%3Crect x='34' y='34' width='13' height='13' rx='3.5' fill='%23fff' opacity='.5'/%3E%3C/svg%3E">
 <meta name="description" content="Catálogo institucional de sistemas digitales. Explora, conoce y solicita los sistemas disponibles para tu dependencia.">
 <style>
 /* Diseño: barra lateral en escritorio y panel inferior anclado en teléfono.
@@ -513,7 +514,27 @@ input::placeholder,textarea::placeholder{color:var(--label-3)}
 .opt-row button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .cfg-note{color:var(--label-2);font-size:13.5px;margin-top:6px}
 
-/* ---------- Acceso (RFC + contraseña) ---------- */
+
+/* ---------- Pestañeo al cambiar de sección ---------- */
+@keyframes pestanea{0%{opacity:0}28%{opacity:1}46%{opacity:.35}70%{opacity:1}100%{opacity:1}}
+#view.blink{animation:pestanea .5s ease-out}
+@media (prefers-reduced-motion:reduce){#view.blink{animation-duration:.25s}}
+
+/* ---------- Logotipo ---------- */
+.logo-svg{width:100%;height:100%;display:block}
+.ico.lg,.rail-brand.lg,.auth-logo.lg{background:none;box-shadow:none;overflow:visible}
+.ico.lg::after{display:none}
+.logo-ed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:640px){.logo-ed{grid-template-columns:minmax(0,1fr)}}
+.logo-prev{width:96px;height:96px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))}
+.logo-opts{display:flex;gap:8px;flex-wrap:wrap}
+.logo-opts button{width:52px;height:52px;border-radius:14px;border:1.5px solid transparent;padding:5px;background:var(--bg-input)}
+.logo-opts button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.logo-opts .txt{width:auto;height:auto;padding:9px 14px;font-size:14.5px;font-weight:600;color:var(--label)}
+.logo-grp{display:grid;gap:6px;margin-bottom:14px}
+.logo-grp:last-child{margin-bottom:0}
+
+/* ---------- Acceso (correo + contraseña) ---------- */
 body.auth .sidebar,body.auth .tabbar,body.auth .foot{display:none!important}
 body.auth .app{grid-template-columns:minmax(0,1fr);padding-left:0}
 body.auth main{max-width:none;padding:0}
@@ -664,7 +685,10 @@ const CONFIG_BASE = {
   privacidad: "Usaremos tus datos únicamente para atender esta solicitud y ponernos en contacto contigo.",
   pinHash: "",
   correoAdmin: "delrivero25@gmail.com",   // recibe solicitudes de usuario y de recuperación de contraseña
-  logo: "",
+  logo: "",                   // imagen subida (opcional); si está vacío se usa el diseño de abajo
+  logoMarca: "mosaico",       // mosaico | capas | orbita | cubo | onda | inicial
+  logoColor: "azul",          // color de la paleta
+  logoForma: "squircle",      // squircle | circulo | cuadrado
   horario: "",                // ej. «Lunes a viernes, 9:00 a 17:00»
   tiempoRespuesta: "3 días hábiles",
   reunion: "Coordinamos una reunión con tu dependencia para presentar el sistema, definir accesos y acordar fechas de uso.",
@@ -850,7 +874,7 @@ function migrar(c) {
   c = c || {};
   const base = datosEjemplo();
   const out = { formato: 2, editado: !!c.editado, actualizado: c.actualizado || hoyISO(), config: Object.assign({}, CONFIG_BASE, c.config || {}) };
-  out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && u.rfc && u.hash).map((u) => Object.assign({}, u, { rol: rolDe(u.rol) })) : [];
+  out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && (u.correo || u.rfc) && u.hash).map((u) => Object.assign({}, u, { rol: rolDe(u.rol) })) : [];
   out.categorias = Array.isArray(c.categorias) ? c.categorias : base.categorias;
   out.sistemas = (Array.isArray(c.sistemas) ? c.sistemas : []).map((s) => {
     const b = sistemaBase({});
@@ -1025,7 +1049,24 @@ function cabecera(titulo, sub = "", cuando = "") {
   return `<header class="pagehead"><div>${cuando ? `<div class="when">${esc(cuando)}</div>` : ""}<h1 class="large-title">${esc(titulo)}</h1>${sub ? `<p class="lede">${esc(sub)}</p>` : ""}</div>${S.admin ? `<a class="avatar on" href="#/admin" aria-label="Administración">${glifo("edit")}</a>` : `<button class="avatar" data-act="mi-cuenta" aria-label="Mi cuenta">${S.user ? esc(iniciales(S.user.nombre)) : glifo("user")}</button>`}</header>`;
 }
 function vacio(titulo, texto, extra = "") { return `<div class="empty">${glifo("search")}<b>${esc(titulo)}</b><p>${esc(texto)}</p>${extra}</div>`; }
-const logoHtml = (c) => `<span class="ico s40" style="${colorVars("azul")}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</span>`;
+const LOGO_MARCAS = {
+  mosaico: { n: "Mosaico", d: '<rect x="17" y="17" width="13" height="13" rx="3.5" fill="#fff"/><circle cx="41" cy="23.5" r="6.5" fill="#fff" opacity=".78"/><rect x="17" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".78"/><rect x="34" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".5"/>' },
+  capas: { n: "Capas", d: '<path d="M32 15 49 24.5 32 34 15 24.5Z" fill="#fff"/><path d="M15 33 32 42.5 49 33" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M15 41.5 32 51 49 41.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>' },
+  orbita: { n: "Órbita", d: '<circle cx="32" cy="32" r="16" fill="none" stroke="#fff" stroke-width="3.4" opacity=".6"/><circle cx="32" cy="32" r="6.5" fill="#fff"/><circle cx="43.3" cy="20.7" r="4" fill="#fff"/>' },
+  cubo: { n: "Cubo", d: '<path d="M32 14 48 23v18L32 50 16 41V23Z" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/><path d="M16 23 32 32 48 23M32 32v18" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round" opacity=".7"/>' },
+  onda: { n: "Onda", d: '<path d="M14 24c6-8 12-8 18 0s12 8 18 0" fill="none" stroke="#fff" stroke-width="3.8" stroke-linecap="round"/><path d="M14 33c6-8 12-8 18 0s12 8 18 0" fill="none" stroke="#fff" stroke-width="3.8" stroke-linecap="round" opacity=".7"/><path d="M14 42c6-8 12-8 18 0s12 8 18 0" fill="none" stroke="#fff" stroke-width="3.8" stroke-linecap="round" opacity=".45"/>' },
+  inicial: { n: "Inicial", d: null }
+};
+const LOGO_FORMAS = { squircle: ["Redondeado", 18], circulo: ["Círculo", 32], cuadrado: ["Cuadrado", 8] };
+let logoN = 0;
+function logoSvg(c) {
+  const m = LOGO_MARCAS[c.logoMarca] ? c.logoMarca : "mosaico", col = COLORES[c.logoColor] || COLORES.azul, f = LOGO_FORMAS[c.logoForma] || LOGO_FORMAS.squircle, id = "lgd" + (++logoN);
+  const ini = esc((String(c.nombre || "C").trim()[0] || "C").toUpperCase());
+  const marca = m === "inicial" ? `<text x="32" y="43.5" text-anchor="middle" font-size="32" font-weight="700" fill="#fff" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif">${ini}</text>` : LOGO_MARCAS[m].d;
+  return `<svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col[0]}"/><stop offset="1" stop-color="${col[1]}"/></linearGradient></defs><rect width="64" height="64" rx="${f[1]}" fill="url(#${id})"/>${marca}</svg>`;
+}
+const logoInner = (c) => imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : logoSvg(c);
+const logoHtml = (c) => `<span class="ico s40${imgOk(c.logo) ? "" : " lg"}" style="${colorVars("azul")}">${logoInner(c)}</span>`;
 
 function relacionados(s, n = 6) {
   const pts = (x) => { let p = 0; x.usos.forEach((u) => { if (s.usos.includes(u)) p += 3; }); x.categorias.forEach((c) => { if (s.categorias.includes(c)) p += 2; }); return p; };
@@ -1037,10 +1078,10 @@ function relacionados(s, n = 6) {
 const motivo = (s, x) => { const c = x.usos.find((u) => s.usos.includes(u)); return c ? `También sirve para ${c.toLowerCase()}` : x.subtitulo; };
 
 
-/* ---------- Cuentas y sesión (RFC + contraseña) ---------- */
-const RFC_RE = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/;
-const normRfc = (v) => String(v || "").trim().toUpperCase().replace(/\s+/g, "");
-const rfcOk = (v) => RFC_RE.test(normRfc(v));
+/* ---------- Cuentas y sesión (correo + contraseña) ---------- */
+const normCorreo = (v) => String(v || "").trim().toLowerCase();
+const mismoCorreo = (a, b) => !!normCorreo(a) && normCorreo(a) === normCorreo(b);
+const buscarPorCorreo = (c) => S.cat.usuarios.find((u) => mismoCorreo(u.correo, c));
 const claveOk = (p) => typeof p === "string" && p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
 const CLAVE_AYUDA = "Mínimo 8 caracteres, con letras y números.";
 const iniciales = (n) => String(n || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase() || "?";
@@ -1094,21 +1135,21 @@ function abrirSesion(u, recordar) {
 }
 
 async function iniciarSesion() {
-  const rfc = normRfc(val("a-rfc")), pass = $("#a-pass").value, rec = $("#a-rec") && $("#a-rec").checked;
+  const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value, rec = $("#a-rec") && $("#a-rec").checked;
   authErr("");
-  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
+  if (!correoOk(correo)) return authErr("Escribe un correo electrónico válido.");
   if (!pass) return authErr("Escribe tu contraseña.");
-  const it = intentosDe(rfc);
+  const it = intentosDe(correo);
   if (it.hasta > Date.now()) return authErr(`Demasiados intentos. Vuelve a intentar en ${Math.ceil((it.hasta - Date.now()) / 60000)} min.`);
-  const u = S.cat.usuarios.find((x) => x.rfc === rfc);
+  const u = buscarPorCorreo(correo);
   const ok = !!u && (await hashClave(pass, u.salt)) === u.hash;
   if (!ok) {
     const n = (it.hasta && it.hasta <= Date.now() ? 0 : it.n) + 1;
-    setIntentos(rfc, n >= 5 ? { n: 0, hasta: Date.now() + 5 * 60000 } : { n, hasta: 0 });
-    return authErr(n >= 5 ? "Demasiados intentos. Espera 5 minutos o solicita recuperar tu contraseña." : "RFC o contraseña incorrectos.");
+    setIntentos(correo, n >= 5 ? { n: 0, hasta: Date.now() + 5 * 60000 } : { n, hasta: 0 });
+    return authErr(n >= 5 ? "Demasiados intentos. Espera 5 minutos o solicita recuperar tu contraseña." : "Correo o contraseña incorrectos.");
   }
   if (u.estado === "bloqueado") return authErr("Tu usuario está bloqueado. Contacta al administrador.");
-  setIntentos(rfc, null); abrirSesion(u, rec);
+  setIntentos(correo, null); abrirSesion(u, rec);
 }
 /* ---------- Superadministrador: autorización con código por correo ---------- */
 const CODIGO_VIDA_MIN = 15, CODIGO_MAX_INTENTOS = 5, CODIGO_ESPERA_MS = 60000;
@@ -1139,25 +1180,24 @@ async function enviarAvisoCorreo(para, asunto, campos) {
   } catch (e) { return false; }
 }
 const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Autorización de Superadministrador · ${pend.nombre}`, {
-  "Nombre": pend.nombre, "Usuario": pend.correo, "RFC": pend.rfc, "Tipo de cuenta": "Superadministrador",
+  "Nombre": pend.nombre, "Usuario": pend.correo, "Tipo de cuenta": "Superadministrador",
   "Código de autorización": codigo, "Fecha": new Date().toLocaleString("es-MX"),
   "Instrucciones": "Si autorizas esta cuenta, comparte el código con la persona. Si no la reconoces, ignora este correo."
 });
 async function solicitarSuper() {
-  const rfc = normRfc(val("a-rfc")), nombre = val("a-nombre"), correo = val("a-correo"), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
+  const nombre = val("a-nombre"), correo = normCorreo(val("a-correo")), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
   authErr("");
-  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
   if (!correoOk(correo)) return authErr("Escribe un correo válido.");
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
-  if (p1.toUpperCase() === rfc) return authErr("La contraseña no puede ser tu RFC.");
+  if (normCorreo(p1) === correo) return authErr("La contraseña no puede ser tu correo.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
-  if (S.cat.usuarios.some((u) => u.rfc === rfc)) return authErr("Ese RFC ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
+  if (buscarPorCorreo(correo)) return authErr("Ese correo ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
   const prev = pendSuper.leer();
   if (prev && Date.now() - prev.enviado < CODIGO_ESPERA_MS) return authErr(`Espera ${Math.ceil((CODIGO_ESPERA_MS - (Date.now() - prev.enviado)) / 1000)} s antes de pedir otro código.`);
   const btn = $("#a-super-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
   const codigo = nuevoCodigo(), cs = nuevoSalt(), ps = nuevoSalt();
-  const pend = { rfc, nombre, correo, salt: ps, hash: await hashClave(p1, ps), codeSalt: cs, codeHash: await hashClave(normCodigo(codigo), cs), exp: Date.now() + CODIGO_VIDA_MIN * 60000, enviado: Date.now(), n: 0 };
+  const pend = { nombre, correo, salt: ps, hash: await hashClave(p1, ps), codeSalt: cs, codeHash: await hashClave(normCodigo(codigo), cs), exp: Date.now() + CODIGO_VIDA_MIN * 60000, enviado: Date.now(), n: 0 };
   const ok = await enviarCodigoSuper(pend, codigo);
   if (!ok) {
     if (btn) { btn.disabled = false; btn.textContent = "Solicitar código de autorización"; }
@@ -1188,15 +1228,15 @@ async function verificarCodigoSuper() {
     pend.n++; pendSuper.guardar(pend);
     return authErr(pend.n >= CODIGO_MAX_INTENTOS ? "Demasiados intentos. Usa «Reenviar código» para pedir uno nuevo." : `Código incorrecto. Te quedan ${CODIGO_MAX_INTENTOS - pend.n} intentos.`);
   }
-  if (S.cat.usuarios.some((x) => x.rfc === pend.rfc)) { pendSuper.guardar(null); S.authView = "login"; render(false); return toast("Ese RFC ya tiene un usuario."); }
-  const u = { id: uid("usr"), rfc: pend.rfc, nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() };
+  if (buscarPorCorreo(pend.correo)) { pendSuper.guardar(null); S.authView = "login"; render(false); return toast("Ese correo ya tiene un usuario."); }
+  const u = { id: uid("usr"), nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() };
   S.cat.usuarios.push(u); guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
 }
 async function guardarClaveObligatoria() {
   const p1 = $("#a-pass").value, p2 = $("#a-pass2").value, u = S.user;
   authErr("");
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
-  if (p1.toUpperCase() === u.rfc) return authErr("La contraseña no puede ser tu RFC.");
+  if (normCorreo(p1) === normCorreo(u.correo)) return authErr("La contraseña no puede ser tu correo.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
   u.salt = nuevoSalt(); u.hash = await hashClave(p1, u.salt); u.debeCambiar = false; guardarCatalogo();
   toast("Contraseña actualizada"); render(true);
@@ -1212,30 +1252,28 @@ async function prepararEnvio(tipo, asunto, cuerpo, folio) {
 }
 const mailtoAdmin = (i) => `mailto:${i.para}?subject=${encodeURIComponent(i.asunto)}&body=${encodeURIComponent(i.cuerpo)}`;
 function solicitarUsuario() {
-  const d = { rfc: normRfc(val("a-rfc")), nombre: val("a-nombre"), dependencia: val("a-dep"), cargo: val("a-cargo"), correo: val("a-correo"), telefono: val("a-tel") };
+  const d = { nombre: val("a-nombre"), dependencia: val("a-dep"), cargo: val("a-cargo"), correo: normCorreo(val("a-correo")), telefono: val("a-tel") };
   authErr("");
-  if (!rfcOk(d.rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
   if (d.nombre.length < 3) return authErr("Escribe tu nombre completo.");
   if (!d.dependencia) return authErr("Escribe tu dependencia.");
   if (!d.cargo) return authErr("Escribe tu cargo.");
   if (!correoOk(d.correo)) return authErr("Escribe un correo válido.");
   if (d.telefono.replace(/\D/g, "").length < 8) return authErr("Escribe un teléfono de al menos 8 dígitos.");
   if (!$("#a-acepto").checked) return authErr("Necesitamos tu aceptación para continuar.");
-  if (S.cat.usuarios.some((u) => u.rfc === d.rfc)) return authErr("Ese RFC ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
-  const folio = folioDe("USR"), q = new URLSearchParams({ nuevo: "1", rfc: d.rfc, nombre: d.nombre, correo: d.correo, dep: d.dependencia, cargo: d.cargo, tel: d.telefono }).toString();
-  const cuerpo = ["SOLICITUD DE USUARIO", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `RFC: ${d.rfc}`, `Nombre: ${d.nombre}`, `Dependencia: ${d.dependencia}`, `Cargo: ${d.cargo}`, `Correo: ${d.correo}`, `Teléfono: ${d.telefono}`, "",
+  if (buscarPorCorreo(d.correo)) return authErr("Ese correo ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
+  const folio = folioDe("USR"), q = new URLSearchParams({ nuevo: "1", nombre: d.nombre, correo: d.correo, dep: d.dependencia, cargo: d.cargo, tel: d.telefono }).toString();
+  const cuerpo = ["SOLICITUD DE USUARIO", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `Nombre: ${d.nombre}`, `Dependencia: ${d.dependencia}`, `Cargo: ${d.cargo}`, `Correo: ${d.correo}`, `Teléfono: ${d.telefono}`, "",
     "Para crear el usuario (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Por seguridad la contraseña no viaja por correo: el administrador asignará una contraseña temporal."].join("\n");
   prepararEnvio("usuario", `Solicitud de usuario ${folio} · ${d.nombre}`, cuerpo, folio);
 }
 function solicitarRecuperacion() {
-  const rfc = normRfc(val("a-rfc")), correo = val("a-correo");
+  const correo = normCorreo(val("a-correo"));
   authErr("");
-  if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
   if (!correoOk(correo)) return authErr("Escribe el correo con el que te registraste.");
-  const folio = folioDe("REC"), q = new URLSearchParams({ reset: rfc, correo }).toString();
-  const cuerpo = ["RECUPERACIÓN DE CONTRASEÑA", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `RFC: ${rfc}`, `Correo indicado: ${correo}`, "",
-    "Para restablecer la contraseña (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Verifica que el correo coincida con el registrado antes de generar la contraseña temporal."].join("\n");
-  prepararEnvio("recuperacion", `Recuperación de contraseña ${folio} · ${rfc}`, cuerpo, folio);
+  const folio = folioDe("REC"), q = new URLSearchParams({ reset: correo }).toString();
+  const cuerpo = ["RECUPERACIÓN DE CONTRASEÑA", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `Correo: ${correo}`, "",
+    "Para restablecer la contraseña (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Confirma la identidad de la persona antes de generar la contraseña temporal."].join("\n");
+  prepararEnvio("recuperacion", `Recuperación de contraseña ${folio} · ${correo}`, cuerpo, folio);
 }
 
 function vAuth() {
@@ -1243,11 +1281,11 @@ function vAuth() {
   let v = S.authView;
   if (!hay && (v === "login" || v === "registro" || v === "recuperar")) v = "super";
   if (v === "codigo" && !pendSuper.leer()) v = hay ? "login" : "super";
-  const logo = imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas");
+  const logo = logoInner(c);
   const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
     ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
     : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
-  const rfc = (id = "a-rfc") => fld(id, "RFC", { ph: "Ej. XAXX010101000", auto: "username", extra: 'maxlength="13" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"' });
+  const correoF = (label = "Correo electrónico") => fld("a-correo", label, { tipo: "email", ph: "nombre@dependencia.gob.mx", auto: "username", extra: 'autocapitalize="none" spellcheck="false"' });
   const err = `<div class="err" id="a-err" role="alert"></div>`;
   const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visitante</button>`;
   const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
@@ -1264,7 +1302,7 @@ function vAuth() {
     t = hay ? "Acceso de Superadministrador" : "Crea la cuenta de Superadministrador";
     sub = hay ? "Tendrás control total del catálogo. Para protegerlo, el propietario debe autorizar tu cuenta con un código."
               : "Es el primer acceso. Se enviará un código de autorización al correo del propietario del sistema; sin ese código no se crea la cuenta.";
-    body = `<form id="form-super" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
+    body = `<form id="form-super" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
       <div class="note info">${glifo("info")}<div>El código llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Pídeselo a la persona propietaria y escríbelo en el siguiente paso.</div></div>
       ${err}<button class="btn big" type="submit" id="a-super-btn">Solicitar código de autorización</button></form>
       <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}${hay ? `<button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button>` : ""}</div>${visitante}`;
@@ -1276,12 +1314,12 @@ function vAuth() {
       <div class="auth-links"><button type="button" data-act="super-reenviar">Reenviar código</button><button type="button" data-act="super-cancelar">Cancelar solicitud</button></div>`;
   } else if (v === "registro") {
     t = "Solicitar acceso como colaborador"; sub = "Un colaborador ayuda a manejar el catálogo (sistemas y categorías). Llena tus datos: la solicitud llega al administrador, quien te asignará una contraseña temporal.";
-    body = `<form id="form-reg" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-dep", "Dependencia u organización")}${fld("a-cargo", "Cargo")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono", { tipo: "tel", auto: "tel" })}
+    body = `<form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-dep", "Dependencia u organización")}${fld("a-cargo", "Cargo")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono", { tipo: "tel", auto: "tel" })}
       <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit">Enviar solicitud</button></form>
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button><button type="button" data-act="auth-ir" data-v="super">Necesito acceso de Superadministrador</button></div>`;
   } else if (v === "recuperar") {
-    t = "Recuperar contraseña"; sub = "Escribe tu RFC y el correo registrado. El administrador te enviará una contraseña temporal.";
-    body = `<form id="form-rec" novalidate>${rfc()}${fld("a-correo", "Correo registrado", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${err}<button class="btn big" type="submit">Solicitar recuperación</button></form>
+    t = "Recuperar contraseña"; sub = "Escribe el correo con el que te registraste. El administrador te enviará una contraseña temporal.";
+    body = `<form id="form-rec" novalidate>${correoF("Correo registrado")}${err}<button class="btn big" type="submit">Solicitar recuperación</button></form>
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else if (v === "enviado" && S.authInfo) {
     const i = S.authInfo, rec = i.tipo === "recuperacion";
@@ -1292,18 +1330,18 @@ function vAuth() {
     body = `<ol class="timeline auth-steps">
       <li><span class="n">1</span><div><b>${paso1[0]}</b><span>${paso1[1]}</span></div></li>
       <li><span class="n">2</span><div><b>El administrador lo revisa</b><span>${rec ? "Verifica que el correo coincida con el registrado y restablece tu acceso." : "Valida tus datos y crea tu usuario."}</span></div></li>
-      <li><span class="n">3</span><div><b>Recibes tu contraseña temporal</b><span>Entra con tu RFC y esa contraseña; el sistema te pedirá crear una nueva.</span></div></li></ol>
+      <li><span class="n">3</span><div><b>Recibes tu contraseña temporal</b><span>Entra con tu correo y esa contraseña; el sistema te pedirá crear una nueva.</span></div></li></ol>
       ${!i.enviando && !i.auto && i.para ? `<a class="btn big" href="${esc(mailtoAdmin(i))}">${glifo("correo")}Abrir correo</a>` : ""}
       ${!i.enviando && !i.auto ? `<button class="btn sec big" type="button" data-act="auth-copiar" style="margin-top:10px">${glifo("copy")}Copiar mensaje</button>` : ""}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else {
-    t = "Iniciar sesión"; sub = "Entra con tu RFC y tu contraseña, o explora el catálogo como visitante.";
-    body = `<form id="form-login" novalidate>${rfc()}${fld("a-pass", "Contraseña", { pw: 1 })}
+    t = "Iniciar sesión"; sub = "Entra con tu correo y tu contraseña, o explora el catálogo como visitante.";
+    body = `<form id="form-login" novalidate>${correoF()}${fld("a-pass", "Contraseña", { pw: 1 })}
       <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
       ${visitante}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Quiero ser colaborador</button><button type="button" data-act="auth-ir" data-v="super">Superadministrador</button></div>${ayudaRoles}`;
   }
-  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
 
 /* ---- Mi cuenta ---- */
@@ -1317,7 +1355,7 @@ function abrirMiCuenta() {
   modal({
     titulo: "Mi cuenta",
     body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${ROLES[rolDe(u.rol)]}</div></div></div>
-      <div class="kv"><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div>${u.correo ? `<div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div>` : ""}${u.dependencia ? `<div><span class="k">Dependencia</span><span class="v">${esc(u.dependencia)}</span></div>` : ""}${u.cargo ? `<div><span class="k">Cargo</span><span class="v">${esc(u.cargo)}</span></div>` : ""}</div>`,
+      <div class="kv">${u.correo ? `<div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div>` : ""}${u.dependencia ? `<div><span class="k">Dependencia</span><span class="v">${esc(u.dependencia)}</span></div>` : ""}${u.cargo ? `<div><span class="k">Cargo</span><span class="v">${esc(u.cargo)}</span></div>` : ""}</div>`,
     pie: `<button class="btn sec" data-act="cambiar-pass">${glifo("candado")}Cambiar contraseña</button>${S.admin ? `<a class="btn sec" href="#/admin" data-act="cerrar-modal">${glifo("ajustes")}Administración</a>` : ""}<button class="btn danger" data-act="cerrar-sesion">Cerrar sesión</button>`
   });
 }
@@ -1337,7 +1375,7 @@ async function cambiarMiClave() {
   const u = S.user, a = $("#pw0").value, n = $("#pw1").value, n2 = $("#pw2").value, er = $("#pw-err");
   if ((await hashClave(a, u.salt)) !== u.hash) { er.textContent = "La contraseña actual no es correcta."; return; }
   if (!claveOk(n)) { er.textContent = CLAVE_AYUDA; return; }
-  if (n.toUpperCase() === u.rfc) { er.textContent = "La contraseña no puede ser tu RFC."; return; }
+  if (normCorreo(n) === normCorreo(u.correo)) { er.textContent = "La contraseña no puede ser tu correo."; return; }
   if (n !== n2) { er.textContent = "Las contraseñas nuevas no coinciden."; return; }
   u.salt = nuevoSalt(); u.hash = await hashClave(n, u.salt); guardarCatalogo(); cerrarModal(); toast("Contraseña actualizada");
 }
@@ -1348,21 +1386,21 @@ function vAdminUsuarios() {
   post = () => {
     const q = hashQuery(); if (!q.nuevo && !q.reset) return;
     history.replaceState(null, "", location.pathname + location.search + "#/admin/usuarios");
-    if (q.nuevo) abrirCrearUsuario({ rfc: q.rfc, nombre: q.nombre, correo: q.correo, dep: q.dep, cargo: q.cargo, tel: q.tel });
-    else abrirReset(normRfc(q.reset), q.correo);
+    if (q.nuevo) abrirCrearUsuario({ nombre: q.nombre, correo: q.correo, dep: q.dep, cargo: q.cargo, tel: q.tel });
+    else abrirReset(q.reset);
   };
   const n = (r) => U.filter((u) => rolDe(u.rol) === r).length;
   const opt = (cur) => Object.keys(ROLES).map((r) => `<option value="${r}" ${r === cur ? "selected" : ""}>${ROLES[r]}</option>`).join("");
   return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${n("superadmin")} ${plural(n("superadmin"), "superadministrador", "superadministradores")} · ${n("gestor")} ${plural(n("gestor"), "colaborador", "colaboradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
-  <div class="note info">${glifo("info")}<div>Las solicitudes de colaborador y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>. Abre el enlace del correo para precargar los datos, asigna una contraseña temporal y compártela con la persona.
-    <ul class="rolhelp"><li><b>Visitante:</b> solo consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total. Las cuentas nuevas se autorizan con un código enviado a ${esc(maskCorreo(CORREO_SUPER))}.</li></ul></div></div>
+  <div class="note info">${glifo("info")}<div>Como superadministrador creas los usuarios aquí mismo, al instante y sin códigos de verificación. Las solicitudes de colaborador y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>.
+    <ul class="rolhelp"><li><b>Visitante:</b> solo consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total.</li></ul></div></div>
   <div class="list-card" style="margin-top:14px">${U.map((u) => { const r = rolDe(u.rol), yo = u.id === S.user.id; return `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
-    <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.rfc)}${u.correo ? " · " + esc(u.correo) : ""}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
+    <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.correo || u.rfc || "")}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
     <div class="acts"><label class="sr" for="rol-${esc(u.id)}">Tipo de acceso</label><select class="select" id="rol-${esc(u.id)}" data-usr-rol="${esc(u.id)}" ${yo ? "disabled" : ""}>${opt(r)}</select>
       <button class="btn sm sec" data-act="usr-reset" data-id="${esc(u.id)}">Restablecer contraseña</button>
       <button class="btn sm ghost" data-act="usr-toggle" data-id="${esc(u.id)}" ${yo ? "disabled" : ""}>${u.estado === "activo" ? "Bloquear" : "Activar"}</button>
-      <button class="iconbtn bad" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${yo ? "disabled" : ""}>${glifo("trash")}</button></div></div>`; }).join("")}</div>
-  <p class="cfg-note" style="margin-top:14px">Al descargar el catálogo para publicarlo, el archivo incluye estas cuentas (con las contraseñas cifradas). Publícalo solo en un sitio con acceso controlado.</p>`;
+      <button class="btn sm danger" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${yo ? "disabled" : ""}>${glifo("trash")}Eliminar</button></div></div>`; }).join("")}</div>
+  `;
 }
 function abrirCrearUsuario(q) {
   if (!S.super) return toast("Solo el superadministrador puede crear usuarios.");
@@ -1371,47 +1409,49 @@ function abrirCrearUsuario(q) {
   modal({
     titulo: "Crear usuario", wide: true,
     body: `<form id="form-usr" novalidate><div class="fields">
-      ${f("uc-rfc", "RFC", q.rfc, { extra: 'maxlength="13" style="text-transform:uppercase" autocapitalize="characters"' })}${f("uc-nombre", "Nombre completo", q.nombre)}
-      ${f("uc-correo", "Correo", q.correo, { tipo: "email" })}${f("uc-tel", "Teléfono", q.tel, { tipo: "tel" })}
-      ${f("uc-dep", "Dependencia", q.dep)}${f("uc-cargo", "Cargo", q.cargo)}
-      <div class="field"><label for="uc-rol">Rol</label><select class="select" id="uc-rol"><option value="visitante">Visitante</option><option value="gestor" selected>Colaborador</option><option value="superadmin">Superadministrador</option></select></div></div>
-      <div class="err" id="uc-err" role="alert" style="margin-top:10px"></div>
-      <p class="cfg-note">Se generará una contraseña temporal que la persona cambiará al entrar.</p></form>`,
+      ${f("uc-correo", "Correo electrónico (es su usuario)", q.correo, { tipo: "email", full: true, extra: 'autocapitalize="none" spellcheck="false"' })}
+      ${f("uc-nombre", "Nombre completo", q.nombre)}
+      <div class="field"><label for="uc-rol">Tipo de acceso</label><select class="select" id="uc-rol"><option value="visitante">Visitante</option><option value="gestor" selected>Colaborador</option><option value="superadmin">Superadministrador</option></select></div>
+      <div class="field full"><label for="uc-pass">Contraseña</label><div class="pwrow"><input id="uc-pass" type="text" value="${esc(claveTemporal())}" autocomplete="off" spellcheck="false"><button type="button" class="showpw" data-act="usr-gen">Generar otra</button></div><span class="muted" style="font-size:12.5px">${CLAVE_AYUDA} Puedes escribir la que prefieras.</span></div>
+      ${f("uc-dep", "Dependencia (opcional)", q.dep)}${f("uc-cargo", "Cargo (opcional)", q.cargo)}
+      ${f("uc-tel", "Teléfono (opcional)", q.tel, { tipo: "tel" })}
+      <label class="chk full"><input type="checkbox" id="uc-cambiar" checked><span>Pedir que cambie la contraseña al entrar por primera vez</span></label></div>
+      <div class="err" id="uc-err" role="alert" style="margin-top:10px"></div></form>`,
     pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-usr">Crear usuario</button>`
   });
 }
 async function crearUsuarioAdmin() {
   if (!S.super) return;
-  const er = $("#uc-err"), rfc = normRfc(val("uc-rfc")), nombre = val("uc-nombre"), correo = val("uc-correo");
-  if (!rfcOk(rfc)) { er.textContent = "Escribe un RFC válido (12 o 13 caracteres)."; return; }
-  if (S.cat.usuarios.some((u) => u.rfc === rfc)) { er.textContent = "Ya existe un usuario con ese RFC."; return; }
+  const er = $("#uc-err"), correo = normCorreo(val("uc-correo")), nombre = val("uc-nombre"), pass = $("#uc-pass").value.trim();
+  if (!correoOk(correo)) { er.textContent = "Escribe un correo electrónico válido."; return; }
+  if (buscarPorCorreo(correo)) { er.textContent = "Ya existe un usuario con ese correo."; return; }
   if (nombre.length < 3) { er.textContent = "Escribe el nombre completo."; return; }
-  if (!correoOk(correo)) { er.textContent = "Escribe un correo válido."; return; }
-  const temp = claveTemporal(), salt = nuevoSalt();
-  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: val("uc-dep"), cargo: val("uc-cargo"), telefono: val("uc-tel"), rol: ROLES[$("#uc-rol").value] ? $("#uc-rol").value : "gestor", estado: "activo", salt, hash: await hashClave(temp, salt), debeCambiar: true, creado: hoyISO() };
-  S.cat.usuarios.push(u); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "creado");
+  if (!claveOk(pass)) { er.textContent = CLAVE_AYUDA; return; }
+  const salt = nuevoSalt();
+  const u = { id: uid("usr"), nombre, correo, dependencia: val("uc-dep"), cargo: val("uc-cargo"), telefono: val("uc-tel"), rol: ROLES[$("#uc-rol").value] ? $("#uc-rol").value : "gestor", estado: "activo", salt, hash: await hashClave(pass, salt), debeCambiar: !!$("#uc-cambiar").checked, creado: hoyISO() };
+  S.cat.usuarios.push(u); guardarCatalogo(); cerrarModal(); render(false); toast("Usuario creado"); mostrarClaveTemporal(u, pass, "creado");
 }
 function mostrarClaveTemporal(u, temp, modo) {
   const asunto = modo === "reset" ? "Contraseña temporal del catálogo de sistemas" : "Tu usuario del catálogo de sistemas";
-  const cuerpo = [`Hola ${u.nombre},`, "", modo === "reset" ? "Se restableció tu contraseña." : "Tu usuario fue creado.", "", `Sitio: ${location.href.split("#")[0]}`, `Usuario (RFC): ${u.rfc}`, `Contraseña temporal: ${temp}`, "", "Al entrar, el sistema te pedirá crear una contraseña nueva. No compartas este mensaje."].join("\n");
+  const cuerpo = [`Hola ${u.nombre},`, "", modo === "reset" ? "Se restableció tu contraseña." : "Tu usuario fue creado.", "", `Sitio: ${location.href.split("#")[0]}`, `Usuario (correo): ${u.correo}`, `Contraseña${u.debeCambiar ? " temporal" : ""}: ${temp}`, "", u.debeCambiar ? "Al entrar, el sistema te pedirá crear una contraseña nueva. No compartas este mensaje." : "No compartas este mensaje."].join("\n");
   modal({
     titulo: modo === "reset" ? "Contraseña restablecida" : "Usuario creado",
-    body: `<p class="muted" style="margin-bottom:12px">Comparte esta contraseña temporal con ${esc(u.nombre)}. Solo se muestra ahora.</p>
-      <div class="kv"><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div></div>
+    body: `<p class="muted" style="margin-bottom:12px">Comparte estos datos con ${esc(u.nombre)}. La contraseña solo se muestra ahora.</p>
+      <div class="kv"><div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div></div>
       <div class="tmp" style="margin-top:12px">${esc(temp)}</div>
       <div style="margin-top:10px"><button class="btn ghost sm" data-act="copiar" data-v="${esc(temp)}">${glifo("copy")}Copiar contraseña</button></div>
-      <div class="note info" style="margin-top:12px">${glifo("info")}<div>La persona deberá cambiarla al iniciar sesión.</div></div>`,
+      ${u.debeCambiar ? `<div class="note info" style="margin-top:12px">${glifo("info")}<div>La persona deberá cambiarla al iniciar sesión.</div></div>` : ""}`,
     pie: `<button class="btn sec" data-act="copiar" data-v="${esc(cuerpo)}">${glifo("copy")}Copiar mensaje</button>${u.correo ? `<a class="btn" href="mailto:${esc(u.correo)}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(cuerpo)}">${glifo("correo")}Enviar por correo</a>` : `<button class="btn" data-act="cerrar-modal">Listo</button>`}`
   });
 }
 function abrirReset(ref, correoSol) {
   cerrarModal();
-  const u = S.cat.usuarios.find((x) => x.id === ref || x.rfc === ref);
-  if (!u) { toast("No hay un usuario con ese RFC. Puedes crearlo."); abrirCrearUsuario({ rfc: ref, correo: correoSol }); return; }
+  const u = S.cat.usuarios.find((x) => x.id === ref || mismoCorreo(x.correo, ref));
+  if (!u) { toast("No hay un usuario con ese correo. Puedes crearlo."); abrirCrearUsuario({ correo: ref }); return; }
   const coincide = correoSol ? norm(correoSol) === norm(u.correo) : null;
   modal({
     titulo: "Restablecer contraseña",
-    body: `<div class="kv"><div><span class="k">Nombre</span><span class="v">${esc(u.nombre)}</span></div><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div><div><span class="k">Correo registrado</span><span class="v">${esc(u.correo || "—")}</span></div>${correoSol ? `<div><span class="k">Correo de la solicitud</span><span class="v">${esc(correoSol)}</span></div>` : ""}</div>
+    body: `<div class="kv"><div><span class="k">Nombre</span><span class="v">${esc(u.nombre)}</span></div><div><span class="k">Correo registrado</span><span class="v">${esc(u.correo || "—")}</span></div>${correoSol ? `<div><span class="k">Correo de la solicitud</span><span class="v">${esc(correoSol)}</span></div>` : ""}</div>
       ${coincide === true ? `<div class="note info" style="margin-top:12px">${glifo("check")}<div>El correo de la solicitud coincide con el registrado.</div></div>` : ""}
       ${coincide === false ? `<div class="note warn" style="margin-top:12px">${glifo("warn")}<div><b>El correo no coincide</b> con el registrado. Confirma la identidad por otro medio antes de continuar.</div></div>` : ""}
       <p class="muted" style="margin-top:12px">Se generará una contraseña temporal y la actual dejará de funcionar.</p>`,
@@ -1422,7 +1462,7 @@ async function restablecerClave(id) {
   if (!S.super) return;
   const u = S.cat.usuarios.find((x) => x.id === id); if (!u) return;
   const temp = claveTemporal(); u.salt = nuevoSalt(); u.hash = await hashClave(temp, u.salt); u.debeCambiar = true;
-  setIntentos(u.rfc, null); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "reset");
+  setIntentos(normCorreo(u.correo), null); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "reset");
 }
 
 /* ---------- Apariencia ---------- */
@@ -1453,10 +1493,11 @@ const go = (p) => { location.hash = "#/" + p; };
 let post = null, io = null;
 const F2 = { cat: "todas", orden: "catalogo" };
 
+function pestanear() { view.classList.remove("blink"); void view.offsetWidth; view.classList.add("blink"); }
 function render(nav) {
   if ((!S.user && !S.guest) || (S.user && S.user.debeCambiar)) {
     document.body.classList.add("auth"); cerrarLightbox(); aplicarApariencia();
-    view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); return;
+    view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); pestanear(); return;
   }
   document.body.classList.remove("auth");
   const [a, b, c] = hashParts();
@@ -1489,7 +1530,7 @@ function render(nav) {
   view.innerHTML = (S.qa ? qaBanner() : "") + html;
   renderChrome(a || "");
   if (post) post();
-  if (nav) { window.scrollTo(0, 0); }
+  if (nav) { window.scrollTo(0, 0); pestanear(); }
   document.title = (S.qa ? "[PRUEBAS] " : "") + (a === "sistema" && byId(b) ? byId(b).nombre + " · " : "") + cfg().nombre;
 }
 
@@ -1511,7 +1552,7 @@ function renderChrome(a) {
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
-  $("#tabbar").innerHTML = `<a class="rail-brand" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</a>`
+  $("#tabbar").innerHTML = `<a class="rail-brand${imgOk(c.logo) ? "" : " lg"}" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${logoInner(c)}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
     + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
   $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}</span>`;
@@ -1924,8 +1965,8 @@ async function hashPin(p) {
 }
 function bannerAdmin() {
   let h = "";
-  if (S.memoria) h += `<div class="note warn">${glifo("warn")}<div>Este navegador no permite guardar datos (por ejemplo, ventana privada). Tus cambios se perderán al cerrar la página. Usa «Descargar catálogo» para conservarlos.</div></div>`;
-  if (S.cat.editado) h += `<div class="note warn">${glifo("warn")}<div><b>Tienes cambios sin publicar.</b> Solo tú los ves en este navegador. Para que los vean todas las dependencias, descarga el catálogo y súbelo junto a <b>index.html</b>.${S.super ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="exportar">${glifo("download")}Descargar catálogo</button><button class="btn sm sec" data-act="como-publicar">Cómo publicar</button></div>` : '<div style="margin-top:6px">Avisa al superadministrador para que los publique.</div>'}</div></div>`;
+  if (S.memoria) h += `<div class="note warn">${glifo("warn")}<div>Este navegador no permite guardar datos (por ejemplo, ventana privada). Tus cambios se perderán al cerrar la página.</div></div>`;
+  if (S.cat.editado) h += `<div class="note warn">${glifo("warn")}<div><b>Tienes cambios sin publicar.</b> Solo tú los ves en este navegador. Para que los vean todas las dependencias, publícalos siguiendo la guía.${S.super ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="como-publicar">Cómo publicar</button></div>` : '<div style="margin-top:6px">Avisa al superadministrador para que los publique.</div>'}</div></div>`;
   if (S.cat.sistemas.some((s) => s.ejemplo)) h += `<div class="note info">${glifo("info")}<div>Estás viendo sistemas de ejemplo. Cuando tengas los tuyos, puedes quitarlos${S.super ? ' todos de una vez.<div style="margin-top:10px"><button class="btn sm sec" data-act="quitar-ejemplos">Eliminar sistemas de ejemplo</button></div>' : ". Puedes editarlos o eliminarlos uno por uno."}</div></div>`;
   return h ? `<div style="display:grid;gap:12px;margin-bottom:18px">${h}</div>` : "";
 }
@@ -1974,14 +2015,22 @@ function vAdminConfig(sec) {
     panel = `<section class="grp"><h2>Estado del catálogo</h2><p class="hint">Revisión rápida de lo que falta para que el catálogo funcione completo.</p><div class="card">
       ${g.correoDestino ? item("ok", "Correo de solicitudes", esc(g.correoDestino)) : item("warn", "Correo de solicitudes", "Falta definir a dónde llegan las solicitudes.", `<a class="btn sm sec" href="#/admin/config/solicitudes">Configurar</a>`)}
       ${g.endpoint ? item("ok", "Envío automático", "Activo: las solicitudes se envían sin abrir el correo.") : item("off", "Envío automático", "Opcional. Sin él, el solicitante envía el correo desde su dispositivo.")}
-      ${item(S.cat.usuarios.some((x) => rolDe(x.rol) === "superadmin" && x.estado === "activo") ? "ok" : "warn", "Usuarios y accesos", `${S.cat.usuarios.length} ${plural(S.cat.usuarios.length, "usuario", "usuarios")} con acceso (RFC y contraseña).`, `<a class="btn sm sec" href="#/admin/usuarios">Administrar</a>`)}
+      ${item(S.cat.usuarios.some((x) => rolDe(x.rol) === "superadmin" && x.estado === "activo") ? "ok" : "warn", "Usuarios y accesos", `${S.cat.usuarios.length} ${plural(S.cat.usuarios.length, "usuario", "usuarios")} con acceso (correo y contraseña).`, `<a class="btn sm sec" href="#/admin/usuarios">Administrar</a>`)}
       ${S.pub ? item(S.cat.editado ? "warn" : "ok", "Catálogo publicado", S.cat.editado ? "Tienes cambios locales sin publicar." : "La versión publicada está al día.", S.cat.editado ? `<a class="btn sm sec" href="#/admin/config/datos">Publicar</a>` : "") : item("warn", "Catálogo publicado", "Aún no hay archivo catalogo.json junto a index.html.", `<a class="btn sm sec" href="#/admin/config/datos">Cómo publicar</a>`)}
       ${ej ? item("warn", "Sistemas de ejemplo", `${ej} ${plural(ej, "sistema de ejemplo", "sistemas de ejemplo")} visibles para las dependencias.`, `<a class="btn sm sec" href="#/admin/config/datos">Quitar</a>`) : item("ok", "Contenido propio", "No hay sistemas de ejemplo.")}
     </div></section>
     <section class="grp"><h2>Identidad</h2><div class="card"><div class="fields">
       ${f("nombre", "Nombre del catálogo")}${f("organizacion", "Organización o área responsable")}
       ${f("telefono", "Teléfono de contacto", { ph: "Opcional" })}${f("horario", "Horario de atención", { ph: "Lunes a viernes, 9:00 a 17:00" })}
-      <div class="field full"><span class="lbl">Logotipo (opcional)</span><div class="up">${logoHtml(c)}<input type="file" id="up-logo" accept="image/*" data-up="logo"><label class="btn sec sm" for="up-logo">${glifo("upload")}Subir imagen</label>${imgOk(c.logo) ? `<button class="btn ghost sm" data-act="quitar-logo">Quitar</button>` : ""}</div></div>
+      <div class="field full"><span class="lbl">Logotipo</span><div class="logo-ed">
+        <div class="logo-prev" aria-label="Vista previa del logotipo">${imgOk(c.logo) ? `<span class="ico s96" style="${colorVars("azul")};--s:96px"><img src="${esc(c.logo)}" alt=""></span>` : logoSvg(c)}</div>
+        <div>
+          <div class="logo-grp"><span class="muted" style="font-size:13px">Símbolo</span><div class="logo-opts" role="group" aria-label="Símbolo">${Object.keys(LOGO_MARCAS).map((k) => `<button type="button" data-act="logo-marca" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoMarca || "mosaico") === k}" aria-label="${LOGO_MARCAS[k].n}" title="${LOGO_MARCAS[k].n}">${logoSvg(Object.assign({}, c, { logoMarca: k }))}</button>`).join("")}</div></div>
+          <div class="logo-grp"><span class="muted" style="font-size:13px">Color</span><div class="swatches" role="group" aria-label="Color del logotipo">${Object.keys(COLORES).map((k) => `<button type="button" data-act="logo-color" data-c="${k}" style="${colorVars(k)}" aria-pressed="${!imgOk(c.logo) && (c.logoColor || "azul") === k}" aria-label="${k}"></button>`).join("")}</div></div>
+          <div class="logo-grp"><span class="muted" style="font-size:13px">Forma</span><div class="logo-opts" role="group" aria-label="Forma">${Object.keys(LOGO_FORMAS).map((k) => `<button type="button" class="txt" data-act="logo-forma" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoForma || "squircle") === k}">${LOGO_FORMAS[k][0]}</button>`).join("")}</div></div>
+          <div class="up" style="margin-top:6px"><input type="file" id="up-logo" accept="image/*" data-up="logo"><label class="btn sec sm" for="up-logo">${glifo("upload")}Usar mi propia imagen</label>${imgOk(c.logo) ? `<button class="btn ghost sm" data-act="quitar-logo">Volver al diseño</button>` : ""}</div>
+          <p class="cfg-note">Elige símbolo, color y forma, o sube tu propia imagen. Presiona «Guardar configuración» para aplicarlo.</p>
+        </div></div></div>
     </div></div></section>` + savebar;
   } else if (sec === "solicitudes") {
     const pasos = pasosSigue(c).map(([t, d], i) => `<li><span class="n">${i + 1}</span><div><b>${esc(t)}</b><span>${esc(d)}</span></div></li>`).join("");
@@ -2006,13 +2055,12 @@ function vAdminConfig(sec) {
       <div class="swatches" role="group" aria-label="Color de acento"><button type="button" data-act="cfg-acento" data-c="" style="${colorVars("azul")}" aria-pressed="${!c.acento}" aria-label="Predeterminado"></button>${Object.keys(COLORES).filter((k) => k !== "azul").map((k) => `<button type="button" data-act="cfg-acento" data-c="${k}" style="${colorVars(k)}" aria-pressed="${c.acento === k}" aria-label="${k}"></button>`).join("")}</div>
       <p class="cfg-note">La vista se actualiza al elegir; para conservarlo, presiona «Guardar configuración».</p></div></section>` + savebar;
   } else if (sec === "seguridad") {
-    panel = `<section class="grp"><h2>Mi cuenta</h2><p class="hint">Sesión iniciada como ${esc(S.user.nombre)} (${esc(S.user.rfc)}).</p><div class="card" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec sm" data-act="cambiar-pass">${glifo("candado")}Cambiar mi contraseña</button><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div></section>
+    panel = `<section class="grp"><h2>Mi cuenta</h2><p class="hint">Sesión iniciada como ${esc(S.user.nombre)} (${esc(S.user.correo)}).</p><div class="card" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec sm" data-act="cambiar-pass">${glifo("candado")}Cambiar mi contraseña</button><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div></section>
     <section class="grp"><h2>Usuarios y accesos</h2><p class="hint">Crea cuentas, restablece contraseñas y bloquea accesos.</p><div class="card"><a class="btn sec sm" href="#/admin/usuarios">Administrar usuarios</a>
-      <ul style="margin:14px 0 0;padding-left:18px;color:var(--label-2);font-size:14px;display:grid;gap:4px"><li>Se entra con RFC y contraseña (mínimo 8 caracteres, con letras y números).</li><li>Tras 5 intentos fallidos, el RFC se bloquea 5 minutos en ese dispositivo.</li><li>Las contraseñas temporales se deben cambiar al primer inicio de sesión.</li><li>Las contraseñas se guardan cifradas, nunca en texto claro.</li><li>Tres tipos de acceso: visitante, colaborador y superadministrador. Las cuentas de superadministrador se autorizan con un código enviado por correo al propietario.</li></ul></div></section>`;
+      <ul style="margin:14px 0 0;padding-left:18px;color:var(--label-2);font-size:14px;display:grid;gap:4px"><li>Se entra con correo y contraseña (mínimo 8 caracteres, con letras y números).</li><li>Tras 5 intentos fallidos, el correo se bloquea 5 minutos en ese dispositivo.</li><li>Las contraseñas temporales se deben cambiar al primer inicio de sesión.</li><li>Las contraseñas se guardan cifradas, nunca en texto claro.</li><li>Tres tipos de acceso: visitante, colaborador y superadministrador. El superadministrador crea y elimina usuarios directamente desde «Usuarios».</li></ul></div></section>`;
   } else {
-    panel = `<section class="grp"><h2>Copia y publicación</h2><p class="hint">Descarga una copia, restaura una anterior o vuelve a la versión publicada. El archivo incluye las cuentas de usuario (con contraseñas cifradas): publícalo solo en un sitio con acceso controlado.</p>
+    panel = `<section class="grp"><h2>Copia y publicación</h2><p class="hint">Carga una copia, consulta cómo publicar o vuelve a la versión publicada. El archivo del catálogo incluye las cuentas de usuario (con contraseñas cifradas): publícalo solo en un sitio con acceso controlado.</p>
       <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <button class="btn sec sm" data-act="exportar">${glifo("download")}Descargar catálogo</button>
         <div class="up"><input type="file" id="up-import" accept="application/json,.json" data-up="import"><label class="btn sec sm" for="up-import">${glifo("upload")}Cargar catálogo…</label></div>
         <button class="btn sec sm" data-act="como-publicar">Cómo publicar</button>
         ${S.pub && S.cat.editado ? `<button class="btn danger sm" data-act="descartar-local">Descartar mis cambios y usar el publicado</button>` : ""}
@@ -2243,10 +2291,10 @@ async function cargarDatosPrueba() {
     mk({ nombre: "[PRUEBA] Sin enlace", subtitulo: "Para probar el aviso de enlace faltante", enlaces: [], requisitos: [] }),
     mk({ nombre: "[PRUEBA] En mantenimiento", subtitulo: "Botón de solicitar desactivado", estado: "En mantenimiento" }),
     mk({ nombre: "[PRUEBA] Requiere validación", subtitulo: "Muestra el aviso de validación", estado: "Requiere validación", requisitos: ["Visto bueno de TI"] }));
-  for (const [rfc, nombre, rol] of [["QAGE010101AB1", "QA Colaborador", "gestor"], ["QAVI010101AB1", "QA Visitante", "visitante"]]) {
-    if (S.cat.usuarios.some((u) => u.rfc === rfc)) continue;
+  for (const [correo, nombre, rol] of [["qa.colaborador@ejemplo.com", "QA Colaborador", "gestor"], ["qa.visitante@ejemplo.com", "QA Visitante", "visitante"]]) {
+    if (buscarPorCorreo(correo)) continue;
     const salt = nuevoSalt();
-    S.cat.usuarios.push({ id: uid("usr"), rfc, nombre, correo: "qa@ejemplo.com", dependencia: "Pruebas", cargo: "QA", telefono: "", rol, estado: "activo", salt, hash: await hashClave("Prueba1234", salt), debeCambiar: false, creado: hoyISO(), prueba: true });
+    S.cat.usuarios.push({ id: uid("usr"), nombre, correo, dependencia: "Pruebas", cargo: "QA", telefono: "", rol, estado: "activo", salt, hash: await hashClave("Prueba1234", salt), debeCambiar: false, creado: hoyISO(), prueba: true });
   }
   const d = new Date();
   S.sols.unshift({ id: uid("sol"), folio: "SOL-PRUEBA-" + Math.random().toString(36).slice(2, 6).toUpperCase(), fecha: hoyISO(), hora: `${pad(d.getHours())}:${pad(d.getMinutes())}`, prueba: true,
@@ -2259,14 +2307,14 @@ async function correrQA() {
   const R = [], add = (estado, titulo, detalle = "") => R.push({ estado, titulo, detalle });
   const t = async (titulo, fn) => { try { await fn(); } catch (e) { add("bad", titulo, "Error: " + (e && e.message ? e.message : e)); } };
   await t("Almacenamiento", () => add(S.memoria ? "bad" : "ok", "Almacenamiento del navegador", S.memoria ? "No se pueden guardar datos (ventana privada o bloqueado)." : "Disponible."));
-  await t("Validaciones", () => { const v = [rfcOk("XAXX010101000"), !rfcOk("123"), claveOk("Clave1234"), !claveOk("corta1"), correoOk("a@b.com"), !correoOk("a@b"), urlOk("https://x.com") !== "", urlOk("javascript:alert(1)") === ""], n = v.filter(Boolean).length; add(n === v.length ? "ok" : "bad", "Validaciones (RFC, contraseña, correo, URL)", `${n} de ${v.length} correctas.`); });
+  await t("Validaciones", () => { const v = [normCorreo(" A@B.com ") === "a@b.com", !correoOk("123"), claveOk("Clave1234"), !claveOk("corta1"), correoOk("a@b.com"), !correoOk("a@b"), urlOk("https://x.com") !== "", urlOk("javascript:alert(1)") === ""], n = v.filter(Boolean).length; add(n === v.length ? "ok" : "bad", "Validaciones (correo, contraseña, URL)", `${n} de ${v.length} correctas.`); });
   await t("Cifrado", async () => { const a = await hashClave("Prueba1234", "sal-a"), b = await hashClave("Prueba1234", "sal-a"), c = await hashClave("Prueba1234", "sal-b"), d = await hashClave("Otra12345", "sal-a"); add(a === b && a !== c && a !== d ? "ok" : "bad", "Cifrado de contraseñas", a === b && a !== c && a !== d ? "Mismo dato da el mismo resultado; cambia con otra sal u otra contraseña." : "El cifrado no es consistente."); });
   await t("Códigos", () => { const c = Array.from({ length: 50 }, nuevoCodigo); const ok = c.every((x) => /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(x)) && new Set(c).size === 50 && normCodigo("ab-cd 12") === "ABCD12"; add(ok ? "ok" : "bad", "Códigos de autorización", ok ? "Formato XXXX-XXXX y sin repeticiones en 50 pruebas." : "El formato o la unicidad fallaron."); });
   await t("Permisos", () => { const a0 = S.admin, s0 = S.super, r = {}; ["visitante", "gestor", "superadmin"].forEach((x) => { aplicarRol({ rol: x }); r[x] = S.admin + "," + S.super; }); S.admin = a0; S.super = s0; const ok = r.visitante === "false,false" && r.gestor === "true,false" && r.superadmin === "true,true" && rolDe("admin") === "superadmin" && rolDe("usuario") === "visitante"; add(ok ? "ok" : "bad", "Permisos por tipo de acceso", ok ? "Visitante sin acceso, colaborador sin usuarios/configuración, superadministrador con todo." : JSON.stringify(r)); });
   await t("Usuarios", () => {
-    const U = S.cat.usuarios, sa = U.filter((u) => rolDe(u.rol) === "superadmin" && u.estado === "activo").length, rf = U.map((u) => u.rfc), dup = rf.length - new Set(rf).size;
+    const U = S.cat.usuarios, sa = U.filter((u) => rolDe(u.rol) === "superadmin" && u.estado === "activo").length, rf = U.map((u) => normCorreo(u.correo)), dup = rf.length - new Set(rf).size;
     add(sa ? "ok" : "bad", "Superadministrador activo", sa ? `${sa} activo(s).` : "No hay ningún superadministrador activo.");
-    add(dup ? "bad" : "ok", "RFC repetidos", dup ? `${dup} repetido(s).` : "Sin repetidos.");
+    add(dup ? "bad" : "ok", "Correos repetidos", dup ? `${dup} repetido(s).` : "Sin repetidos.");
   });
   await t("Catálogo", () => {
     const Sx = S.cat.sistemas, ids = Sx.map((s) => s.id), kids = new Set(S.cat.categorias.map((k) => k.id));
@@ -2314,7 +2362,7 @@ function vAdminQA() {
   return `<section class="grp"><h2>Modo pruebas</h2><p class="hint">Es un espacio aparte: puedes crear, editar y borrar sin que nada se guarde. Los correos solo se simulan. Al salir, el catálogo queda exactamente como estaba.</p><div class="card">
     ${S.qa ? `<div class="note warn">${glifo("warn")}<div><b>Modo pruebas activo.</b> Todo lo que hagas se descartará al salir o al recargar la página.</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" data-act="qa-datos">${glifo("plus")}Cargar datos de prueba</button><button class="btn sm sec" data-act="qa-reiniciar">Reiniciar datos de prueba</button><button class="btn sm danger" data-act="qa-salir">Salir y descartar todo</button></div>
-      ${prueba ? `<div class="kv" style="margin-top:12px"><div><span class="k">Colaborador de prueba</span><span class="v">QAGE010101AB1 · contraseña Prueba1234</span></div><div><span class="k">Visitante de prueba</span><span class="v">QAVI010101AB1 · contraseña Prueba1234</span></div></div>` : `<p class="cfg-note" style="margin-top:12px">«Cargar datos de prueba» agrega sistemas, una categoría, usuarios y una solicitud ficticios para probar todo.</p>`}`
+      ${prueba ? `<div class="kv" style="margin-top:12px"><div><span class="k">Colaborador de prueba</span><span class="v">qa.colaborador@ejemplo.com · contraseña Prueba1234</span></div><div><span class="k">Visitante de prueba</span><span class="v">qa.visitante@ejemplo.com · contraseña Prueba1234</span></div></div>` : `<p class="cfg-note" style="margin-top:12px">«Cargar datos de prueba» agrega sistemas, una categoría, usuarios y una solicitud ficticios para probar todo.</p>`}`
     : `<button class="btn" data-act="qa-activar">Activar modo pruebas</button><p class="cfg-note" style="margin-top:10px">Los cambios reales no se tocan mientras esté activo.</p>`}</div></section>
   <section class="grp"><h2>Revisión automática</h2><p class="hint">Comprueba validaciones, cifrado, permisos, datos del catálogo, configuración y que cada pantalla se genere sin errores. No cambia nada.</p><div class="card">
     <button class="btn sm" data-act="qa-correr">Ejecutar revisión</button>
@@ -2452,6 +2500,7 @@ const ACT = {
   "auth-copiar"() { if (S.authInfo) copiar(`Para: ${S.authInfo.para}\nAsunto: ${S.authInfo.asunto}\n\n${S.authInfo.cuerpo}`, "Mensaje copiado"); },
   "ver-pass"(t) { const i = $("input", t.closest(".pwrow")); if (!i) return; const ver = i.type === "password"; i.type = ver ? "text" : "password"; t.textContent = ver ? "Ocultar" : "Mostrar"; },
   "usr-nuevo"() { abrirCrearUsuario({}); },
+  "usr-gen"() { const i = $("#uc-pass"); if (i) i.value = claveTemporal(); },
   "usr-reset"(t) { abrirReset(t.dataset.id); },
   async "usr-reset-ok"(t) { await restablecerClave(t.dataset.id); },
   async "usr-toggle"(t) {
@@ -2495,6 +2544,9 @@ const ACT = {
     guardarCatalogo(); S.cfgDraft = null; aplicarApariencia(); toast("Configuración guardada"); render(false);
   },
   "quitar-logo"() { if (S.cfgDraft) { S.cfgDraft.logo = ""; keep(() => render(false)); } },
+  "logo-marca"(t) { if (S.cfgDraft) { S.cfgDraft.logoMarca = t.dataset.v; S.cfgDraft.logo = ""; keep(() => render(false)); } },
+  "logo-color"(t) { if (S.cfgDraft) { S.cfgDraft.logoColor = t.dataset.c; S.cfgDraft.logo = ""; keep(() => render(false)); } },
+  "logo-forma"(t) { if (S.cfgDraft) { S.cfgDraft.logoForma = t.dataset.v; S.cfgDraft.logo = ""; keep(() => render(false)); } },
   exportar() {
     const j = JSON.stringify(Object.assign({}, S.cat, { editado: false }));
     const u = URL.createObjectURL(new Blob([j], { type: "application/json" })); descargar(u, ARCHIVO_PUBLICADO); setTimeout(() => URL.revokeObjectURL(u), 5000);
@@ -2563,7 +2615,7 @@ const ACT = {
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const SOLO_SUPER = new Set(["usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
 const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
