@@ -384,7 +384,8 @@ main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:0 var(--gutter) 72
 @media (max-width:640px){.fields{grid-template-columns:minmax(0,1fr)}}
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field>label,.lbl{font-size:13.5px;font-weight:600;color:var(--label-2)}
-.field .req{color:var(--bad)}
+.field .req,.chk .req{color:var(--label-3);font-weight:700}
+.field.bad .req,.chk.bad .req{color:#d92a2a}
 input[type=text],input[type=email],input[type=tel],input[type=url],input[type=number],input[type=date],input[type=password],input[type=search],textarea{width:100%;background:var(--bg-input);border:1px solid var(--sep-strong);border-radius:12px;padding:11px 14px;font-size:16px;outline:none;color:var(--label);min-width:0}
 .field .select,.card .select{width:100%;background-color:var(--bg-input);border:1px solid var(--sep-strong);border-radius:12px;padding:11px 38px 11px 14px;font-size:16px;outline:none}
 .arow .select{padding:8px 34px 8px 12px;font-size:14.5px}
@@ -392,7 +393,9 @@ textarea{resize:vertical;min-height:110px;line-height:1.45}
 input:focus,.select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .field.bad .select{border-color:var(--bad)}
 input::placeholder,textarea::placeholder{color:var(--label-3)}
-.field.bad input,.field.bad select,.field.bad textarea{border-color:var(--bad)}
+.field.bad input,.field.bad select,.field.bad textarea,.field.bad .select{border:2px solid #d92a2a;background-color:#fff5f5;box-shadow:0 0 0 3px rgba(217,42,42,.12)}
+.chk.bad{border:2px solid #d92a2a;border-radius:12px;padding:10px 12px}
+.field .err{color:#c0262d;font-size:13px}
 .err{color:var(--bad);font-size:13px;min-height:0}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
@@ -722,7 +725,7 @@ const SB_ON = !!(SUPABASE_URL && SUPABASE_KEY);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
 const CORREO_SUPER = "";  // recibe el código para autorizar cuentas de Superadministrador
-const ROLES = { visitante: "Visitante", gestor: "Colaborador", superadmin: "Superadministrador" };
+const ROLES = { visitante: "Usuario", gestor: "Colaborador", superadmin: "Superadministrador" };
 const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
 /* ---------- Utilidades ---------- */
@@ -1047,6 +1050,7 @@ function rich(t) {
 
 /* ---------- Piezas reutilizables ---------- */
 function btnGet(s, cls = "", sinNota = false) {
+  if (S.super) return `<span class="get-wrap"><a class="get ${cls}" href="#/solicitudes">Ver solicitudes</a></span>`;
   const e = s.estado, dis = e === "En mantenimiento";
   const label = e === "Próximamente" ? "Me interesa" : "Solicitar";
   const nota = e === "Disponible" || sinNota ? "" : e;
@@ -1319,7 +1323,7 @@ function vAuth() {
   const err = `<div class="err" id="a-err" role="alert"></div>`;
   const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visitante</button>`;
   const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
-    <li><b>Visitante:</b> consulta el catálogo y solicita sistemas. No necesita cuenta.</li>
+    <li><b>Visualizador:</b> solo consulta el catálogo, sin cuenta. No puede solicitar.</li><li><b>Usuario:</b> con su cuenta, consulta y solicita sistemas.</li>
     <li><b>Colaborador:</b> ayuda a manejar el catálogo (sistemas y categorías). Lo autoriza el administrador.</li>
     <li><b>Superadministrador:</b> control total (usuarios, configuración y publicación). Requiere un código de autorización.</li></ul></details>`;
   let t, sub, body;
@@ -1423,7 +1427,7 @@ function vAdminUsuarios() {
   const opt = (cur) => Object.keys(ROLES).map((r) => `<option value="${r}" ${r === cur ? "selected" : ""}>${ROLES[r]}</option>`).join("");
   return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${n("superadmin")} ${plural(n("superadmin"), "superadministrador", "superadministradores")} · ${n("gestor")} ${plural(n("gestor"), "colaborador", "colaboradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
   <div class="note info">${glifo("info")}<div>Como superadministrador creas los usuarios aquí mismo, al instante y sin códigos de verificación. Las solicitudes de colaborador y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>.
-    <ul class="rolhelp"><li><b>Visitante:</b> solo consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total.</li></ul></div></div>
+    <ul class="rolhelp"><li><b>Usuario:</b> con sesión, consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total.</li></ul></div></div>
   <div class="list-card" style="margin-top:14px">${U.map((u) => { const r = rolDe(u.rol), yo = u.id === S.user.id; return `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
     <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.correo || u.rfc || "")}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
     <div class="acts"><label class="sr" for="rol-${esc(u.id)}">Tipo de acceso</label><select class="select" id="rol-${esc(u.id)}" data-usr-rol="${esc(u.id)}" ${yo ? "disabled" : ""}>${opt(r)}</select>
@@ -1442,7 +1446,7 @@ function abrirCrearUsuario(q) {
     body: `<form id="form-usr" novalidate><div class="fields">
       ${f("uc-correo", "Correo electrónico (es su usuario)", q.correo, { tipo: "email", full: true, extra: 'autocapitalize="none" spellcheck="false"' })}
       ${f("uc-nombre", "Nombre completo", q.nombre)}
-      <div class="field"><label for="uc-rol">Tipo de acceso</label><select class="select" id="uc-rol"><option value="visitante">Visitante</option><option value="gestor" selected>Colaborador</option><option value="superadmin">Superadministrador</option></select></div>
+      <div class="field"><label for="uc-rol">Tipo de acceso</label><select class="select" id="uc-rol"><option value="visitante">Usuario</option><option value="gestor" selected>Colaborador</option><option value="superadmin">Superadministrador</option></select></div>
       <div class="field full"><label for="uc-pass">Contraseña</label><div class="pwrow"><input id="uc-pass" type="text" value="${esc(claveTemporal())}" autocomplete="off" spellcheck="false"><button type="button" class="showpw" data-act="usr-gen">Generar otra</button></div><span class="muted" style="font-size:12.5px">${CLAVE_AYUDA} Puedes escribir la que prefieras.</span></div>
       ${f("uc-dep", "Dependencia (opcional)", q.dep)}${f("uc-cargo", "Cargo (opcional)", q.cargo)}
       ${f("uc-tel", "Teléfono (opcional)", q.tel, { tipo: "tel" })}
@@ -1561,9 +1565,9 @@ function render(nav) {
       case "uso": html = vLista("uso", b); break;
       case "sistema": html = vFicha(b); break;
       case "buscar": html = vBuscar(); break;
-      case "solicitar": html = vSolicitar(b); break;
+      case "solicitar": if (S.super) { history.replaceState(null, "", "#/solicitudes"); html = vBandeja(); } else html = S.user ? vSolicitar(b) : vAccesoParaSolicitar(b); break;
       case "gracias": html = vGracias(b); break;
-      case "solicitudes": html = vSolicitudes(); break;
+      case "solicitudes": html = S.super ? vBandeja() : vSolicitudes(); break;
       case "ayuda": html = vAyuda(); break;
       case "contacto": html = vContacto(); break;
       case "admin": html = vAdmin(b, c); break;
@@ -1593,11 +1597,11 @@ function renderChrome(a) {
   $("#sidenav").innerHTML = `
     <a href="#/"${cur("")}>${glifo("hoy")}Descubrir</a>
     <a href="#/sistemas"${cur("sistemas")}>${glifo("capas")}Sistemas</a>
-    <a href="#/solicitudes"${cur("solicitudes")}>${glifo("send")}Mis solicitudes${S.sols.length ? ` <span class="badge acc" style="margin-left:auto">${S.sols.length}</span>` : ""}</a>
+    <a href="#/solicitudes"${cur("solicitudes")}>${glifo("send")}${S.super ? "Solicitudes" : "Mis solicitudes"}${S.sols.length ? ` <span class="badge acc" style="margin-left:auto">${S.sols.length}</span>` : ""}</a>
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
-  $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visitante"}</div>`
+  $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
@@ -1830,6 +1834,14 @@ function vAyuda() {
 /* ---------- Solicitud de sistema ---------- */
 const F = { ini: null, sel: [], vals: { contactoPref: "Correo electrónico", acepto: false }, errs: {}, enviando: false };
 
+function vAccesoParaSolicitar(id) {
+  const s0 = id && byId(id), c = cfg();
+  return `${navbar()}${cabecera("Inicia sesión para solicitar", s0 ? "Quieres solicitar: " + s0.nombre : "Solo las personas con cuenta pueden solicitar un sistema.")}
+    <div class="sp"></div>
+    <div class="card" style="max-width:560px"><p style="margin:0 0 10px">Para evitar mensajes no deseados, <b>solicitar un sistema requiere iniciar sesión con tu correo</b>. Puedes seguir explorando el catálogo sin cuenta.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><a class="btn sec" href="#/sistemas">Seguir explorando</a></div>
+    <p class="muted" style="font-size:13.5px;margin:16px 0 0">¿No tienes cuenta? ${c.correoDestino ? `Escribe a <a href="mailto:${esc(c.correoDestino)}">${esc(c.correoDestino)}</a> o ` : ""}consulta la página de <a href="#/contacto">contacto</a> para que te la creemos.</p></div>`;
+}
 function vSolicitar(id) {
   if (F.ini !== (id || "")) {
     F.ini = id || "";
@@ -1846,37 +1858,48 @@ function vSolicitar(id) {
   if (sel.length) { const seen = new Set(); sel.forEach((s) => relacionados(s, 6).forEach((x) => { if (!F.sel.includes(x.id) && x.estado !== "En mantenimiento" && !seen.has(x.id)) { seen.add(x.id); sug.push({ x, s }); } })); }
   sug = sug.slice(0, 4);
   const campo = (k, label, o = {}) => `<div class="field ${o.full ? "full" : ""} ${e[k] ? "bad" : ""}"><label for="f-${k}">${label}${o.req ? ' <span class="req" aria-hidden="true">*</span>' : ""}</label><input id="f-${k}" type="${o.tipo || "text"}" data-form="${k}" value="${esc(v[k] || "")}" placeholder="${esc(o.ph || "")}" ${o.req ? 'aria-required="true"' : ""} ${o.extra || ""} autocomplete="${o.ac || "off"}">${e[k] ? `<span class="err" role="alert">${esc(e[k])}</span>` : ""}</div>`;
+  const uniq = (a) => [...new Set(a.filter(Boolean))];
+  const depsUsadas = uniq(S.sols.map((x) => x.datos && x.datos.dependencia));
+  const usosUsados = uniq(S.sols.map((x) => { const m = /^Otro: (.+)/.exec((x.datos && x.datos.tipoUso) || ""); return m && m[1]; }));
+  F.nuevo = F.nuevo || {};
+  const combo = (k, label, lista, o) => {
+    if (!lista.length) return campo(k, label, o);
+    const cur = v[k] || "", texto = F.nuevo[k] || (cur && !lista.includes(cur));
+    return `<div class="field ${o.full ? "full" : ""} ${e[k] && !texto ? "bad" : ""}"><label for="f-${k}Sel">${label} <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-${k}Sel" data-form="${k}Sel" style="width:100%"><option value="">Selecciona…</option>${lista.map((x) => `<option ${!texto && x === cur ? "selected" : ""}>${esc(x)}</option>`).join("")}<option value="__nuevo" ${texto ? "selected" : ""}>${o.nuevo}</option></select>${e[k] && !texto ? `<span class="err" role="alert">${esc(e[k])}</span>` : ""}</div>${texto ? campo(k, o.nuevoLabel, o) : ""}`;
+  };
   const opts = (arr, cur) => arr.map((o) => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("");
   return `${navbar()}
   <header class="pagehead" style="padding-top:8px"><div><div class="when">Solicitud</div><h1 class="large-title">Solicitar sistema</h1><p class="lede">Cuéntanos quién eres y qué necesitas. Nos pondremos en contacto con tu dependencia para coordinar una reunión.</p></div></header>
   <form id="form-sol" novalidate class="formgrid">
     <div>
-      <section class="grp" id="selblock"><h2>Sistemas</h2><p class="hint">Puedes pedir más de uno en la misma solicitud.</p>
+      <p class="hint" style="margin:0 0 6px">Los campos marcados con <span class="req" style="color:var(--bad)">*</span> son obligatorios.</p>
+      <section class="grp" id="selblock"><h2>Sistemas <span class="req" aria-hidden="true" style="${e.sel ? "color:#d92a2a" : "color:var(--label-3)"}">*</span></h2><p class="hint">Puedes pedir más de uno en la misma solicitud.</p>
         <div class="selchips">${sel.map((s) => `<div class="selchip">${icono(s, "s34")}<b>${esc(s.nombre)}</b><button type="button" class="iconbtn" data-act="quitar-sel" data-id="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">${glifo("x")}</button></div>`).join("")}</div>
         ${e.sel ? `<span class="err" role="alert" id="err-sel">${esc(e.sel)}</span>` : ""}
         ${disp.length ? `<div style="margin-top:${sel.length ? 12 : 0}px"><label class="sr" for="addsel">Agregar sistema</label><select class="select" id="addsel" data-sel="addsis"><option value="">${sel.length ? "Agregar otro sistema…" : "Elige un sistema…"}</option>${disp.map((x) => `<option value="${esc(x.id)}">${esc(x.nombre)}</option>`).join("")}</select></div>` : ""}
       </section>
       <section class="grp"><h2>Tus datos</h2><p class="hint">Los usaremos para contactarte.</p>
         <div class="fields">
-          ${campo("dependencia", "Dependencia u organización", { req: true, full: true, ph: "Ej. Secretaría de Ejemplo", ac: "organization" })}
+          ${combo("dependencia", "Dependencia u organización", depsUsadas, { req: true, full: true, ph: "Ej. Secretaría de Ejemplo", ac: "organization", nuevo: "Otra dependencia (escribir)…", nuevoLabel: "Nombre de la dependencia u organización" })}
           ${campo("area", "Área o unidad", { ph: "Opcional" })}
-          ${campo("cargo", "Cargo", { req: true, ac: "organization-title" })}
+          ${campo("cargo", "Cargo", { ph: "Opcional", ac: "organization-title" })}
           ${campo("nombre", "Nombre completo", { req: true, full: true, ac: "name" })}
           ${campo("correo", "Correo institucional", { req: true, tipo: "email", ph: "nombre@dependencia.gob.mx", ac: "email" })}
           ${campo("telefono", "Teléfono", { req: true, tipo: "tel", ph: "10 dígitos", ac: "tel" })}
           <div class="field"><label for="f-contactoPref">¿Cómo prefieres que te contactemos?</label><select class="in select" id="f-contactoPref" data-form="contactoPref" style="width:100%">${opts(["Correo electrónico", "Llamada telefónica", "Videollamada"], v.contactoPref)}</select></div>
-          ${campo("horario", "Horario preferido", { ph: "Ej. lunes a viernes, 10:00 a 14:00" })}
+          ${campo("horario", "Horario preferido para que te contactemos", { ph: "Ej. lunes a viernes, 10:00 a 14:00" })}
         </div></section>
       <section class="grp"><h2>Uso previsto</h2>
         <div class="fields">
           <div class="field ${e.tipoUso ? "bad" : ""}"><label for="f-tipoUso">Tipo de uso <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-tipoUso" data-form="tipoUso" style="width:100%"><option value="">Selecciona…</option>${opts(TIPOS_USO, v.tipoUso)}</select>${e.tipoUso ? `<span class="err" role="alert">${esc(e.tipoUso)}</span>` : ""}</div>
+          ${v.tipoUso === "Otro" ? combo("usoOtro", "¿Cuál será el uso?", usosUsados, { req: true, full: true, ph: "Describe el uso en pocas palabras", nuevo: "Otro uso (escribir)…", nuevoLabel: "¿Cuál será el uso?" }) : ""}
           ${campo("fechaUso", "Fecha estimada de uso", { tipo: "date" })}
           ${campo("participantes", "Personas que lo usarían", { tipo: "number", ph: "Aproximado", extra: 'min="1" inputmode="numeric"' })}
           <div class="field full ${e.mensaje ? "bad" : ""}"><label for="f-mensaje">¿Qué necesitas? <span class="req" aria-hidden="true">*</span></label><textarea id="f-mensaje" data-form="mensaje" placeholder="Describe brevemente el evento, la reunión o el proceso donde lo usarías.">${esc(v.mensaje || "")}</textarea>${e.mensaje ? `<span class="err" role="alert">${esc(e.mensaje)}</span>` : ""}</div>
         </div></section>
       ${sug.length ? `<section class="grp"><h2>Te podría interesar también</h2><p class="hint">Sistemas relacionados con lo que elegiste. Agrégalos si los necesitas.</p><div class="card"><ul class="sugg">${sug.map(({ x, s }) => `<li>${icono(x, "s40")}<div class="t"><b>${esc(x.nombre)}</b><small>${esc(motivo(s, x))}</small></div><button type="button" class="get sm" data-act="add-sel" data-id="${esc(x.id)}">Agregar</button></li>`).join("")}</ul></div></section>` : ""}
       <div class="hp" aria-hidden="true"><label for="f-web">No llenar este campo</label><input id="f-web" type="text" tabindex="-1" autocomplete="off" data-form="web"></div>
-      <section class="grp"><label class="chk ${e.acepto ? "bad" : ""}"><input type="checkbox" id="f-acepto" data-form="acepto" ${v.acepto ? "checked" : ""}><span>${esc(cfg().privacidad)}</span></label>${e.acepto ? `<span class="err" role="alert" id="err-acepto">${esc(e.acepto)}</span>` : ""}</section>
+      <section class="grp"><label class="chk ${e.acepto ? "bad" : ""}"><input type="checkbox" id="f-acepto" data-form="acepto" ${v.acepto ? "checked" : ""}><span><span class="req" aria-hidden="true">*</span> ${esc(cfg().privacidad)}</span></label>${e.acepto ? `<span class="err" role="alert" id="err-acepto">${esc(e.acepto)}</span>` : ""}</section>
       <button class="get big" type="submit" id="btn-enviar" style="padding:14px 34px;font-size:17px">Enviar solicitud</button>
     </div>
     <aside class="sticky-side">
@@ -1892,10 +1915,10 @@ function validarSolicitud() {
   const v = F.vals, e = {};
   const req = (k, m) => { if (!String(v[k] || "").trim()) e[k] = m; };
   if (!F.sel.length) e.sel = "Elige al menos un sistema.";
-  req("dependencia", "Escribe el nombre de tu dependencia."); req("cargo", "Escribe tu cargo."); req("nombre", "Escribe tu nombre completo.");
+  req("dependencia", "Elige o escribe el nombre de tu dependencia."); req("nombre", "Escribe tu nombre completo.");
   if (!correoOk(v.correo)) e.correo = "Escribe un correo válido, por ejemplo nombre@dependencia.gob.mx.";
   if (String(v.telefono || "").replace(/\D/g, "").length < 8) e.telefono = "Escribe un teléfono de al menos 8 dígitos.";
-  req("tipoUso", "Elige el tipo de uso."); req("mensaje", "Cuéntanos brevemente qué necesitas.");
+  req("tipoUso", "Elige el tipo de uso."); if (v.tipoUso === "Otro") req("usoOtro", "Escribe cuál será el uso."); req("mensaje", "Cuéntanos brevemente qué necesitas.");
   if (!v.acepto) e.acepto = "Necesitamos tu aceptación para continuar.";
   return e;
 }
@@ -1921,6 +1944,7 @@ function enfocarError() {
 }
 
 async function enviarSolicitud() {
+  if (!S.user) { go("solicitar"); return; }
   F.errs = validarSolicitud();
   if (Object.keys(F.errs).length) { keep(() => render(false)); enfocarError(); return; }
   if (F.vals.web) { go("solicitudes"); return; }
@@ -1932,10 +1956,16 @@ async function enviarSolicitud() {
     id: uid("sol"), folio: folioNuevo(), fecha: hoyISO(), hora: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
     sistemas: F.sel.map((id) => { const s = byId(id); return { id, nombre: s.nombre, version: s.version, requisitos: s.requisitos.map((x) => String(x).trim()).filter(Boolean) }; }),
     base: baseReqs(), checks: {}, listo: false,
-    datos: { dependencia: v.dependencia.trim(), area: (v.area || "").trim(), nombre: v.nombre.trim(), cargo: v.cargo.trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), contactoPref: v.contactoPref, horario: (v.horario || "").trim(), tipoUso: v.tipoUso, fechaUso: v.fechaUso || "", participantes: v.participantes || "", mensaje: v.mensaje.trim() },
+    datos: { dependencia: v.dependencia.trim(), area: (v.area || "").trim(), nombre: v.nombre.trim(), cargo: (v.cargo || "").trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), contactoPref: v.contactoPref, horario: (v.horario || "").trim(), tipoUso: v.tipoUso === "Otro" ? "Otro: " + (v.usoOtro || "").trim() : v.tipoUso, fechaUso: v.fechaUso || "", participantes: v.participantes || "", mensaje: v.mensaje.trim() },
     estado: c.correoDestino ? "pendiente" : "guardada", canal: ""
   };
-  if (urlOk(c.endpoint)) {
+  if (SB) {
+    try {
+      const { error } = await SB.from("solicitudes").insert({ folio: sol.folio, dependencia: sol.datos.dependencia, datos: sol.datos, sistemas: sol.sistemas.map((x) => ({ id: x.id, nombre: x.nombre, version: x.version || "" })) });
+      if (!error) { sol.estado = "enviada"; sol.canal = "Supabase"; }
+    } catch (err) { /* sigue con el correo */ }
+  }
+  if (sol.estado !== "enviada" && urlOk(c.endpoint)) {
     try {
       const r = await fetch(urlOk(c.endpoint), { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(Object.assign({ folio: sol.folio, asunto: asuntoSol(sol), _subject: asuntoSol(sol), mensaje: armarMensaje(sol), email: sol.datos.correo, sistemas: sol.sistemas.map((s) => s.nombre).join(", ") }, sol.datos)) });
       if (r.ok) { sol.estado = "enviada"; sol.canal = "automático"; }
@@ -2005,6 +2035,49 @@ function marcarRequisito(t) {
   guardarSolicitudes(); keep(() => render(false));
 }
 
+/* ---------- Superadministrador: bandeja de solicitudes recibidas ---------- */
+const ESTADOS_BAN = { nueva: ["warn", "Nueva"], contacto: ["info", "En contacto"], atendida: ["ok", "Atendida"], archivada: ["", "Archivada"] };
+S.bf = "todas";
+function exportarBandeja() {
+  const ver = S.bf === "todas" ? filasBandeja() : filasBandeja().filter((r) => r.estado === S.bf);
+  const d = (r) => r.datos || {};
+  const cols = [["Folio", (r) => r.folio], ["Fecha", (r) => String(r.creado).slice(0, 10)], ["Estado", (r) => (ESTADOS_BAN[r.estado] || ["", r.estado])[1]], ["Dependencia", (r) => d(r).dependencia], ["Área o unidad", (r) => d(r).area], ["Nombre", (r) => d(r).nombre], ["Cargo", (r) => d(r).cargo], ["Correo", (r) => d(r).correo], ["Teléfono", (r) => d(r).telefono], ["Contacto preferido", (r) => d(r).contactoPref], ["Horario para contactarlo", (r) => d(r).horario], ["Sistemas", (r) => (r.sistemas || []).map((x) => x.nombre).join("; ")], ["Uso previsto", (r) => d(r).tipoUso], ["Fecha estimada", (r) => d(r).fechaUso], ["Personas", (r) => d(r).participantes], ["Mensaje", (r) => d(r).mensaje], ["Nota interna", (r) => r.nota]];
+  const q = (x) => { let t = String(x == null ? "" : x); if (/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; };
+  const csv = "\ufeff" + [cols.map((c) => q(c[0])).join(","), ...ver.map((r) => cols.map((c) => q(c[1](r))).join(","))].join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })); a.download = "solicitudes-" + hoyISO() + ".csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(ver.length + " solicitud" + (ver.length === 1 ? "" : "es") + " exportada" + (ver.length === 1 ? "" : "s"));
+}
+async function cargarBandeja() {
+  if (!SB || !S.super) { S.inbox = null; return; }
+  S.inbox = "cargando";
+  const { data, error } = await SB.from("solicitudes").select("*").order("creado", { ascending: false }).limit(500);
+  S.inbox = error ? "error" : data;
+}
+function filasBandeja() {
+  if (SB) return Array.isArray(S.inbox) ? S.inbox : [];
+  return S.sols.map((x) => ({ id: x.id, folio: x.folio, creado: x.fecha, datos: x.datos, sistemas: x.sistemas, estado: "nueva", nota: "", local: true }));
+}
+function vBandeja() {
+  if (SB && S.inbox === undefined) { cargarBandeja().then(() => { if (/^#\/solicitudes/.test(location.hash)) render(true); }); }
+  const rows = filasBandeja(), cuenta = (e) => rows.filter((r) => r.estado === e).length;
+  const vis = S.bf === "todas" ? rows : rows.filter((r) => r.estado === S.bf);
+  const grupos = new Map();
+  vis.forEach((r) => { const k = String((r.datos && r.datos.dependencia) || "Sin dependencia").trim(); const g = k.toLowerCase(); if (!grupos.has(g)) grupos.set(g, { nombre: k, items: [] }); grupos.get(g).items.push(r); });
+  const nDeps = new Set(rows.map((r) => String((r.datos && r.datos.dependencia) || "").trim().toLowerCase())).size;
+  const dato = (t, x, href) => x ? `<div><small>${t}</small>${href ? `<a href="${esc(href)}">${esc(x)}</a>` : `<span>${esc(x)}</span>`}</div>` : "";
+  const card = (r) => { const d = r.datos || {}, [cl, tx] = ESTADOS_BAN[r.estado] || ["", r.estado], tel = String(d.telefono || "").replace(/[^\d+]/g, "");
+    return `<details class="ban-card"><summary><span class="ban-sis">${esc((r.sistemas || []).map((x) => x.nombre).join(", "))}</span><span class="badge ${cl}">${tx}</span><small>${esc(fmtFecha(String(r.creado).slice(0, 10)))} · ${esc(r.folio)}</small></summary>
+      <div class="ban-grid">${dato("Nombre", d.nombre)}${dato("Cargo", d.cargo)}${dato("Correo", d.correo, "mailto:" + d.correo + "?subject=" + encodeURIComponent("Seguimiento de tu solicitud " + r.folio))}${dato("Teléfono", d.telefono, tel ? "tel:" + tel : "")}${dato("Prefiere que lo contacten por", d.contactoPref)}${dato("Horario para contactarlo", d.horario)}${dato("Área o unidad", d.area)}${dato("Uso previsto", d.tipoUso)}${dato("Fecha estimada", d.fechaUso ? fmtFecha(d.fechaUso) : "")}${dato("Personas que lo usarían", d.participantes)}</div>
+      ${d.mensaje ? `<p class="ban-msg"><small>Lo que necesita</small>${esc(d.mensaje)}</p>` : ""}
+      ${r.local ? "" : `<div class="ban-acts">${Object.entries(ESTADOS_BAN).filter(([k]) => k !== r.estado).map(([k, v]) => `<button class="btn sm sec" data-act="bandeja-estado" data-id="${esc(r.id)}" data-v="${k}">Marcar: ${v[1]}</button>`).join("")}</div>
+      <label class="sr" for="nota-${esc(r.id)}">Nota interna</label><textarea id="nota-${esc(r.id)}" class="ban-nota" placeholder="Nota interna (solo la ves tú)">${esc(r.nota || "")}</textarea><button class="btn sm" data-act="bandeja-nota" data-id="${esc(r.id)}">Guardar nota</button>`}</details>`; };
+  const estado = SB ? (S.inbox === "cargando" || S.inbox === undefined ? '<div class="note info">' + glifo("info") + "<div>Cargando solicitudes…</div></div>" : S.inbox === "error" ? '<div class="note warn">' + glifo("warn") + "<div>No se pudieron cargar las solicitudes. Revisa tu conexión y que tu cuenta sea superadministrador.</div></div>" : "") : '<div class="note info">' + glifo("info") + "<div>Aún no está conectado Supabase, así que solo ves las solicitudes hechas desde este dispositivo. Al conectarlo recibirás aquí las de todas las dependencias.</div></div>";
+  return `${cabecera("Solicitudes recibidas", "Qué sistemas pidió cada dependencia y cómo contactarla.")}
+    <div class="sp"></div>${estado}
+    <div class="ban-kpis"><div><b>${cuenta("nueva")}</b><span>Nuevas</span></div><div><b>${cuenta("contacto")}</b><span>En contacto</span></div><div><b>${cuenta("atendida")}</b><span>Atendidas</span></div><div><b>${nDeps}</b><span>Dependencias</span></div></div>
+    <div class="chips" role="group" aria-label="Filtrar por estado">${[["todas", "Todas (" + rows.length + ")"], ...Object.entries(ESTADOS_BAN).map(([k, v]) => [k, v[1] + " (" + cuenta(k) + ")"])].map(([k, t]) => `<button type="button" data-act="bandeja-filtro" data-v="${k}" ${S.bf === k ? 'aria-current="true" class="on"' : ""}>${t}</button>`).join("")}<button type="button" data-act="bandeja-recargar">${glifo("reloj")}Actualizar</button><button type="button" data-act="bandeja-exportar">Descargar Excel (.csv)</button></div>
+    ${grupos.size ? [...grupos.values()].map((g) => `<section class="ban-dep"><h2>${esc(g.nombre)} <small>${g.items.length} solicitud${g.items.length === 1 ? "" : "es"}</small></h2>${g.items.map(card).join("")}</section>`).join("") : vacio("No hay solicitudes", S.bf === "todas" ? "Cuando una dependencia solicite un sistema aparecerá aquí." : "No hay solicitudes con este estado.")}`;
+}
 function vSolicitudes() {
   const est = { enviada: ["ok", "Enviada"], pendiente: ["warn", "Falta enviar el correo"], guardada: ["", "Guardada en este dispositivo"] };
   return `${cabecera("Mis solicitudes", "Historial de las solicitudes que hiciste desde este dispositivo.")}
@@ -2667,6 +2740,11 @@ const ACT = {
   },
   "e-descartar"() { const [, , id] = hashParts(); delete S.drafts[id]; render(false); },
   "entrar-visitante"() { S.guest = true; try { sessionStorage.setItem("catalogo-visitante", "1"); } catch (e) {} location.hash = "#/"; render(true); },
+  "bandeja-filtro"(t) { S.bf = t.dataset.v; keep(() => render(true)); },
+  "bandeja-exportar"() { exportarBandeja(); },
+  "bandeja-recargar"() { S.inbox = undefined; render(true); },
+  async "bandeja-estado"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id); if (!r || !SB) return; const { error } = await SB.from("solicitudes").update({ estado: t.dataset.v }).eq("id", r.id); if (error) return toast("No se pudo actualizar el estado."); r.estado = t.dataset.v; keep(() => render(true)); },
+  async "bandeja-nota"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id), n = $("#nota-" + t.dataset.id); if (!r || !n || !SB) return; const { error } = await SB.from("solicitudes").update({ nota: n.value }).eq("id", r.id); if (error) return toast("No se pudo guardar la nota."); r.nota = n.value; toast("Nota guardada"); },
   "guardar-directorio"() { const t = $("#dir-txt"); if (!t) return; cfg().directorio = t.value.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((a) => a[0]).map((a) => ({ nombre: a[0], cargo: a[1] || "", correo: a[2] || "", telefono: a[3] || "" })); guardarCatalogo(); toast("Directorio guardado"); render(true); },
   "ir-login"() { cerrarModal(); S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
@@ -2716,6 +2794,13 @@ document.addEventListener("input", (e) => {
     return;
   }
   if (t.dataset.form) {
+    const kf = t.dataset.form, ms = /^(dependencia|usoOtro)Sel$/.exec(kf);
+    if (ms || kf === "tipoUso") {
+      F.nuevo = F.nuevo || {};
+      if (ms) { const k = ms[1]; if (t.value === "__nuevo") { F.nuevo[k] = true; F.vals[k] = ""; } else { F.nuevo[k] = false; F.vals[k] = t.value; } delete F.errs[k]; }
+      else { F.vals.tipoUso = t.value; delete F.errs.tipoUso; }
+      keep(() => render(false)); return;
+    }
     F.vals[t.dataset.form] = t.type === "checkbox" ? t.checked : t.value;
     if (F.errs[t.dataset.form]) { delete F.errs[t.dataset.form]; const fl = t.closest(".field"); if (fl) { fl.classList.remove("bad"); const er = $(".err", fl); if (er) er.remove(); } const er2 = $("#err-acepto"); if (t.dataset.form === "acepto" && er2) er2.remove(); }
     return;
@@ -2935,6 +3020,26 @@ html.acc-hc *{--label-2:#000}
 .dir-ed{margin-top:22px;padding:14px;border:1px dashed var(--pal-borde);border-radius:12px}.dir-ed summary{cursor:pointer;font-weight:600}
 .dir-ed textarea{width:100%;margin:10px 0;padding:10px;border:1px solid var(--pal-borde);border-radius:10px;font:inherit;font-size:14px}
 @media (prefers-color-scheme:dark){.ctc,.dir-p,#acc-pop,#acc-pop button{background:#10222b;color:#e8f4f8;border-color:#27424f}}
+
+/* ===== Bandeja del superadministrador ===== */
+[aria-label="Filtrar por estado"]{display:flex;flex-wrap:wrap;gap:8px}[aria-label="Filtrar por estado"] button{padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:inherit}[aria-label="Filtrar por estado"] svg{width:16px;height:16px}
+.ban-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:18px 0}
+.ban-kpis div{background:#fff;border:1px solid var(--pal-borde);border-radius:12px;padding:12px 14px;display:grid}
+.ban-kpis b{font-size:26px;color:var(--pal-principal);line-height:1.1}.ban-kpis span{font-size:12.5px;opacity:.75}
+.ban-dep{margin-top:26px}.ban-dep h2{font-size:19px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.ban-dep h2 small{font-size:13px;font-weight:500;opacity:.65}
+.ban-card{background:#fff;border:1px solid var(--pal-borde);border-radius:12px;margin-top:10px;padding:0}
+.ban-card>summary{list-style:none;cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 16px}
+.ban-card>summary::-webkit-details-marker{display:none}
+.ban-sis{font-weight:700;flex:1 1 220px;min-width:0}.ban-card summary small{opacity:.65}
+.ban-card[open]>summary{border-bottom:1px solid var(--pal-borde)}
+.ban-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 18px;padding:14px 16px;font-size:14px}
+.ban-grid div{display:grid;gap:2px;min-width:0;word-break:break-word}.ban-grid small,.ban-msg small{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--pal-principal);font-weight:700}
+.ban-grid a{color:var(--pal-principal)}
+.ban-msg{margin:0;padding:0 16px 12px;display:grid;gap:2px;font-size:14px}
+.ban-acts{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 12px}
+.ban-nota{width:calc(100% - 32px);margin:0 16px 10px;min-height:70px;border:1px solid var(--pal-borde);border-radius:10px;padding:10px;font:inherit;font-size:14px}
+.ban-card>.btn{margin:0 16px 16px}
+@media (prefers-color-scheme:dark){.ban-kpis div,.ban-card{background:#10222b;border-color:#27424f;color:#e8f4f8}.ban-nota{background:#0b1a21;color:#e8f4f8;border-color:#27424f}}
 /* Barra inferior (celular) con el mismo estilo del panel azul petróleo */
 @media (max-width:900px){
   .tabbar{background:linear-gradient(180deg,#12475a,#0e2f3d);border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 -8px 24px -10px rgba(14,47,61,.55)}
