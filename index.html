@@ -559,6 +559,10 @@ button.avatar{font:inherit;font-weight:700}
 .rolhelp{display:grid;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:13.5px;color:var(--label-2)}
 .rolhelp b{color:var(--label)}
 .auth-alt{margin-top:10px}
+.chk-item .dot.bad{background:var(--bad-soft);color:var(--bad)}
+.qa-log{display:grid;gap:8px;margin-top:10px}
+.qa-log details{border:1px solid var(--sep);border-radius:12px;padding:10px 12px;background:var(--bg-soft);font-size:14px}
+.qa-log pre{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;font-size:12.5px}
 </style>
 </head>
 <body>
@@ -894,18 +898,22 @@ const IDB = {
 };
 
 /* ---------- Estado ---------- */
-const S = { cat: null, user: null, guest: false, super: false, authView: "login", authInfo: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
+const S = { cat: null, user: null, guest: false, super: false, qa: false, qaSnap: null, qaLog: [], qaRes: null, authView: "login", authInfo: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
 
-let tGuardar = null;
+let tGuardar = null, guardadoPend = false;
 function guardarCatalogo(marcar = true) {
   if (marcar) { S.cat.editado = true; S.cat.actualizado = hoyISO(); }
   clearTimeout(tGuardar);
+  if (S.qa) return;
+  guardadoPend = true;
   tGuardar = setTimeout(async () => {
+    guardadoPend = false;
+    if (S.qa) return;
     const ok = await IDB.set("catalogo", S.cat);
     if (!ok) toast("No se pudieron guardar los cambios en este navegador. Descarga el catálogo para no perderlos.");
   }, 250);
 }
-async function guardarSolicitudes() { const ok = await IDB.set("solicitudes", S.sols); if (!ok) toast("No se pudo guardar el historial en este dispositivo."); }
+async function guardarSolicitudes() { if (S.qa) return; const ok = await IDB.set("solicitudes", S.sols); if (!ok) toast("No se pudo guardar el historial en este dispositivo."); }
 
 const vis = () => S.cat.sistemas.filter((s) => s.publicado || S.admin);
 const byId = (id) => S.cat.sistemas.find((s) => s.id === id);
@@ -1060,6 +1068,7 @@ const leerVisitante = () => { try { return sessionStorage.getItem("catalogo-visi
 const guardarSesion = (u, recordar) => { try { (recordar ? localStorage : sessionStorage).setItem("catalogo-sesion", u.id); } catch (e) {} };
 const leerSesion = () => { try { return sessionStorage.getItem("catalogo-sesion") || localStorage.getItem("catalogo-sesion"); } catch (e) { return null; } };
 function limpiarSesion() {
+  if (S.qa) restaurarQA();
   try { sessionStorage.removeItem("catalogo-sesion"); localStorage.removeItem("catalogo-sesion"); } catch (e) {}
   S.user = null; S.admin = false; S.super = false; S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} S.drafts = {}; S.cfgDraft = null; S.authView = "login"; S.authInfo = null;
   F.ini = null; F.sel = []; F.errs = {}; F.vals = { contactoPref: "Correo electrónico", acepto: false };
@@ -1117,6 +1126,7 @@ function nuevoCodigo() {
 }
 async function enviarAvisoCorreo(para, asunto, campos) {
   if (!correoOk(para)) return false;
+  if (S.qa) { S.qaLog.unshift({ fecha: new Date().toLocaleString("es-MX"), para, asunto, campos }); return true; }
   try {
     const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 15000);
     const r = await fetch("https://formsubmit.co/ajax/" + para.trim(), {
@@ -1476,11 +1486,11 @@ function render(nav) {
     console.error(err);
     html = vacio("Algo salió mal", "No se pudo mostrar esta pantalla. Vuelve al inicio e inténtalo de nuevo.", `<a class="btn" href="#/">Ir al inicio</a>`);
   }
-  view.innerHTML = html;
+  view.innerHTML = (S.qa ? qaBanner() : "") + html;
   renderChrome(a || "");
   if (post) post();
   if (nav) { window.scrollTo(0, 0); }
-  document.title = (a === "sistema" && byId(b) ? byId(b).nombre + " · " : "") + cfg().nombre;
+  document.title = (S.qa ? "[PRUEBAS] " : "") + (a === "sistema" && byId(b) ? byId(b).nombre + " · " : "") + cfg().nombre;
 }
 
 function renderChrome(a) {
@@ -1923,12 +1933,13 @@ function bannerAdmin() {
 function vAdmin(sub, id) {
   if (!S.admin) return `${cabecera("Administración")}${vacio("Acceso restringido", "Esta sección es solo para administradores del catálogo.", `<a class="btn" href="#/">Ir al inicio</a>`)}`;
   if (sub === "editar") return vEditor(id);
-  const permitidas = S.super ? ["categorias", "config", "usuarios"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
+  const permitidas = S.super ? ["categorias", "config", "usuarios", "qa"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
   const cur = (k) => (tab === k ? ' aria-current="page"' : "");
   const cab = `${cabecera("Administración", S.super ? "Control total del catálogo, usuarios y configuración." : "Como colaborador puedes editar sistemas y categorías.")}
-    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
+    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a><a href="#/admin/qa"${cur("qa")}>Pruebas QA${S.qa ? " ●" : ""}</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
   if (tab === "categorias") return cab + vAdminCategorias();
   if (tab === "usuarios") return cab + vAdminUsuarios();
+  if (tab === "qa") return cab + vAdminQA();
   if (tab === "config") return cab + vAdminConfig(id);
   const l = S.cat.sistemas;
   return cab + `<div class="admbar" style="margin-top:0"><span class="muted">${l.length} ${plural(l.length, "sistema", "sistemas")} · ${l.filter((s) => s.publicado).length} publicados</span><a class="btn" href="#/admin/editar/nuevo">${glifo("plus")}Agregar sistema</a></div>
@@ -2182,6 +2193,140 @@ async function subirImagenRapida(kind, id, f) {
   } catch (e) { toast("No se pudo leer la imagen."); }
 }
 
+/* ---------- Modo de pruebas (QA) ---------- */
+const QA_MANUAL = [
+  ["q1", "Entrar como visitante: ver el catálogo, buscar y solicitar un sistema"],
+  ["q2", "El visitante no puede abrir Administración"],
+  ["q3", "Pedir acceso de Superadministrador: llega el correo con el código (fuera del modo pruebas)"],
+  ["q4", "Un código incorrecto o vencido es rechazado"],
+  ["q5", "Crear un colaborador, entrar con su contraseña temporal y cambiarla"],
+  ["q6", "El colaborador edita sistemas y categorías, pero no ve Usuarios ni Configuración"],
+  ["q7", "Renombrar, editar y eliminar una categoría"],
+  ["q8", "Renombrar y eliminar un sistema"],
+  ["q9", "El botón «Abrir sistema» abre el enlace correcto"],
+  ["q10", "En «Solicitar sistema», «Tus datos» aparece antes de «Te podría interesar también»"],
+  ["q11", "Enviar una solicitud: llega el correo con su folio"],
+  ["q12", "Lista de verificación: marcar todo y «Avisar que ya cumplo» llega por correo"],
+  ["q13", "Probar en celular y en computadora (claro y oscuro)"],
+  ["q14", "Descargar el catálogo, publicarlo como catalogo.json y confirmar que carga"]
+];
+const qaLeerManual = () => { try { return JSON.parse(localStorage.getItem("catalogo-qa-manual") || "{}"); } catch (e) { return {}; } };
+function marcarQA(t) {
+  const o = qaLeerManual(); if (t.checked) o[t.dataset.qa] = true; else delete o[t.dataset.qa];
+  try { localStorage.setItem("catalogo-qa-manual", JSON.stringify(o)); } catch (e) {}
+  keep(() => render(false));
+}
+const qaBanner = () => `<div class="note warn" style="margin-bottom:14px">${glifo("warn")}<div><b>MODO PRUEBAS.</b> Nada de lo que hagas se guarda y los correos solo se simulan.<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a class="btn sm sec" href="#/admin/qa">Panel QA</a><button class="btn sm danger" data-act="qa-salir">Salir y descartar</button></div></div></div>`;
+async function activarQA() {
+  if (S.qa) return;
+  if (guardadoPend) { clearTimeout(tGuardar); guardadoPend = false; await IDB.set("catalogo", S.cat); }
+  S.qaSnap = { cat: clone(S.cat), sols: clone(S.sols) }; S.qaLog = []; S.qaRes = null; S.qa = true;
+  toast("Modo pruebas activado: nada se guardará"); render(false);
+}
+function restaurarQA(soloDatos) {
+  const sn = S.qaSnap; if (!sn) { S.qa = false; return; }
+  S.cat = soloDatos ? clone(sn.cat) : sn.cat; S.sols = soloDatos ? clone(sn.sols) : sn.sols;
+  S.drafts = {}; S.cfgDraft = null; S.qaLog = [];
+  if (!soloDatos) { S.qa = false; S.qaSnap = null; S.qaRes = null; }
+  revalidarSesion();
+}
+function salirQA() { restaurarQA(false); toast("Saliste del modo pruebas. Se descartó todo lo de prueba."); irA("admin/qa"); }
+async function cargarDatosPrueba() {
+  if (!S.qa) return;
+  const kId = uid("cat");
+  S.cat.categorias.push({ id: kId, nombre: "[PRUEBA] Categoría", glifo: "estrella", color: "naranja" });
+  const mk = (o) => sistemaBase(Object.assign({ prueba: true, ejemplo: false, categorias: [kId], usos: ["Pruebas"], version: "0.1", actualizado: hoyISO(), area: "Equipo QA", contacto: { correo: "qa@ejemplo.com", telefono: "" } }, o));
+  const completo = mk({ nombre: "[PRUEBA] Sistema completo", subtitulo: "Con enlace, requisitos y capturas", icono: { glifo: "rayo", color: "verde", imagen: "" }, destacado: true,
+    descripcion: "Sistema ficticio para probar la ficha, la solicitud y la lista de verificación.", requisitos: ["Requisito de prueba 1", "Requisito de prueba 2", "Clave de acceso (API) entregada"],
+    pasos: ["Paso de prueba 1", "Paso de prueba 2"], enlaces: [{ etiqueta: "Abrir el sistema", url: "https://example.com/prueba", tipo: "sistema" }], capturas: capturas("verde", "Prueba") });
+  S.cat.sistemas.push(completo,
+    mk({ nombre: "[PRUEBA] Sin enlace", subtitulo: "Para probar el aviso de enlace faltante", enlaces: [], requisitos: [] }),
+    mk({ nombre: "[PRUEBA] En mantenimiento", subtitulo: "Botón de solicitar desactivado", estado: "En mantenimiento" }),
+    mk({ nombre: "[PRUEBA] Requiere validación", subtitulo: "Muestra el aviso de validación", estado: "Requiere validación", requisitos: ["Visto bueno de TI"] }));
+  for (const [rfc, nombre, rol] of [["QAGE010101AB1", "QA Colaborador", "gestor"], ["QAVI010101AB1", "QA Visitante", "visitante"]]) {
+    if (S.cat.usuarios.some((u) => u.rfc === rfc)) continue;
+    const salt = nuevoSalt();
+    S.cat.usuarios.push({ id: uid("usr"), rfc, nombre, correo: "qa@ejemplo.com", dependencia: "Pruebas", cargo: "QA", telefono: "", rol, estado: "activo", salt, hash: await hashClave("Prueba1234", salt), debeCambiar: false, creado: hoyISO(), prueba: true });
+  }
+  const d = new Date();
+  S.sols.unshift({ id: uid("sol"), folio: "SOL-PRUEBA-" + Math.random().toString(36).slice(2, 6).toUpperCase(), fecha: hoyISO(), hora: `${pad(d.getHours())}:${pad(d.getMinutes())}`, prueba: true,
+    sistemas: [{ id: completo.id, nombre: completo.nombre, version: completo.version, requisitos: completo.requisitos.slice() }], base: baseReqs(), checks: {}, listo: false,
+    datos: { dependencia: "Dependencia de prueba", area: "", nombre: "Persona de prueba", cargo: "Titular", correo: "prueba@ejemplo.com", telefono: "5512345678", contactoPref: "Correo electrónico", horario: "", tipoUso: "Prueba o demostración", fechaUso: "", participantes: "", mensaje: "Solicitud ficticia." },
+    estado: "guardada", canal: "" });
+  toast("Datos de prueba cargados"); render(false);
+}
+async function correrQA() {
+  const R = [], add = (estado, titulo, detalle = "") => R.push({ estado, titulo, detalle });
+  const t = async (titulo, fn) => { try { await fn(); } catch (e) { add("bad", titulo, "Error: " + (e && e.message ? e.message : e)); } };
+  await t("Almacenamiento", () => add(S.memoria ? "bad" : "ok", "Almacenamiento del navegador", S.memoria ? "No se pueden guardar datos (ventana privada o bloqueado)." : "Disponible."));
+  await t("Validaciones", () => { const v = [rfcOk("XAXX010101000"), !rfcOk("123"), claveOk("Clave1234"), !claveOk("corta1"), correoOk("a@b.com"), !correoOk("a@b"), urlOk("https://x.com") !== "", urlOk("javascript:alert(1)") === ""], n = v.filter(Boolean).length; add(n === v.length ? "ok" : "bad", "Validaciones (RFC, contraseña, correo, URL)", `${n} de ${v.length} correctas.`); });
+  await t("Cifrado", async () => { const a = await hashClave("Prueba1234", "sal-a"), b = await hashClave("Prueba1234", "sal-a"), c = await hashClave("Prueba1234", "sal-b"), d = await hashClave("Otra12345", "sal-a"); add(a === b && a !== c && a !== d ? "ok" : "bad", "Cifrado de contraseñas", a === b && a !== c && a !== d ? "Mismo dato da el mismo resultado; cambia con otra sal u otra contraseña." : "El cifrado no es consistente."); });
+  await t("Códigos", () => { const c = Array.from({ length: 50 }, nuevoCodigo); const ok = c.every((x) => /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(x)) && new Set(c).size === 50 && normCodigo("ab-cd 12") === "ABCD12"; add(ok ? "ok" : "bad", "Códigos de autorización", ok ? "Formato XXXX-XXXX y sin repeticiones en 50 pruebas." : "El formato o la unicidad fallaron."); });
+  await t("Permisos", () => { const a0 = S.admin, s0 = S.super, r = {}; ["visitante", "gestor", "superadmin"].forEach((x) => { aplicarRol({ rol: x }); r[x] = S.admin + "," + S.super; }); S.admin = a0; S.super = s0; const ok = r.visitante === "false,false" && r.gestor === "true,false" && r.superadmin === "true,true" && rolDe("admin") === "superadmin" && rolDe("usuario") === "visitante"; add(ok ? "ok" : "bad", "Permisos por tipo de acceso", ok ? "Visitante sin acceso, colaborador sin usuarios/configuración, superadministrador con todo." : JSON.stringify(r)); });
+  await t("Usuarios", () => {
+    const U = S.cat.usuarios, sa = U.filter((u) => rolDe(u.rol) === "superadmin" && u.estado === "activo").length, rf = U.map((u) => u.rfc), dup = rf.length - new Set(rf).size;
+    add(sa ? "ok" : "bad", "Superadministrador activo", sa ? `${sa} activo(s).` : "No hay ningún superadministrador activo.");
+    add(dup ? "bad" : "ok", "RFC repetidos", dup ? `${dup} repetido(s).` : "Sin repetidos.");
+  });
+  await t("Catálogo", () => {
+    const Sx = S.cat.sistemas, ids = Sx.map((s) => s.id), kids = new Set(S.cat.categorias.map((k) => k.id));
+    const sinNombre = Sx.filter((s) => !String(s.nombre).trim()).length, dupId = ids.length - new Set(ids).size;
+    const huerf = Sx.reduce((n, s) => n + s.categorias.filter((c) => !kids.has(c)).length, 0);
+    const pub = Sx.filter((s) => s.publicado && !s.prueba), sinLink = pub.filter((s) => !s.enlaces.some((l) => l.tipo === "sistema" && urlOk(l.url)));
+    const urlMal = Sx.reduce((n, s) => n + s.enlaces.filter((l) => l.url && !urlOk(l.url)).length, 0);
+    const kn = S.cat.categorias.map((k) => norm(k.nombre)), kdup = kn.length - new Set(kn).size, vacias = S.cat.categorias.filter((k) => !Sx.some((s) => s.categorias.includes(k.id))).length;
+    add(sinNombre || dupId ? "bad" : "ok", "Sistemas válidos", sinNombre || dupId ? `${sinNombre} sin nombre, ${dupId} con id repetido.` : `${Sx.length} sistemas con nombre e id únicos.`);
+    add(huerf ? "bad" : "ok", "Categorías de cada sistema", huerf ? `${huerf} referencia(s) a categorías que ya no existen.` : "Todas existen.");
+    add(sinLink.length ? "warn" : "ok", "Enlace «Abrir sistema»", sinLink.length ? `Faltan en: ${sinLink.map((s) => s.nombre).join(", ")}.` : "Todos los sistemas publicados tienen enlace válido.");
+    add(urlMal ? "bad" : "ok", "Direcciones (URL)", urlMal ? `${urlMal} enlace(s) con dirección inválida.` : "Todas válidas.");
+    add(kdup ? "warn" : "ok", "Nombres de categorías", kdup ? `${kdup} nombre(s) repetido(s).` : "Sin repetidos.");
+    add(vacias ? "warn" : "ok", "Categorías vacías", vacias ? `${vacias} sin sistemas.` : "Todas tienen sistemas.");
+    const ej = Sx.filter((s) => s.ejemplo).length; add(ej ? "warn" : "ok", "Sistemas de ejemplo", ej ? `${ej} visibles. Quítalos antes de usarlo en producción.` : "Ninguno.");
+  });
+  await t("Configuración", () => {
+    const c = cfg();
+    add(correoOk(c.correoAdmin) ? "ok" : "bad", "Correo del administrador", correoOk(c.correoAdmin) ? c.correoAdmin : "Falta o es inválido.");
+    add(correoOk(c.correoDestino) ? "ok" : "warn", "Correo de solicitudes", correoOk(c.correoDestino) ? c.correoDestino : "Sin definir: se usará el del administrador.");
+    add(correoOk(CORREO_SUPER) ? "ok" : "bad", "Correo del código de superadministrador", maskCorreo(CORREO_SUPER));
+    add(baseReqs().length ? "ok" : "warn", "Requisitos generales", baseReqs().length ? `${baseReqs().length} requisitos.` : "No hay requisitos generales.");
+  });
+  await t("Solicitud simulada", () => {
+    const f = { id: "x", folio: "SOL-TEST", fecha: hoyISO(), hora: "10:00", sistemas: [{ id: "x1", nombre: "Sis", version: "1", requisitos: ["a", "b"] }], base: ["g"], checks: { _base: [true], x1: [true, false] }, datos: { dependencia: "D", nombre: "N", cargo: "C", correo: "a@b.com", telefono: "5512345678", contactoPref: "Correo electrónico", tipoUso: "Otro", mensaje: "m" } };
+    const p1 = progreso(f), m = armarMensaje(f); f.checks.x1 = [true, true]; const p2 = progreso(f);
+    const ok = p1.t === 3 && p1.h === 2 && !p1.ok && p2.ok && m.includes("SOL-TEST") && avisoListo(f).includes("REQUISITOS COMPLETOS");
+    add(ok ? "ok" : "bad", "Solicitud y lista de verificación", ok ? "El mensaje se arma y el avance se calcula bien." : "El cálculo o el mensaje fallaron.");
+  });
+  await t("Pantallas", () => {
+    const fallas = [], prueba = (n, fn) => { try { const h = fn(); if (typeof h !== "string" || !h.length) fallas.push(n); } catch (e) { fallas.push(n); } };
+    prueba("Inicio", vHome); prueba("Sistemas", vSistemas); prueba("Categorías", vCategorias); prueba("Ayuda", vAyuda); prueba("Solicitudes", vSolicitudes);
+    S.cat.sistemas.forEach((s) => prueba("Ficha " + s.nombre, () => vFicha(s.id)));
+    S.cat.categorias.forEach((k) => prueba("Categoría " + k.nombre, () => vLista("categoria", k.id)));
+    add(fallas.length ? "bad" : "ok", "Pantallas sin errores", fallas.length ? "Fallan: " + fallas.join(", ") : `${5 + S.cat.sistemas.length + S.cat.categorias.length} pantallas generadas correctamente.`);
+  });
+  add(S.qa ? "ok" : "warn", "Envío de correos", S.qa ? "Simulado en modo pruebas (ver «Correos simulados»)." : "No probado: la revisión no envía correos reales. Pruébalo con el checklist manual.");
+  S.qaRes = { fecha: new Date().toLocaleString("es-MX"), items: R }; render(false);
+}
+function vAdminQA() {
+  const man = qaLeerManual(), hechos = QA_MANUAL.filter(([id]) => man[id]).length, pct = Math.round((hechos / QA_MANUAL.length) * 100);
+  const item = (e, t, d) => `<div class="chk-item"><span class="dot ${e}">${glifo(e === "ok" ? "check" : "warn")}</span><div class="t"><b>${esc(t)}</b><small>${esc(d)}</small></div></div>`;
+  const R = S.qaRes, n = (e) => (R ? R.items.filter((x) => x.estado === e).length : 0);
+  const prueba = S.cat.sistemas.filter((s) => s.prueba).length;
+  return `<section class="grp"><h2>Modo pruebas</h2><p class="hint">Es un espacio aparte: puedes crear, editar y borrar sin que nada se guarde. Los correos solo se simulan. Al salir, el catálogo queda exactamente como estaba.</p><div class="card">
+    ${S.qa ? `<div class="note warn">${glifo("warn")}<div><b>Modo pruebas activo.</b> Todo lo que hagas se descartará al salir o al recargar la página.</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sm" data-act="qa-datos">${glifo("plus")}Cargar datos de prueba</button><button class="btn sm sec" data-act="qa-reiniciar">Reiniciar datos de prueba</button><button class="btn sm danger" data-act="qa-salir">Salir y descartar todo</button></div>
+      ${prueba ? `<div class="kv" style="margin-top:12px"><div><span class="k">Colaborador de prueba</span><span class="v">QAGE010101AB1 · contraseña Prueba1234</span></div><div><span class="k">Visitante de prueba</span><span class="v">QAVI010101AB1 · contraseña Prueba1234</span></div></div>` : `<p class="cfg-note" style="margin-top:12px">«Cargar datos de prueba» agrega sistemas, una categoría, usuarios y una solicitud ficticios para probar todo.</p>`}`
+    : `<button class="btn" data-act="qa-activar">Activar modo pruebas</button><p class="cfg-note" style="margin-top:10px">Los cambios reales no se tocan mientras esté activo.</p>`}</div></section>
+  <section class="grp"><h2>Revisión automática</h2><p class="hint">Comprueba validaciones, cifrado, permisos, datos del catálogo, configuración y que cada pantalla se genere sin errores. No cambia nada.</p><div class="card">
+    <button class="btn sm" data-act="qa-correr">Ejecutar revisión</button>
+    ${R ? `<p class="muted" style="margin:12px 0 4px;font-size:14px">${esc(R.fecha)} · <b>${n("ok")}</b> bien · <b>${n("warn")}</b> por revisar · <b>${n("bad")}</b> con falla</p>${R.items.map((x) => item(x.estado, x.titulo, x.detalle)).join("")}` : ""}</div></section>
+  <section class="grp"><h2>Correos simulados</h2><p class="hint">Lo que se habría enviado durante esta sesión de pruebas.</p><div class="card">
+    ${S.qaLog.length ? `<div class="qa-log">${S.qaLog.map((m) => `<details><summary><b>${esc(m.asunto)}</b> <span class="muted">→ ${esc(m.para)} · ${esc(m.fecha)}</span></summary><pre>${esc(Object.entries(m.campos).map(([k, v]) => k + ": " + v).join("\n"))}</pre></details>`).join("")}</div>` : `<p class="muted">${S.qa ? "Aún no se ha simulado ningún correo. Envía una solicitud o avisa que cumples requisitos." : "Activa el modo pruebas para ver aquí los correos simulados."}</p>`}</div></section>
+  <section class="grp"><h2>Checklist de QA</h2><p class="hint">Pasos para revisar a mano durante la prueba piloto. Se guardan solo en este navegador.</p><div class="card">
+    <div class="chkl-h"><b>Avance</b><span class="badge ${hechos === QA_MANUAL.length ? "ok" : "warn"}">${hechos}/${QA_MANUAL.length}</span></div><div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="chkgrp">${QA_MANUAL.map(([id, tx]) => `<label class="chk"><input type="checkbox" data-qa="${id}" ${man[id] ? "checked" : ""}><span>${esc(tx)}</span></label>`).join("")}</div>
+    ${hechos ? `<button class="btn ghost sm" data-act="qa-limpiar-manual">Desmarcar todo</button>` : ""}</div></section>`;
+}
+
 /* ---------- Renombrar sistema y editar categorías ---------- */
 const irA = (p) => { const igual = location.hash === "#/" + p; go(p); if (igual) render(false); };
 function abrirRenombrarSistema(id) {
@@ -2407,17 +2552,25 @@ const ACT = {
     else { toast("No se pudo enviar automáticamente. Se abrirá tu correo."); setTimeout(() => { location.href = `mailto:${para}?subject=${enc(asunto)}&body=${enc(cuerpo)}`; }, 300); }
     keep(() => render(false));
   },
+  "qa-activar"() { activarQA(); },
+  "qa-salir"() { salirQA(); },
+  "qa-datos"() { cargarDatosPrueba(); },
+  "qa-reiniciar"() { restaurarQA(true); toast("Datos de prueba reiniciados"); render(false); },
+  "qa-correr"() { correrQA(); },
+  "qa-limpiar-manual"() { try { localStorage.removeItem("catalogo-qa-manual"); } catch (e) {} keep(() => render(false)); },
   "cerrar-modal": cerrarModal,
   "conf-si"() { if (confFin) confFin(true); },
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar"]);
+const SOLO_SUPER = new Set(["usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]");
   if (!t || t.disabled) return;
   if (SOLO_SUPER.has(t.dataset.act) && !S.super) { e.preventDefault(); toast("Esta acción es solo para el superadministrador."); return; }
+  if (S.qa && QA_BLOQ.has(t.dataset.act)) { e.preventDefault(); toast("No disponible en modo pruebas: saca los datos reales saliendo primero."); return; }
   if (SOLO_GESTION.has(t.dataset.act) && !S.admin) { e.preventDefault(); toast("Necesitas ser colaborador o superadministrador."); return; }
   const fn = ACT[t.dataset.act];
   if (fn) { if (t.tagName === "A" && !t.getAttribute("href")) e.preventDefault(); fn(t, e); }
@@ -2444,7 +2597,8 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("change", (e) => {
   const t = e.target;
-  if (t.dataset.usrRol) cambiarRolUsuario(t);
+  if (t.dataset.qa) marcarQA(t);
+  else if (t.dataset.usrRol) cambiarRolUsuario(t);
   else if (t.dataset.chk) marcarRequisito(t);
   else if (t.dataset.sel === "orden") { F2.orden = t.value; render(false); }
   else if (t.dataset.sel === "addsis") { if (t.value && !F.sel.includes(t.value)) F.sel.push(t.value); keep(() => render(false)); }
