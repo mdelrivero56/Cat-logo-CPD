@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Catálogo de Sistemas</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2352b0ff'/%3E%3Cstop offset='1' stop-color='%230a60ea'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='url(%23a)'/%3E%3Crect x='17' y='17' width='13' height='13' rx='3.5' fill='%23fff'/%3E%3Ccircle cx='41' cy='23.5' r='6.5' fill='%23fff' opacity='.78'/%3E%3Crect x='17' y='34' width='13' height='13' rx='3.5' fill='%23fff' opacity='.78'/%3E%3Crect x='34' y='34' width='13' height='13' rx='3.5' fill='%23fff' opacity='.5'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Cdefs%3E%3ClinearGradient%20id='a'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%2352b0ff'/%3E%3Cstop%20offset='1'%20stop-color='%230a60ea'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='64'%20height='64'%20rx='18'%20fill='url%28%23a%29'/%3E%3Cg%20transform='rotate%2845%2032%2032%29'%3E%3Crect%20x='18.5'%20y='18.5'%20width='12'%20height='12'%20rx='3.6'%20fill='%23fff'/%3E%3Crect%20x='33.5'%20y='18.5'%20width='12'%20height='12'%20rx='3.6'%20fill='%23fff'%20opacity='.7'/%3E%3Crect%20x='18.5'%20y='33.5'%20width='12'%20height='12'%20rx='3.6'%20fill='%23fff'%20opacity='.5'/%3E%3Crect%20x='33.5'%20y='33.5'%20width='12'%20height='12'%20rx='3.6'%20fill='%23fff'%20opacity='.3'/%3E%3C/g%3E%3C/svg%3E">
 <meta name="description" content="Catálogo institucional de sistemas digitales. Explora, conoce y solicita los sistemas disponibles para tu dependencia.">
 <style>
 /* Diseño: barra lateral en escritorio y panel inferior anclado en teléfono.
@@ -114,6 +114,19 @@ main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:0 var(--gutter) 72
   main{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
   .foot{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
   .toast{left:calc(50% + 34px);max-width:calc(100vw - 68px - 24px)}
+}
+
+
+/* ---------- Celular: barra inferior compacta (sin riel lateral) ---------- */
+@media (max-width:900px){
+  .app{padding-left:0!important}
+  .tabbar{top:auto!important;left:0;right:0;bottom:0;width:auto;height:calc(60px + env(safe-area-inset-bottom,0px));flex-direction:row;align-items:stretch;justify-content:space-around;gap:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--sep);overflow:hidden}
+  .tabbar::after,.rail-brand{display:none!important}
+  .tabbar a:not(.rail-brand),.rail-admin{flex:1 1 0;width:auto;min-width:0;margin:0!important;padding:6px 0 4px}
+  .tabbar a:not(.rail-brand)::before{left:28%;right:28%;top:-6px;bottom:auto;width:auto;height:3px;border-radius:0 0 4px 4px;transform:scaleX(0)}
+  .tabbar a[aria-current="page"]::before{transform:scaleX(1)}
+  main{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+  .toast{left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 24px)}
 }
 
 /* ---------- Encabezados ---------- */
@@ -516,9 +529,14 @@ input::placeholder,textarea::placeholder{color:var(--label-3)}
 
 
 /* ---------- Pestañeo al cambiar de sección ---------- */
-@keyframes pestanea{0%{opacity:0}28%{opacity:1}46%{opacity:.35}70%{opacity:1}100%{opacity:1}}
-#view.blink{animation:pestanea .5s ease-out}
-@media (prefers-reduced-motion:reduce){#view.blink{animation-duration:.25s}}
+@keyframes pestanea{0%{opacity:0;transform:translateY(14px)}45%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.88)}60%{transform:scale(1.04)}100%{transform:none}}
+.blink{animation:pestanea .42s cubic-bezier(.22,.8,.3,1)}
+.seg a[aria-current="page"],.cfg-nav a[aria-current="page"]{animation:pop .4s cubic-bezier(.3,1.4,.5,1)}
+@media (prefers-reduced-motion:reduce){.blink,.seg a[aria-current="page"],.cfg-nav a[aria-current="page"]{animation-duration:.01s}}
+.avisos{margin-top:40px}
+@media (max-width:640px){.arow .acts{width:100%;gap:8px}.arow .acts .select{flex:1 1 100%}}
+.avisos .note{margin-bottom:12px}
 
 /* ---------- Logotipo ---------- */
 .logo-svg{width:100%;height:100%;display:block}
@@ -684,9 +702,9 @@ const CONFIG_BASE = {
   telefono: "",
   privacidad: "Usaremos tus datos únicamente para atender esta solicitud y ponernos en contacto contigo.",
   pinHash: "",
-  correoAdmin: "delrivero25@gmail.com",   // recibe solicitudes de usuario y de recuperación de contraseña
+  correoAdmin: "",   // recibe solicitudes de usuario y de recuperación de contraseña
   logo: "",                   // imagen subida (opcional); si está vacío se usa el diseño de abajo
-  logoMarca: "mosaico",       // mosaico | capas | orbita | cubo | onda | inicial
+  logoMarca: "facetas",       // facetas | mosaico | capas | orbita | cubo | onda | inicial
   logoColor: "azul",          // color de la paleta
   logoForma: "squircle",      // squircle | circulo | cuadrado
   horario: "",                // ej. «Lunes a viernes, 9:00 a 17:00»
@@ -696,9 +714,13 @@ const CONFIG_BASE = {
   acento: "",                 // vacío = azul institucional; o un color de la paleta
   requisitosBase: "Persona responsable designada (nombre y contacto)\nConexión a internet estable en el lugar de uso\nDispositivos compatibles disponibles (computadora, tablet o teléfono)\nFecha y lugar de la ocasión confirmados\nAutorización de la dependencia para usar el sistema"
 };
+/* Supabase: pega aquí la URL y la clave pública (anon) de tu proyecto. Nunca uses la clave service_role. */
+const SUPABASE_URL = "";
+const SUPABASE_KEY = "";
+const SB_ON = !!(SUPABASE_URL && SUPABASE_KEY);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
-const CORREO_SUPER = "delrivero25@gmail.com";  // recibe el código para autorizar cuentas de Superadministrador
+const CORREO_SUPER = "";  // recibe el código para autorizar cuentas de Superadministrador
 const ROLES = { visitante: "Visitante", gestor: "Colaborador", superadmin: "Superadministrador" };
 const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
@@ -935,6 +957,7 @@ function guardarCatalogo(marcar = true) {
     if (S.qa) return;
     const ok = await IDB.set("catalogo", S.cat);
     if (!ok) toast("No se pudieron guardar los cambios en este navegador. Descarga el catálogo para no perderlos.");
+    if (SB && S.admin) sbEnCola();
   }, 250);
 }
 async function guardarSolicitudes() { if (S.qa) return; const ok = await IDB.set("solicitudes", S.sols); if (!ok) toast("No se pudo guardar el historial en este dispositivo."); }
@@ -1050,6 +1073,7 @@ function cabecera(titulo, sub = "", cuando = "") {
 }
 function vacio(titulo, texto, extra = "") { return `<div class="empty">${glifo("search")}<b>${esc(titulo)}</b><p>${esc(texto)}</p>${extra}</div>`; }
 const LOGO_MARCAS = {
+  facetas: { n: "Facetas", d: '<g transform="translate(32 32) rotate(45) scale(1.16) translate(-32 -32)"><rect x="18.5" y="18.5" width="12" height="12" rx="3.6" fill="#fff"/><rect x="33.5" y="18.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".7"/><rect x="18.5" y="33.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".5"/><rect x="33.5" y="33.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".3"/></g>' },
   mosaico: { n: "Mosaico", d: '<rect x="17" y="17" width="13" height="13" rx="3.5" fill="#fff"/><circle cx="41" cy="23.5" r="6.5" fill="#fff" opacity=".78"/><rect x="17" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".78"/><rect x="34" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".5"/>' },
   capas: { n: "Capas", d: '<path d="M32 15 49 24.5 32 34 15 24.5Z" fill="#fff"/><path d="M15 33 32 42.5 49 33" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M15 41.5 32 51 49 41.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>' },
   orbita: { n: "Órbita", d: '<circle cx="32" cy="32" r="16" fill="none" stroke="#fff" stroke-width="3.4" opacity=".6"/><circle cx="32" cy="32" r="6.5" fill="#fff"/><circle cx="43.3" cy="20.7" r="4" fill="#fff"/>' },
@@ -1060,10 +1084,10 @@ const LOGO_MARCAS = {
 const LOGO_FORMAS = { squircle: ["Redondeado", 18], circulo: ["Círculo", 32], cuadrado: ["Cuadrado", 8] };
 let logoN = 0;
 function logoSvg(c) {
-  const m = LOGO_MARCAS[c.logoMarca] ? c.logoMarca : "mosaico", col = COLORES[c.logoColor] || COLORES.azul, f = LOGO_FORMAS[c.logoForma] || LOGO_FORMAS.squircle, id = "lgd" + (++logoN);
+  const m = LOGO_MARCAS[c.logoMarca] ? c.logoMarca : "facetas", col = COLORES[c.logoColor] || COLORES.azul, f = LOGO_FORMAS[c.logoForma] || LOGO_FORMAS.squircle, id = "lgd" + (++logoN);
   const ini = esc((String(c.nombre || "C").trim()[0] || "C").toUpperCase());
   const marca = m === "inicial" ? `<text x="32" y="43.5" text-anchor="middle" font-size="32" font-weight="700" fill="#fff" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif">${ini}</text>` : LOGO_MARCAS[m].d;
-  return `<svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col[0]}"/><stop offset="1" stop-color="${col[1]}"/></linearGradient></defs><rect width="64" height="64" rx="${f[1]}" fill="url(#${id})"/>${marca}</svg>`;
+  return `<svg class="logo-svg" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col[0]}"/><stop offset="1" stop-color="${col[1]}"/></linearGradient><radialGradient id="${id}h" cx=".25" cy=".15" r=".95"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><rect width="64" height="64" rx="${f[1]}" fill="url(#${id})"/><rect width="64" height="64" rx="${f[1]}" fill="url(#${id}h)"/><rect x=".5" y=".5" width="63" height="63" rx="${f[1] - .5}" fill="none" stroke="#fff" stroke-opacity=".22"/>${marca}</svg>`;
 }
 const logoInner = (c) => imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : logoSvg(c);
 const logoHtml = (c) => `<span class="ico s40${imgOk(c.logo) ? "" : " lg"}" style="${colorVars("azul")}">${logoInner(c)}</span>`;
@@ -1109,6 +1133,7 @@ const leerVisitante = () => { try { return sessionStorage.getItem("catalogo-visi
 const guardarSesion = (u, recordar) => { try { (recordar ? localStorage : sessionStorage).setItem("catalogo-sesion", u.id); } catch (e) {} };
 const leerSesion = () => { try { return sessionStorage.getItem("catalogo-sesion") || localStorage.getItem("catalogo-sesion"); } catch (e) { return null; } };
 function limpiarSesion() {
+  if (SB) SB.auth.signOut();
   if (S.qa) restaurarQA();
   try { sessionStorage.removeItem("catalogo-sesion"); localStorage.removeItem("catalogo-sesion"); } catch (e) {}
   S.user = null; S.admin = false; S.super = false; S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} S.drafts = {}; S.cfgDraft = null; S.authView = "login"; S.authInfo = null;
@@ -1117,7 +1142,7 @@ function limpiarSesion() {
 function restaurarSesion() {
   const id = leerSesion(), u = id && S.cat.usuarios.find((x) => x.id === id && x.estado === "activo");
   S.user = u || null; aplicarRol(u || null);
-  S.guest = !u && leerVisitante();
+  S.guest = !u;
 }
 function revalidarSesion() {
   if (!S.user) return;
@@ -1131,10 +1156,12 @@ const val = (id) => { const e = $("#" + id); return e ? e.value.trim() : ""; };
 const authErr = (t) => { const e = $("#a-err"); if (e) e.textContent = t; };
 function abrirSesion(u, recordar) {
   S.user = u; aplicarRol(u); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} guardarSesion(u, recordar); S.authView = "login";
+  if (/^#\/acceso/.test(location.hash)) history.replaceState(null, "", "#/");
   render(true); if (!u.debeCambiar) toast(`Bienvenido(a), ${u.nombre.split(" ")[0]}`);
 }
 
 async function iniciarSesion() {
+  if (SB_ON) return sbLogin();
   const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value, rec = $("#a-rec") && $("#a-rec").checked;
   authErr("");
   if (!correoOk(correo)) return authErr("Escribe un correo electrónico válido.");
@@ -1277,6 +1304,7 @@ function solicitarRecuperacion() {
 }
 
 function vAuth() {
+  if (SB_ON) return vAuthSB();
   const c = cfg(), forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
   let v = S.authView;
   if (!hay && (v === "login" || v === "registro" || v === "recuperar")) v = "super";
@@ -1397,6 +1425,7 @@ function vAdminUsuarios() {
   <div class="list-card" style="margin-top:14px">${U.map((u) => { const r = rolDe(u.rol), yo = u.id === S.user.id; return `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
     <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.correo || u.rfc || "")}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
     <div class="acts"><label class="sr" for="rol-${esc(u.id)}">Tipo de acceso</label><select class="select" id="rol-${esc(u.id)}" data-usr-rol="${esc(u.id)}" ${yo ? "disabled" : ""}>${opt(r)}</select>
+      <button class="btn sm ${r === "superadmin" ? "sec" : ""}" data-act="usr-super" data-id="${esc(u.id)}" ${yo ? "disabled" : ""}>${glifo("user")}${r === "superadmin" ? "Quitar superadministrador" : "Hacer superadministrador"}</button>
       <button class="btn sm sec" data-act="usr-reset" data-id="${esc(u.id)}">Restablecer contraseña</button>
       <button class="btn sm ghost" data-act="usr-toggle" data-id="${esc(u.id)}" ${yo ? "disabled" : ""}>${u.estado === "activo" ? "Bloquear" : "Activar"}</button>
       <button class="btn sm danger" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${yo ? "disabled" : ""}>${glifo("trash")}Eliminar</button></div></div>`; }).join("")}</div>
@@ -1421,6 +1450,7 @@ function abrirCrearUsuario(q) {
   });
 }
 async function crearUsuarioAdmin() {
+  if (SB_ON) return toast("Las cuentas se crean en Supabase (Authentication → Users); el rol se asigna en la tabla perfiles.");
   if (!S.super) return;
   const er = $("#uc-err"), correo = normCorreo(val("uc-correo")), nombre = val("uc-nombre"), pass = $("#uc-pass").value.trim();
   if (!correoOk(correo)) { er.textContent = "Escribe un correo electrónico válido."; return; }
@@ -1467,6 +1497,7 @@ async function restablecerClave(id) {
 
 /* ---------- Apariencia ---------- */
 async function cambiarRolUsuario(t) {
+  if (SB_ON) return toast("El rol se cambia en Supabase, en la tabla perfiles.");
   const u = S.cat.usuarios.find((x) => x.id === t.dataset.usrRol); if (!u) return;
   const nuevo = ROLES[t.value] ? t.value : "visitante", vuelve = () => keep(() => render(false));
   if (!S.super) { toast("Solo el superadministrador puede cambiar tipos de acceso."); return vuelve(); }
@@ -1493,9 +1524,21 @@ const go = (p) => { location.hash = "#/" + p; };
 let post = null, io = null;
 const F2 = { cat: "todas", orden: "catalogo" };
 
-function pestanear() { view.classList.remove("blink"); void view.offsetWidth; view.classList.add("blink"); }
+let rutaPrev = ["", ""];
+function pestanear(parcial, sub) {
+  let dest = [view];
+  if (parcial) { const t = sub ? $(".cfg-body", view) : $(".admin-panel", view); if (t) dest = [t]; }
+  [view, ...view.querySelectorAll(".admin-panel,.cfg-body")].forEach((e) => e.classList.remove("blink")); void view.offsetWidth; dest.forEach((e) => e.classList.add("blink"));
+}
+function centrarPestanas() {
+  view.querySelectorAll(".seg,.cfg-nav").forEach((p) => {
+    const e = p.querySelector('[aria-current="page"]'); if (!e || p.scrollWidth <= p.clientWidth) return;
+    p.scrollLeft += e.getBoundingClientRect().left - p.getBoundingClientRect().left - (p.clientWidth - e.offsetWidth) / 2;
+  });
+}
 function render(nav) {
-  if ((!S.user && !S.guest) || (S.user && S.user.debeCambiar)) {
+  const pideAcceso = (hashParts()[0] === "acceso" && !S.user) || (S.user && S.user.debeCambiar);
+  if (pideAcceso) {
     document.body.classList.add("auth"); cerrarLightbox(); aplicarApariencia();
     view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); pestanear(); return;
   }
@@ -1509,7 +1552,7 @@ function render(nav) {
   let html;
   try {
     switch (a || "") {
-      case "": html = vHome(); break;
+      case "": case "acceso": html = vHome(); break;
       case "sistemas": html = vSistemas(); break;
       case "categorias": html = vCategorias(); break;
       case "categoria": html = vLista("categoria", b); break;
@@ -1530,7 +1573,10 @@ function render(nav) {
   view.innerHTML = (S.qa ? qaBanner() : "") + html;
   renderChrome(a || "");
   if (post) post();
-  if (nav) { window.scrollTo(0, 0); pestanear(); }
+  const dentro = !!nav && a === "admin" && rutaPrev[0] === "admin" && b !== "editar" && rutaPrev[1] !== "editar";
+  if (nav) { if (!dentro) window.scrollTo(0, 0); pestanear(dentro, dentro && b === "config" && rutaPrev[1] === "config"); }
+  rutaPrev = [a || "", b || ""];
+  centrarPestanas();
   document.title = (S.qa ? "[PRUEBAS] " : "") + (a === "sistema" && byId(b) ? byId(b).nombre + " · " : "") + cfg().nombre;
 }
 
@@ -1555,7 +1601,7 @@ function renderChrome(a) {
   $("#tabbar").innerHTML = `<a class="rail-brand${imgOk(c.logo) ? "" : " lg"}" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${logoInner(c)}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
     + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
-  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}</span>`;
+  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
 }
 
 /* ---------- Vistas públicas ---------- */
@@ -1968,16 +2014,21 @@ function bannerAdmin() {
   if (S.memoria) h += `<div class="note warn">${glifo("warn")}<div>Este navegador no permite guardar datos (por ejemplo, ventana privada). Tus cambios se perderán al cerrar la página.</div></div>`;
   if (S.cat.editado) h += `<div class="note warn">${glifo("warn")}<div><b>Tienes cambios sin publicar.</b> Solo tú los ves en este navegador. Para que los vean todas las dependencias, publícalos siguiendo la guía.${S.super ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="como-publicar">Cómo publicar</button></div>` : '<div style="margin-top:6px">Avisa al superadministrador para que los publique.</div>'}</div></div>`;
   if (S.cat.sistemas.some((s) => s.ejemplo)) h += `<div class="note info">${glifo("info")}<div>Estás viendo sistemas de ejemplo. Cuando tengas los tuyos, puedes quitarlos${S.super ? ' todos de una vez.<div style="margin-top:10px"><button class="btn sm sec" data-act="quitar-ejemplos">Eliminar sistemas de ejemplo</button></div>' : ". Puedes editarlos o eliminarlos uno por uno."}</div></div>`;
-  return h ? `<div style="display:grid;gap:12px;margin-bottom:18px">${h}</div>` : "";
+  return h ? `<section class="grp avisos"><h2>Avisos</h2><p class="hint">Información sobre el estado del catálogo.</p>${h}</section>` : "";
 }
 
 function vAdmin(sub, id) {
+  const h = vAdminBase(sub, id);
+  if (!h.includes("<!--panel-->")) return h;
+  return h.replace("<!--panel-->", '<div class="admin-panel">') + "</div>" + bannerAdmin();
+}
+function vAdminBase(sub, id) {
   if (!S.admin) return `${cabecera("Administración")}${vacio("Acceso restringido", "Esta sección es solo para administradores del catálogo.", `<a class="btn" href="#/">Ir al inicio</a>`)}`;
   if (sub === "editar") return vEditor(id);
   const permitidas = S.super ? ["categorias", "config", "usuarios", "qa"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
   const cur = (k) => (tab === k ? ' aria-current="page"' : "");
   const cab = `${cabecera("Administración", S.super ? "Control total del catálogo, usuarios y configuración." : "Como colaborador puedes editar sistemas y categorías.")}
-    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a><a href="#/admin/qa"${cur("qa")}>Pruebas QA${S.qa ? " ●" : ""}</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
+    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a><a href="#/admin/qa"${cur("qa")}>Pruebas QA${S.qa ? " ●" : ""}</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div><!--panel-->`;
   if (tab === "categorias") return cab + vAdminCategorias();
   if (tab === "usuarios") return cab + vAdminUsuarios();
   if (tab === "qa") return cab + vAdminQA();
@@ -2025,7 +2076,7 @@ function vAdminConfig(sec) {
       <div class="field full"><span class="lbl">Logotipo</span><div class="logo-ed">
         <div class="logo-prev" aria-label="Vista previa del logotipo">${imgOk(c.logo) ? `<span class="ico s96" style="${colorVars("azul")};--s:96px"><img src="${esc(c.logo)}" alt=""></span>` : logoSvg(c)}</div>
         <div>
-          <div class="logo-grp"><span class="muted" style="font-size:13px">Símbolo</span><div class="logo-opts" role="group" aria-label="Símbolo">${Object.keys(LOGO_MARCAS).map((k) => `<button type="button" data-act="logo-marca" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoMarca || "mosaico") === k}" aria-label="${LOGO_MARCAS[k].n}" title="${LOGO_MARCAS[k].n}">${logoSvg(Object.assign({}, c, { logoMarca: k }))}</button>`).join("")}</div></div>
+          <div class="logo-grp"><span class="muted" style="font-size:13px">Símbolo</span><div class="logo-opts" role="group" aria-label="Símbolo">${Object.keys(LOGO_MARCAS).map((k) => `<button type="button" data-act="logo-marca" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoMarca || "facetas") === k}" aria-label="${LOGO_MARCAS[k].n}" title="${LOGO_MARCAS[k].n}">${logoSvg(Object.assign({}, c, { logoMarca: k }))}</button>`).join("")}</div></div>
           <div class="logo-grp"><span class="muted" style="font-size:13px">Color</span><div class="swatches" role="group" aria-label="Color del logotipo">${Object.keys(COLORES).map((k) => `<button type="button" data-act="logo-color" data-c="${k}" style="${colorVars(k)}" aria-pressed="${!imgOk(c.logo) && (c.logoColor || "azul") === k}" aria-label="${k}"></button>`).join("")}</div></div>
           <div class="logo-grp"><span class="muted" style="font-size:13px">Forma</span><div class="logo-opts" role="group" aria-label="Forma">${Object.keys(LOGO_FORMAS).map((k) => `<button type="button" class="txt" data-act="logo-forma" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoForma || "squircle") === k}">${LOGO_FORMAS[k][0]}</button>`).join("")}</div></div>
           <div class="up" style="margin-top:6px"><input type="file" id="up-logo" accept="image/*" data-up="logo"><label class="btn sec sm" for="up-logo">${glifo("upload")}Usar mi propia imagen</label>${imgOk(c.logo) ? `<button class="btn ghost sm" data-act="quitar-logo">Volver al diseño</button>` : ""}</div>
@@ -2500,6 +2551,17 @@ const ACT = {
   "auth-copiar"() { if (S.authInfo) copiar(`Para: ${S.authInfo.para}\nAsunto: ${S.authInfo.asunto}\n\n${S.authInfo.cuerpo}`, "Mensaje copiado"); },
   "ver-pass"(t) { const i = $("input", t.closest(".pwrow")); if (!i) return; const ver = i.type === "password"; i.type = ver ? "text" : "password"; t.textContent = ver ? "Ocultar" : "Mostrar"; },
   "usr-nuevo"() { abrirCrearUsuario({}); },
+  async "usr-super"(t) {
+    const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
+    if (u.id === S.user.id) return toast("No puedes cambiar tu propio tipo de acceso.");
+    const era = rolDe(u.rol) === "superadmin";
+    if (era && esUltimoAdmin(u)) return toast("Debe existir al menos un superadministrador activo.");
+    const ok = await confirmar(era
+      ? { titulo: "Quitar superadministrador", texto: `${u.nombre} pasará a ser colaborador y ya no podrá administrar usuarios, configuración ni publicación.`, si: "Quitar", peligro: true }
+      : { titulo: "Hacer superadministrador", texto: `${u.nombre} tendrá control total: usuarios, configuración y publicación.`, si: "Hacer superadministrador" });
+    if (!ok) return;
+    u.rol = era ? "gestor" : "superadmin"; guardarCatalogo(); toast(era ? "Ahora es colaborador" : "Ahora es superadministrador"); keep(() => render(false));
+  },
   "usr-gen"() { const i = $("#uc-pass"); if (i) i.value = claveTemporal(); },
   "usr-reset"(t) { abrirReset(t.dataset.id); },
   async "usr-reset-ok"(t) { await restablecerClave(t.dataset.id); },
@@ -2548,7 +2610,7 @@ const ACT = {
   "logo-color"(t) { if (S.cfgDraft) { S.cfgDraft.logoColor = t.dataset.c; S.cfgDraft.logo = ""; keep(() => render(false)); } },
   "logo-forma"(t) { if (S.cfgDraft) { S.cfgDraft.logoForma = t.dataset.v; S.cfgDraft.logo = ""; keep(() => render(false)); } },
   exportar() {
-    const j = JSON.stringify(Object.assign({}, S.cat, { editado: false }));
+    const j = JSON.stringify(catPublico());
     const u = URL.createObjectURL(new Blob([j], { type: "application/json" })); descargar(u, ARCHIVO_PUBLICADO); setTimeout(() => URL.revokeObjectURL(u), 5000);
     toast("Catálogo descargado. Súbelo junto a index.html.");
   },
@@ -2588,7 +2650,7 @@ const ACT = {
   },
   "e-descartar"() { const [, , id] = hashParts(); delete S.drafts[id]; render(false); },
   "entrar-visitante"() { S.guest = true; try { sessionStorage.setItem("catalogo-visitante", "1"); } catch (e) {} location.hash = "#/"; render(true); },
-  "ir-login"() { cerrarModal(); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} S.authView = "login"; render(false); },
+  "ir-login"() { cerrarModal(); S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
   "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
   "ren-sis"(t) { abrirRenombrarSistema(t.dataset.id); },
@@ -2615,7 +2677,7 @@ const ACT = {
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const SOLO_SUPER = new Set(["usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
 const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
@@ -2691,9 +2753,54 @@ document.addEventListener("keydown", (e) => {
 window.addEventListener("scroll", () => { const nb = $("#nb"); if (nb) nb.classList.toggle("scrolled", window.scrollY > 8); }, { passive: true });
 
 /* ---------- Arranque ---------- */
+/* ---------- Supabase: catálogo público + acceso real (Auth + RLS) ---------- */
+let SB = null;
+const cargarScript = (src) => new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+const catPublico = () => { const o = JSON.parse(JSON.stringify(Object.assign({}, S.cat, { editado: false }))); delete o.usuarios; if (o.config) { delete o.config.pinHash; delete o.config.correoAdmin; } return o; };
+async function sbIniciar() {
+  if (!SB_ON) return;
+  try { await cargarScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"); SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } }); } catch (e) { SB = null; }
+}
+async function sbCatalogo() { if (!SB) return null; try { const { data } = await SB.from("catalogo").select("data").eq("id", 1).maybeSingle(); return data && catValido(data.data) ? data.data : null; } catch (e) { return null; } }
+const sbUsuario = (p, au) => ({ id: p.id, nombre: p.nombre || (au && au.email) || p.correo, correo: p.correo || (au && au.email) || "", rol: rolDe(p.rol), estado: p.estado || "activo", sb: true, salt: "", hash: "" });
+async function sbPerfil(au) {
+  const { data: p } = await SB.from("perfiles").select("*").eq("id", au.id).maybeSingle();
+  if (!p || p.estado !== "activo") { await SB.auth.signOut(); return null; }
+  const u = sbUsuario(p, au); let lista = [u];
+  if (rolDe(p.rol) === "superadmin") { const { data } = await SB.from("perfiles").select("*"); if (data) lista = data.map((x) => sbUsuario(x)); }
+  S.cat.usuarios = lista; return lista.find((x) => x.id === u.id) || u;
+}
+async function sbLogin() {
+  const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value; authErr("");
+  if (!correoOk(correo)) return authErr("Escribe un correo electrónico válido.");
+  if (!pass) return authErr("Escribe tu contraseña.");
+  if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  const { data, error } = await SB.auth.signInWithPassword({ email: correo, password: pass });
+  if (error || !data.user) return authErr("Correo o contraseña incorrectos.");
+  const u = await sbPerfil(data.user);
+  if (!u) return authErr("Tu usuario no está activo. Contacta al administrador.");
+  abrirSesion(u, true);
+}
+let sbPend = null;
+async function sbPublicar() {
+  if (!SB || !S.admin || S.qa) return;
+  const { error } = await SB.from("catalogo").upsert({ id: 1, data: catPublico(), updated_at: new Date().toISOString() });
+  if (error) toast("No se pudo publicar: tu cuenta no tiene permiso o no hay conexión."); else if (S.cat.editado) toast("Cambios publicados para todos");
+}
+const sbEnCola = () => { clearTimeout(sbPend); sbPend = setTimeout(sbPublicar, 1200); };
+function vAuthSB() {
+  const c = cfg(), logo = logoInner(c);
+  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>Acceso de administración</h1><p class="lede">Solo para colaboradores y superadministradores. El catálogo es público y no requiere cuenta.</p>
+  <form id="form-login" novalidate><div class="field"><label for="a-correo">Correo electrónico</label><input id="a-correo" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nombre@dependencia.gob.mx"></div>
+  <div class="field"><label for="a-pass">Contraseña</label><div class="pwrow"><input id="a-pass" type="password" autocomplete="current-password"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">${glifo("eye")}</button></div></div>
+  <div class="err" id="a-err" role="alert"></div><button class="btn big" type="submit">Iniciar sesión</button></form>
+  <button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Volver al catálogo</button></div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+}
+
 async function boot() {
   const okIDB = await IDB.open();
   S.memoria = !okIDB;
+  await sbIniciar();
   const local = await IDB.get("catalogo"), sols = await IDB.get("solicitudes");
   S.sols = Array.isArray(sols) ? sols : [];
   let pub = null;
@@ -2704,11 +2811,15 @@ async function boot() {
       if (r.ok) { const j = await r.json(); if (catValido(j)) pub = j; }
     } catch (e) { /* sin catálogo publicado */ }
   }
+  if (SB) { const rem = await sbCatalogo(); if (rem) pub = rem; }
   S.pub = pub;
-  if (local && local.editado && catValido(local)) S.cat = migrar(local);
+  if (SB && pub) { S.cat = migrar(pub); S.cat.editado = false; }
+  else if (local && local.editado && catValido(local)) S.cat = migrar(local);
   else if (pub) { S.cat = migrar(pub); S.cat.editado = false; }
   else S.cat = migrar(datosEjemplo());
-  restaurarSesion();
+  if (SB) { try { const { data } = await SB.auth.getSession(); if (data.session) { const u = await sbPerfil(data.session.user); if (u) { S.user = u; aplicarRol(u); } } } catch (e) {} }
+  else restaurarSesion();
+  S.guest = !S.user;
   window.addEventListener("hashchange", () => render(true));
   render(true);
 }
