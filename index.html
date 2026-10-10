@@ -546,6 +546,19 @@ button.avatar{font:inherit;font-weight:700}
 .muted{color:var(--label-2)}
 .sp{height:10px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ---- Roles, categorías y lista de verificación ---- */
+.cwrap{display:grid;gap:8px;align-content:start}
+.cat-tools{display:flex;gap:8px;flex-wrap:wrap}
+.chkl{margin-top:14px;padding:14px;border:1px solid var(--sep);border-radius:14px;background:var(--bg-soft)}
+.chkl-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.bar{height:8px;border-radius:99px;background:var(--sep);overflow:hidden;margin-bottom:10px}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .25s}
+.chkgrp{display:grid;gap:6px;margin:10px 0}
+.chkgrp>b{font-size:14px}
+.rolhelp{display:grid;gap:6px;margin:10px 0 0;padding:0;list-style:none;font-size:13.5px;color:var(--label-2)}
+.rolhelp b{color:var(--label)}
+.auth-alt{margin-top:10px}
 </style>
 </head>
 <body>
@@ -652,10 +665,14 @@ const CONFIG_BASE = {
   tiempoRespuesta: "3 días hábiles",
   reunion: "Coordinamos una reunión con tu dependencia para presentar el sistema, definir accesos y acordar fechas de uso.",
   tema: "auto",               // auto | claro | oscuro
-  acento: ""                  // vacío = azul institucional; o un color de la paleta
+  acento: "",                 // vacío = azul institucional; o un color de la paleta
+  requisitosBase: "Persona responsable designada (nombre y contacto)\nConexión a internet estable en el lugar de uso\nDispositivos compatibles disponibles (computadora, tablet o teléfono)\nFecha y lugar de la ocasión confirmados\nAutorización de la dependencia para usar el sistema"
 };
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
+const CORREO_SUPER = "delrivero25@gmail.com";  // recibe el código para autorizar cuentas de Superadministrador
+const ROLES = { visitante: "Visitante", gestor: "Colaborador", superadmin: "Superadministrador" };
+const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
 /* ---------- Utilidades ---------- */
 const $ = (s, r = document) => r.querySelector(s);
@@ -829,7 +846,7 @@ function migrar(c) {
   c = c || {};
   const base = datosEjemplo();
   const out = { formato: 2, editado: !!c.editado, actualizado: c.actualizado || hoyISO(), config: Object.assign({}, CONFIG_BASE, c.config || {}) };
-  out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && u.rfc && u.hash) : [];
+  out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && u.rfc && u.hash).map((u) => Object.assign({}, u, { rol: rolDe(u.rol) })) : [];
   out.categorias = Array.isArray(c.categorias) ? c.categorias : base.categorias;
   out.sistemas = (Array.isArray(c.sistemas) ? c.sistemas : []).map((s) => {
     const b = sistemaBase({});
@@ -877,7 +894,7 @@ const IDB = {
 };
 
 /* ---------- Estado ---------- */
-const S = { cat: null, user: null, authView: "login", authInfo: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
+const S = { cat: null, user: null, guest: false, super: false, authView: "login", authInfo: null, sols: [], admin: false, q: "", pub: null, drafts: {}, cfg: null, memoria: false };
 
 let tGuardar = null;
 function guardarCatalogo(marcar = true) {
@@ -997,7 +1014,7 @@ function navbar({ mid = "", right = "", back = true } = {}) {
   return `<div class="navbar" id="nb">${back ? `<button class="circ" data-act="back" aria-label="Volver">${glifo("back")}</button>` : ""}<div class="mid">${mid}</div>${mid ? "" : '<div class="spacer"></div>'}<div class="right">${right}</div></div>`;
 }
 function cabecera(titulo, sub = "", cuando = "") {
-  return `<header class="pagehead"><div>${cuando ? `<div class="when">${esc(cuando)}</div>` : ""}<h1 class="large-title">${esc(titulo)}</h1>${sub ? `<p class="lede">${esc(sub)}</p>` : ""}</div>${S.admin ? `<a class="avatar on" href="#/admin" aria-label="Administración">${glifo("edit")}</a>` : `<button class="avatar" data-act="mi-cuenta" aria-label="Mi cuenta">${esc(iniciales(S.user && S.user.nombre))}</button>`}</header>`;
+  return `<header class="pagehead"><div>${cuando ? `<div class="when">${esc(cuando)}</div>` : ""}<h1 class="large-title">${esc(titulo)}</h1>${sub ? `<p class="lede">${esc(sub)}</p>` : ""}</div>${S.admin ? `<a class="avatar on" href="#/admin" aria-label="Administración">${glifo("edit")}</a>` : `<button class="avatar" data-act="mi-cuenta" aria-label="Mi cuenta">${S.user ? esc(iniciales(S.user.nombre)) : glifo("user")}</button>`}</header>`;
 }
 function vacio(titulo, texto, extra = "") { return `<div class="empty">${glifo("search")}<b>${esc(titulo)}</b><p>${esc(texto)}</p>${extra}</div>`; }
 const logoHtml = (c) => `<span class="ico s40" style="${colorVars("azul")}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</span>`;
@@ -1038,29 +1055,32 @@ function claveTemporal() {
   let r = ""; for (let i = 0; i < 7; i++) r += L[a[i] % L.length]; for (let i = 7; i < 10; i++) r += N[a[i] % N.length];
   return r;
 }
+function aplicarRol(u) { const r = u ? rolDe(u.rol) : ""; S.super = r === "superadmin"; S.admin = r === "superadmin" || r === "gestor"; }
+const leerVisitante = () => { try { return sessionStorage.getItem("catalogo-visitante") === "1"; } catch (e) { return false; } };
 const guardarSesion = (u, recordar) => { try { (recordar ? localStorage : sessionStorage).setItem("catalogo-sesion", u.id); } catch (e) {} };
 const leerSesion = () => { try { return sessionStorage.getItem("catalogo-sesion") || localStorage.getItem("catalogo-sesion"); } catch (e) { return null; } };
 function limpiarSesion() {
   try { sessionStorage.removeItem("catalogo-sesion"); localStorage.removeItem("catalogo-sesion"); } catch (e) {}
-  S.user = null; S.admin = false; S.drafts = {}; S.cfgDraft = null; S.authView = "login"; S.authInfo = null;
+  S.user = null; S.admin = false; S.super = false; S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} S.drafts = {}; S.cfgDraft = null; S.authView = "login"; S.authInfo = null;
   F.ini = null; F.sel = []; F.errs = {}; F.vals = { contactoPref: "Correo electrónico", acepto: false };
 }
 function restaurarSesion() {
   const id = leerSesion(), u = id && S.cat.usuarios.find((x) => x.id === id && x.estado === "activo");
-  S.user = u || null; S.admin = !!u && u.rol === "admin";
+  S.user = u || null; aplicarRol(u || null);
+  S.guest = !u && leerVisitante();
 }
 function revalidarSesion() {
   if (!S.user) return;
   const u = S.cat.usuarios.find((x) => x.id === S.user.id && x.estado === "activo");
-  if (!u) limpiarSesion(); else { S.user = u; S.admin = u.rol === "admin"; }
+  if (!u) limpiarSesion(); else { S.user = u; aplicarRol(u); }
 }
-const esUltimoAdmin = (u) => u.rol === "admin" && u.estado === "activo" && S.cat.usuarios.filter((x) => x.rol === "admin" && x.estado === "activo").length <= 1;
+const esUltimoAdmin = (u) => rolDe(u.rol) === "superadmin" && u.estado === "activo" && S.cat.usuarios.filter((x) => rolDe(x.rol) === "superadmin" && x.estado === "activo").length <= 1;
 function intentosDe(rfc) { try { return (JSON.parse(localStorage.getItem("catalogo-intentos") || "{}"))[rfc] || { n: 0, hasta: 0 }; } catch (e) { return { n: 0, hasta: 0 }; } }
 function setIntentos(rfc, v) { try { const o = JSON.parse(localStorage.getItem("catalogo-intentos") || "{}"); if (v) o[rfc] = v; else delete o[rfc]; localStorage.setItem("catalogo-intentos", JSON.stringify(o)); } catch (e) {} }
 const val = (id) => { const e = $("#" + id); return e ? e.value.trim() : ""; };
 const authErr = (t) => { const e = $("#a-err"); if (e) e.textContent = t; };
 function abrirSesion(u, recordar) {
-  S.user = u; S.admin = u.rol === "admin"; guardarSesion(u, recordar); S.authView = "login";
+  S.user = u; aplicarRol(u); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} guardarSesion(u, recordar); S.authView = "login";
   render(true); if (!u.debeCambiar) toast(`Bienvenido(a), ${u.nombre.split(" ")[0]}`);
 }
 
@@ -1081,17 +1101,86 @@ async function iniciarSesion() {
   if (u.estado === "bloqueado") return authErr("Tu usuario está bloqueado. Contacta al administrador.");
   setIntentos(rfc, null); abrirSesion(u, rec);
 }
-async function crearAdminInicial() {
+/* ---------- Superadministrador: autorización con código por correo ---------- */
+const CODIGO_VIDA_MIN = 15, CODIGO_MAX_INTENTOS = 5, CODIGO_ESPERA_MS = 60000;
+const maskCorreo = (e) => { const [u, d] = String(e).split("@"); return (u || "").slice(0, 1) + "•••" + (u || "").slice(-2) + "@" + (d || ""); };
+const normCodigo = (c) => String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+const pendSuper = {
+  leer() { try { return JSON.parse(localStorage.getItem("catalogo-pend-super") || "null"); } catch (e) { return null; } },
+  guardar(v) { try { if (v) localStorage.setItem("catalogo-pend-super", JSON.stringify(v)); else localStorage.removeItem("catalogo-pend-super"); } catch (e) {} }
+};
+function nuevoCodigo() {
+  const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", a = new Uint32Array(8);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a); else a.forEach((_, i) => (a[i] = Math.floor(Math.random() * 4294967295)));
+  const r = [...a].map((x) => A[x % A.length]).join("");
+  return r.slice(0, 4) + "-" + r.slice(4);
+}
+async function enviarAvisoCorreo(para, asunto, campos) {
+  if (!correoOk(para)) return false;
+  try {
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 15000);
+    const r = await fetch("https://formsubmit.co/ajax/" + para.trim(), {
+      method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, signal: ctl.signal,
+      body: JSON.stringify(Object.assign({ _subject: asunto, _template: "table", _captcha: "false" }, campos))
+    });
+    clearTimeout(tm);
+    const j = await r.json().catch(() => ({}));
+    return r.ok && String(j.success) !== "false";
+  } catch (e) { return false; }
+}
+const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Autorización de Superadministrador · ${pend.nombre}`, {
+  "Nombre": pend.nombre, "Usuario": pend.correo, "RFC": pend.rfc, "Tipo de cuenta": "Superadministrador",
+  "Código de autorización": codigo, "Fecha": new Date().toLocaleString("es-MX"),
+  "Instrucciones": "Si autorizas esta cuenta, comparte el código con la persona. Si no la reconoces, ignora este correo."
+});
+async function solicitarSuper() {
   const rfc = normRfc(val("a-rfc")), nombre = val("a-nombre"), correo = val("a-correo"), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
   authErr("");
   if (!rfcOk(rfc)) return authErr("Escribe un RFC válido (12 o 13 caracteres).");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
   if (!correoOk(correo)) return authErr("Escribe un correo válido.");
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
+  if (p1.toUpperCase() === rfc) return authErr("La contraseña no puede ser tu RFC.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
-  const salt = nuevoSalt();
-  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: "", cargo: "", telefono: "", rol: "admin", estado: "activo", salt, hash: await hashClave(p1, salt), debeCambiar: false, creado: hoyISO() };
-  S.cat.usuarios.push(u); guardarCatalogo(); abrirSesion(u, false);
+  if (S.cat.usuarios.some((u) => u.rfc === rfc)) return authErr("Ese RFC ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
+  const prev = pendSuper.leer();
+  if (prev && Date.now() - prev.enviado < CODIGO_ESPERA_MS) return authErr(`Espera ${Math.ceil((CODIGO_ESPERA_MS - (Date.now() - prev.enviado)) / 1000)} s antes de pedir otro código.`);
+  const btn = $("#a-super-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
+  const codigo = nuevoCodigo(), cs = nuevoSalt(), ps = nuevoSalt();
+  const pend = { rfc, nombre, correo, salt: ps, hash: await hashClave(p1, ps), codeSalt: cs, codeHash: await hashClave(normCodigo(codigo), cs), exp: Date.now() + CODIGO_VIDA_MIN * 60000, enviado: Date.now(), n: 0 };
+  const ok = await enviarCodigoSuper(pend, codigo);
+  if (!ok) {
+    if (btn) { btn.disabled = false; btn.textContent = "Solicitar código de autorización"; }
+    return authErr("No se pudo enviar el código al correo del propietario. Revisa tu conexión e inténtalo de nuevo.");
+  }
+  pendSuper.guardar(pend); S.authView = "codigo"; render(false);
+  const i = $("#a-codigo"); if (i) i.focus();
+}
+async function reenviarCodigoSuper() {
+  const pend = pendSuper.leer(); if (!pend) { S.authView = "super"; render(false); return; }
+  const espera = CODIGO_ESPERA_MS - (Date.now() - pend.enviado);
+  if (espera > 0) return authErr(`Espera ${Math.ceil(espera / 1000)} s antes de pedir otro código.`);
+  authErr("");
+  const codigo = nuevoCodigo(); pend.codeSalt = nuevoSalt(); pend.codeHash = await hashClave(normCodigo(codigo), pend.codeSalt);
+  pend.exp = Date.now() + CODIGO_VIDA_MIN * 60000; pend.enviado = Date.now(); pend.n = 0;
+  const ok = await enviarCodigoSuper(pend, codigo);
+  if (!ok) return authErr("No se pudo enviar el código. Revisa tu conexión e inténtalo de nuevo.");
+  pendSuper.guardar(pend); toast("Enviamos un código nuevo al propietario.");
+}
+async function verificarCodigoSuper() {
+  const pend = pendSuper.leer(), cod = normCodigo(val("a-codigo"));
+  authErr("");
+  if (!pend) { S.authView = "super"; render(false); return; }
+  if (Date.now() > pend.exp) return authErr("El código venció. Usa «Reenviar código» para pedir uno nuevo.");
+  if (pend.n >= CODIGO_MAX_INTENTOS) return authErr("Demasiados intentos. Usa «Reenviar código» para pedir uno nuevo.");
+  if (cod.length !== 8) return authErr("Escribe el código completo (8 caracteres).");
+  if ((await hashClave(cod, pend.codeSalt)) !== pend.codeHash) {
+    pend.n++; pendSuper.guardar(pend);
+    return authErr(pend.n >= CODIGO_MAX_INTENTOS ? "Demasiados intentos. Usa «Reenviar código» para pedir uno nuevo." : `Código incorrecto. Te quedan ${CODIGO_MAX_INTENTOS - pend.n} intentos.`);
+  }
+  if (S.cat.usuarios.some((x) => x.rfc === pend.rfc)) { pendSuper.guardar(null); S.authView = "login"; render(false); return toast("Ese RFC ya tiene un usuario."); }
+  const u = { id: uid("usr"), rfc: pend.rfc, nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() };
+  S.cat.usuarios.push(u); guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
 }
 async function guardarClaveObligatoria() {
   const p1 = $("#a-pass").value, p2 = $("#a-pass2").value, u = S.user;
@@ -1103,10 +1192,13 @@ async function guardarClaveObligatoria() {
   toast("Contraseña actualizada"); render(true);
 }
 const folioDe = (p) => `${p}-${hoyISO().replace(/-/g, "")}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-function prepararEnvio(tipo, asunto, cuerpo, folio) {
-  const c = cfg(), para = (c.correoAdmin || c.correoDestino || "").trim();
-  S.authInfo = { tipo, asunto, cuerpo, folio, para }; S.authView = "enviado"; render(false);
-  if (para) setTimeout(() => { location.href = mailtoAdmin(S.authInfo); }, 200);
+async function prepararEnvio(tipo, asunto, cuerpo, folio) {
+  const c = cfg(), para = (c.correoAdmin || c.correoDestino || CORREO_SUPER || "").trim();
+  S.authInfo = { tipo, asunto, cuerpo, folio, para, enviando: true, auto: false }; S.authView = "enviado"; render(false);
+  const ok = await enviarAvisoCorreo(para, asunto, { Folio: folio, Mensaje: cuerpo });
+  if (!S.authInfo || S.authInfo.folio !== folio) return;
+  S.authInfo.enviando = false; S.authInfo.auto = ok; render(false);
+  if (!ok && para) setTimeout(() => { location.href = mailtoAdmin(S.authInfo); }, 200);
 }
 const mailtoAdmin = (i) => `mailto:${i.para}?subject=${encodeURIComponent(i.asunto)}&body=${encodeURIComponent(i.cuerpo)}`;
 function solicitarUsuario() {
@@ -1137,55 +1229,84 @@ function solicitarRecuperacion() {
 }
 
 function vAuth() {
-  const c = cfg(), v = S.authView, forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
+  const c = cfg(), forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
+  let v = S.authView;
+  if (!hay && (v === "login" || v === "registro" || v === "recuperar")) v = "super";
+  if (v === "codigo" && !pendSuper.leer()) v = hay ? "login" : "super";
   const logo = imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas");
   const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
     ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
     : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
   const rfc = (id = "a-rfc") => fld(id, "RFC", { ph: "Ej. XAXX010101000", auto: "username", extra: 'maxlength="13" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"' });
   const err = `<div class="err" id="a-err" role="alert"></div>`;
+  const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visitante</button>`;
+  const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
+    <li><b>Visitante:</b> consulta el catálogo y solicita sistemas. No necesita cuenta.</li>
+    <li><b>Colaborador:</b> ayuda a manejar el catálogo (sistemas y categorías). Lo autoriza el administrador.</li>
+    <li><b>Superadministrador:</b> control total (usuarios, configuración y publicación). Requiere un código de autorización.</li></ul></details>`;
   let t, sub, body;
   if (forzar) {
     t = "Crea tu nueva contraseña"; sub = "Tu contraseña actual es temporal. Elige una nueva para continuar.";
     body = `<form id="form-cambiar" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password" })}<span class="muted" style="font-size:12.5px;margin-top:-8px">${CLAVE_AYUDA}</span>${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit">Guardar y entrar</button></form>
       <div class="auth-links"><button type="button" data-act="cerrar-sesion">Cerrar sesión</button></div>`;
-  } else if (!hay) {
-    t = "Crea el usuario administrador"; sub = "Es el primer acceso al catálogo. Solo el responsable del catálogo debe completar este paso.";
-    body = `<form id="form-setup" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit">Crear administrador y entrar</button></form>`;
+  } else if (v === "super") {
+    const pend = pendSuper.leer();
+    t = hay ? "Acceso de Superadministrador" : "Crea la cuenta de Superadministrador";
+    sub = hay ? "Tendrás control total del catálogo. Para protegerlo, el propietario debe autorizar tu cuenta con un código."
+              : "Es el primer acceso. Se enviará un código de autorización al correo del propietario del sistema; sin ese código no se crea la cuenta.";
+    body = `<form id="form-super" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
+      <div class="note info">${glifo("info")}<div>El código llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Pídeselo a la persona propietaria y escríbelo en el siguiente paso.</div></div>
+      ${err}<button class="btn big" type="submit" id="a-super-btn">Solicitar código de autorización</button></form>
+      <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}${hay ? `<button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button>` : ""}</div>${visitante}`;
+  } else if (v === "codigo") {
+    const pend = pendSuper.leer();
+    t = "Escribe el código de autorización"; sub = `Enviamos un código a ${maskCorreo(CORREO_SUPER)} para autorizar la cuenta de ${pend.nombre}. Vence en ${CODIGO_VIDA_MIN} minutos.`;
+    body = `<form id="form-codigo" novalidate>${fld("a-codigo", "Código de autorización", { ph: "XXXX-XXXX", extra: 'maxlength="9" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.12em"' })}${err}<button class="btn big" type="submit">Verificar y crear cuenta</button></form>
+      <div class="note info" style="margin-top:12px">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. La primera vez, el servicio de correo (FormSubmit) pide al propietario confirmar su correo.</div></div>
+      <div class="auth-links"><button type="button" data-act="super-reenviar">Reenviar código</button><button type="button" data-act="super-cancelar">Cancelar solicitud</button></div>`;
   } else if (v === "registro") {
-    t = "Solicitar un usuario"; sub = "Llena tus datos. Se preparará un correo para el administrador, quien te asignará una contraseña temporal.";
+    t = "Solicitar acceso como colaborador"; sub = "Un colaborador ayuda a manejar el catálogo (sistemas y categorías). Llena tus datos: la solicitud llega al administrador, quien te asignará una contraseña temporal.";
     body = `<form id="form-reg" novalidate>${rfc()}${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-dep", "Dependencia u organización")}${fld("a-cargo", "Cargo")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono", { tipo: "tel", auto: "tel" })}
-      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit">Preparar solicitud</button></form>
-      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button></div>`;
+      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit">Enviar solicitud</button></form>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button><button type="button" data-act="auth-ir" data-v="super">Necesito acceso de Superadministrador</button></div>`;
   } else if (v === "recuperar") {
     t = "Recuperar contraseña"; sub = "Escribe tu RFC y el correo registrado. El administrador te enviará una contraseña temporal.";
     body = `<form id="form-rec" novalidate>${rfc()}${fld("a-correo", "Correo registrado", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${err}<button class="btn big" type="submit">Solicitar recuperación</button></form>
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else if (v === "enviado" && S.authInfo) {
     const i = S.authInfo, rec = i.tipo === "recuperacion";
-    t = "Solicitud preparada"; sub = `Folio ${i.folio}`;
+    t = i.enviando ? "Enviando solicitud…" : i.auto ? "Solicitud enviada" : "Solicitud preparada"; sub = `Folio ${i.folio}`;
+    const paso1 = i.enviando ? ["Enviando tu solicitud", "Un momento, la estamos enviando al administrador."]
+      : i.auto ? ["Solicitud enviada", "Ya llegó al administrador. No tienes que hacer nada más por ahora."]
+      : ["Envía el correo", i.para ? `No se pudo enviar automáticamente, así que se abrió tu aplicación de correo con el mensaje dirigido a ${esc(i.para)}. Solo presiona «Enviar».` : "Copia el mensaje y envíalo al administrador del catálogo."];
     body = `<ol class="timeline auth-steps">
-      <li><span class="n">1</span><div><b>Envía el correo</b><span>${i.para ? `Se abrió tu aplicación de correo con el mensaje dirigido a ${esc(i.para)}. Solo presiona «Enviar».` : "Copia el mensaje y envíalo al administrador del catálogo."}</span></div></li>
+      <li><span class="n">1</span><div><b>${paso1[0]}</b><span>${paso1[1]}</span></div></li>
       <li><span class="n">2</span><div><b>El administrador lo revisa</b><span>${rec ? "Verifica que el correo coincida con el registrado y restablece tu acceso." : "Valida tus datos y crea tu usuario."}</span></div></li>
       <li><span class="n">3</span><div><b>Recibes tu contraseña temporal</b><span>Entra con tu RFC y esa contraseña; el sistema te pedirá crear una nueva.</span></div></li></ol>
-      ${i.para ? `<a class="btn big" href="${esc(mailtoAdmin(i))}">${glifo("correo")}Abrir correo</a>` : ""}
-      <button class="btn sec big" type="button" data-act="auth-copiar" style="margin-top:10px">${glifo("copy")}Copiar mensaje</button>
+      ${!i.enviando && !i.auto && i.para ? `<a class="btn big" href="${esc(mailtoAdmin(i))}">${glifo("correo")}Abrir correo</a>` : ""}
+      ${!i.enviando && !i.auto ? `<button class="btn sec big" type="button" data-act="auth-copiar" style="margin-top:10px">${glifo("copy")}Copiar mensaje</button>` : ""}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else {
-    t = "Iniciar sesión"; sub = "Entra con tu RFC y tu contraseña para consultar y solicitar sistemas.";
+    t = "Iniciar sesión"; sub = "Entra con tu RFC y tu contraseña, o explora el catálogo como visitante.";
     body = `<form id="form-login" novalidate>${rfc()}${fld("a-pass", "Contraseña", { pw: 1 })}
       <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
-      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Solicitar un usuario</button></div>`;
+      ${visitante}
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Quiero ser colaborador</button><button type="button" data-act="auth-ir" data-v="super">Superadministrador</button></div>${ayudaRoles}`;
   }
-  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">Acceso para personal autorizado · ${esc(c.organizacion)}</p></div>`;
+  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
 
 /* ---- Mi cuenta ---- */
 function abrirMiCuenta() {
-  const u = S.user; if (!u) return;
+  const u = S.user;
+  if (!u) {
+    modal({ titulo: "Estás como visitante", body: `<p class="muted">Puedes explorar el catálogo y solicitar sistemas. Si eres colaborador o superadministrador, inicia sesión para administrar.</p>`,
+      pie: `<button class="btn sec" data-act="cerrar-modal">Seguir explorando</button><button class="btn" data-act="ir-login">${glifo("user")}Iniciar sesión</button>` });
+    return;
+  }
   modal({
     titulo: "Mi cuenta",
-    body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${S.admin ? "Administrador" : "Usuario"}</div></div></div>
+    body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${ROLES[rolDe(u.rol)]}</div></div></div>
       <div class="kv"><div><span class="k">RFC</span><span class="v">${esc(u.rfc)}</span></div>${u.correo ? `<div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div>` : ""}${u.dependencia ? `<div><span class="k">Dependencia</span><span class="v">${esc(u.dependencia)}</span></div>` : ""}${u.cargo ? `<div><span class="k">Cargo</span><span class="v">${esc(u.cargo)}</span></div>` : ""}</div>`,
     pie: `<button class="btn sec" data-act="cambiar-pass">${glifo("candado")}Cambiar contraseña</button>${S.admin ? `<a class="btn sec" href="#/admin" data-act="cerrar-modal">${glifo("ajustes")}Administración</a>` : ""}<button class="btn danger" data-act="cerrar-sesion">Cerrar sesión</button>`
   });
@@ -1220,17 +1341,21 @@ function vAdminUsuarios() {
     if (q.nuevo) abrirCrearUsuario({ rfc: q.rfc, nombre: q.nombre, correo: q.correo, dep: q.dep, cargo: q.cargo, tel: q.tel });
     else abrirReset(normRfc(q.reset), q.correo);
   };
-  return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${U.filter((u) => u.rol === "admin").length} ${plural(U.filter((u) => u.rol === "admin").length, "administrador", "administradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
-  <div class="note info">${glifo("info")}<div>Las solicitudes de usuario y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>. Abre el enlace del correo para precargar los datos, asigna una contraseña temporal y compártela con la persona; la cambiará al entrar.</div></div>
-  <div class="list-card" style="margin-top:14px">${U.map((u) => `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
-    <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.rfc)}${u.correo ? " · " + esc(u.correo) : ""}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${u.rol === "admin" ? "acc" : ""}">${u.rol === "admin" ? "Administrador" : "Usuario"}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}${u.id === S.user.id ? '<span class="badge">Tú</span>' : ""}</small></div>
-    <div class="acts"><button class="btn sm sec" data-act="usr-reset" data-id="${esc(u.id)}">Restablecer contraseña</button>
-      <button class="btn sm ghost" data-act="usr-toggle" data-id="${esc(u.id)}" ${u.id === S.user.id ? "disabled" : ""}>${u.estado === "activo" ? "Bloquear" : "Activar"}</button>
-      <button class="btn sm ghost" data-act="usr-rol" data-id="${esc(u.id)}" ${u.id === S.user.id ? "disabled" : ""}>${u.rol === "admin" ? "Quitar admin" : "Hacer admin"}</button>
-      <button class="iconbtn bad" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${u.id === S.user.id ? "disabled" : ""}>${glifo("trash")}</button></div></div>`).join("")}</div>
+  const n = (r) => U.filter((u) => rolDe(u.rol) === r).length;
+  const opt = (cur) => Object.keys(ROLES).map((r) => `<option value="${r}" ${r === cur ? "selected" : ""}>${ROLES[r]}</option>`).join("");
+  return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${n("superadmin")} ${plural(n("superadmin"), "superadministrador", "superadministradores")} · ${n("gestor")} ${plural(n("gestor"), "colaborador", "colaboradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
+  <div class="note info">${glifo("info")}<div>Las solicitudes de colaborador y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>. Abre el enlace del correo para precargar los datos, asigna una contraseña temporal y compártela con la persona.
+    <ul class="rolhelp"><li><b>Visitante:</b> solo consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total. Las cuentas nuevas se autorizan con un código enviado a ${esc(maskCorreo(CORREO_SUPER))}.</li></ul></div></div>
+  <div class="list-card" style="margin-top:14px">${U.map((u) => { const r = rolDe(u.rol), yo = u.id === S.user.id; return `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
+    <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.rfc)}${u.correo ? " · " + esc(u.correo) : ""}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
+    <div class="acts"><label class="sr" for="rol-${esc(u.id)}">Tipo de acceso</label><select class="select" id="rol-${esc(u.id)}" data-usr-rol="${esc(u.id)}" ${yo ? "disabled" : ""}>${opt(r)}</select>
+      <button class="btn sm sec" data-act="usr-reset" data-id="${esc(u.id)}">Restablecer contraseña</button>
+      <button class="btn sm ghost" data-act="usr-toggle" data-id="${esc(u.id)}" ${yo ? "disabled" : ""}>${u.estado === "activo" ? "Bloquear" : "Activar"}</button>
+      <button class="iconbtn bad" data-act="usr-del" data-id="${esc(u.id)}" aria-label="Eliminar ${esc(u.nombre)}" ${yo ? "disabled" : ""}>${glifo("trash")}</button></div></div>`; }).join("")}</div>
   <p class="cfg-note" style="margin-top:14px">Al descargar el catálogo para publicarlo, el archivo incluye estas cuentas (con las contraseñas cifradas). Publícalo solo en un sitio con acceso controlado.</p>`;
 }
 function abrirCrearUsuario(q) {
+  if (!S.super) return toast("Solo el superadministrador puede crear usuarios.");
   q = q || {}; cerrarModal();
   const f = (id, l, v, o = {}) => `<div class="field ${o.full ? "full" : ""}"><label for="${id}">${l}</label><input id="${id}" type="${o.tipo || "text"}" value="${esc(v || "")}" autocomplete="off" ${o.extra || ""}></div>`;
   modal({
@@ -1239,20 +1364,21 @@ function abrirCrearUsuario(q) {
       ${f("uc-rfc", "RFC", q.rfc, { extra: 'maxlength="13" style="text-transform:uppercase" autocapitalize="characters"' })}${f("uc-nombre", "Nombre completo", q.nombre)}
       ${f("uc-correo", "Correo", q.correo, { tipo: "email" })}${f("uc-tel", "Teléfono", q.tel, { tipo: "tel" })}
       ${f("uc-dep", "Dependencia", q.dep)}${f("uc-cargo", "Cargo", q.cargo)}
-      <div class="field"><label for="uc-rol">Rol</label><select class="select" id="uc-rol"><option value="usuario">Usuario</option><option value="admin">Administrador</option></select></div></div>
+      <div class="field"><label for="uc-rol">Rol</label><select class="select" id="uc-rol"><option value="visitante">Visitante</option><option value="gestor" selected>Colaborador</option><option value="superadmin">Superadministrador</option></select></div></div>
       <div class="err" id="uc-err" role="alert" style="margin-top:10px"></div>
       <p class="cfg-note">Se generará una contraseña temporal que la persona cambiará al entrar.</p></form>`,
     pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-usr">Crear usuario</button>`
   });
 }
 async function crearUsuarioAdmin() {
+  if (!S.super) return;
   const er = $("#uc-err"), rfc = normRfc(val("uc-rfc")), nombre = val("uc-nombre"), correo = val("uc-correo");
   if (!rfcOk(rfc)) { er.textContent = "Escribe un RFC válido (12 o 13 caracteres)."; return; }
   if (S.cat.usuarios.some((u) => u.rfc === rfc)) { er.textContent = "Ya existe un usuario con ese RFC."; return; }
   if (nombre.length < 3) { er.textContent = "Escribe el nombre completo."; return; }
   if (!correoOk(correo)) { er.textContent = "Escribe un correo válido."; return; }
   const temp = claveTemporal(), salt = nuevoSalt();
-  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: val("uc-dep"), cargo: val("uc-cargo"), telefono: val("uc-tel"), rol: $("#uc-rol").value === "admin" ? "admin" : "usuario", estado: "activo", salt, hash: await hashClave(temp, salt), debeCambiar: true, creado: hoyISO() };
+  const u = { id: uid("usr"), rfc, nombre, correo, dependencia: val("uc-dep"), cargo: val("uc-cargo"), telefono: val("uc-tel"), rol: ROLES[$("#uc-rol").value] ? $("#uc-rol").value : "gestor", estado: "activo", salt, hash: await hashClave(temp, salt), debeCambiar: true, creado: hoyISO() };
   S.cat.usuarios.push(u); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "creado");
 }
 function mostrarClaveTemporal(u, temp, modo) {
@@ -1283,12 +1409,22 @@ function abrirReset(ref, correoSol) {
   });
 }
 async function restablecerClave(id) {
+  if (!S.super) return;
   const u = S.cat.usuarios.find((x) => x.id === id); if (!u) return;
   const temp = claveTemporal(); u.salt = nuevoSalt(); u.hash = await hashClave(temp, u.salt); u.debeCambiar = true;
   setIntentos(u.rfc, null); guardarCatalogo(); cerrarModal(); render(false); mostrarClaveTemporal(u, temp, "reset");
 }
 
 /* ---------- Apariencia ---------- */
+async function cambiarRolUsuario(t) {
+  const u = S.cat.usuarios.find((x) => x.id === t.dataset.usrRol); if (!u) return;
+  const nuevo = ROLES[t.value] ? t.value : "visitante", vuelve = () => keep(() => render(false));
+  if (!S.super) { toast("Solo el superadministrador puede cambiar tipos de acceso."); return vuelve(); }
+  if (u.id === S.user.id) { toast("No puedes cambiar tu propio tipo de acceso."); return vuelve(); }
+  if (rolDe(u.rol) === "superadmin" && nuevo !== "superadmin" && esUltimoAdmin(u)) { toast("Debe existir al menos un superadministrador activo."); return vuelve(); }
+  if (nuevo === "superadmin" && !(await confirmar({ titulo: "Dar control total", texto: `${u.nombre} podrá administrar usuarios, configuración y publicación. ¿Continuar?`, si: "Dar control total" }))) return vuelve();
+  u.rol = nuevo; guardarCatalogo(); toast(`Ahora es ${ROLES[nuevo].toLowerCase()}`); vuelve();
+}
 function aplicarApariencia(c) {
   c = c || cfg();
   const r = document.documentElement, st = r.style;
@@ -1308,7 +1444,7 @@ let post = null, io = null;
 const F2 = { cat: "todas", orden: "catalogo" };
 
 function render(nav) {
-  if (!S.user || S.user.debeCambiar) {
+  if ((!S.user && !S.guest) || (S.user && S.user.debeCambiar)) {
     document.body.classList.add("auth"); cerrarLightbox(); aplicarApariencia();
     view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); return;
   }
@@ -1361,9 +1497,9 @@ function renderChrome(a) {
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
-  $("#sidefoot").innerHTML = `<div class="mode">${esc(S.user.nombre)} · ${S.admin ? "Administrador" : "Usuario"}</div>`
+  $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visitante"}</div>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
-    + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>Mi cuenta</button>`;
+    + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
   $("#tabbar").innerHTML = `<a class="rail-brand" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${imgOk(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : glifo("capas")}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
@@ -1416,9 +1552,11 @@ function vSistemas() {
 }
 
 function vCategorias() {
-  const cats = S.cat.categorias.filter((k) => vis().some((s) => s.categorias.includes(k.id)));
+  const cats = S.admin ? S.cat.categorias : S.cat.categorias.filter((k) => vis().some((s) => s.categorias.includes(k.id)));
+  const tools = (k) => S.admin ? `<div class="cat-tools"><button class="btn sm sec" data-act="edit-cat" data-id="${esc(k.id)}">${glifo("edit")}Renombrar / editar</button><button class="btn sm danger" data-act="del-cat" data-id="${esc(k.id)}">${glifo("trash")}Eliminar</button></div>` : "";
   return `${cabecera("Categorías", "Explora los sistemas según lo que necesitas hacer.")}
-    <div class="colls" style="margin-top:22px">${cats.map((k) => { const ss = vis().filter((s) => s.categorias.includes(k.id)); return `<a class="coll" href="#/categoria/${enc(k.id)}" style="${colorVars(k.color)}"><div><span class="eyebrow">${ss.length} ${plural(ss.length, "sistema", "sistemas")}</span><strong>${esc(k.nombre)}</strong></div><div class="stack">${ss.slice(0, 4).map((s) => icono(s, "s40")).join("")}</div></a>`; }).join("")}</div>
+    ${S.admin ? `<div class="admbar" style="margin-top:12px"><span class="muted">Puedes renombrar, editar o eliminar categorías.</span><button class="btn" data-act="add-cat">${glifo("plus")}Agregar categoría</button></div>` : ""}
+    <div class="colls" style="margin-top:22px">${cats.map((k) => { const ss = vis().filter((s) => s.categorias.includes(k.id)); return `<div class="cwrap"><a class="coll" href="#/categoria/${enc(k.id)}" style="${colorVars(k.color)}"><div><span class="eyebrow">${ss.length} ${plural(ss.length, "sistema", "sistemas")}</span><strong>${esc(k.nombre)}</strong></div><div class="stack">${ss.slice(0, 4).map((s) => icono(s, "s40")).join("")}</div></a>${tools(k)}</div>`; }).join("")}</div>
     ${cats.length ? "" : vacio("Aún no hay categorías", "Cuando se publiquen sistemas aparecerán aquí.")}`;
 }
 
@@ -1427,7 +1565,7 @@ function vLista(tipo, id) {
   if (tipo === "categoria") { const k = catById(id); if (!k) return vNoEncontrado(); titulo = k.nombre; l = vis().filter((s) => s.categorias.includes(id)); eyebrow = "Categoría"; }
   else { titulo = id; l = vis().filter((s) => s.usos.includes(id)); eyebrow = "Ideal para"; if (!l.length) return vNoEncontrado(); }
   return `${navbar()}<header class="pagehead" style="padding-top:8px"><div><div class="when">${eyebrow}</div><h1 class="large-title">${esc(titulo)}</h1><p class="lede">${l.length} ${plural(l.length, "sistema disponible", "sistemas disponibles")}</p></div></header>
-    <div class="sp"></div>${l.length ? `<div class="rows">${l.map((s) => fila(s)).join("")}</div>` : vacio("Sin sistemas todavía", "Aún no hay sistemas en esta categoría.")}`;
+    ${tipo === "categoria" && S.admin ? `<div class="cat-tools" style="margin-top:12px"><button class="btn sm sec" data-act="edit-cat" data-id="${esc(id)}">${glifo("edit")}Renombrar / editar categoría</button><button class="btn sm danger" data-act="del-cat" data-id="${esc(id)}">${glifo("trash")}Eliminar categoría</button></div>` : ""}<div class="sp"></div>${l.length ? `<div class="rows">${l.map((s) => fila(s)).join("")}</div>` : vacio("Sin sistemas todavía", "Aún no hay sistemas en esta categoría.")}`;
 }
 
 function buscar(q) {
@@ -1525,7 +1663,7 @@ function vFicha(id) {
       ${cats.length ? `<div class="cats">${cats.map((c) => `<a href="#/categoria/${enc(c.id)}">${esc(c.nombre)}</a>`).join("")}</div>` : ""}
       ${!s.publicado ? `<div><span class="badge warn">No publicado · solo lo ves tú</span></div>` : ""}
       <div class="fhead-actions" id="mainget">${btnGet(s, "big")}${prim ? `<a class="btn2" href="${esc(urlOk(prim.url))}" target="_blank" rel="noopener noreferrer">Abrir sistema ${glifo("out")}</a>` : ""}<button class="circ" data-act="compartir" data-id="${esc(s.id)}" aria-label="Copiar enlace del sistema" style="color:var(--accent)">${glifo("share")}</button></div>
-      ${S.admin ? `<div class="manage" role="group" aria-label="Gestionar este sistema"><button type="button" class="mbtn" data-act="gestionar" data-modo="info" data-id="${esc(s.id)}">${glifo("edit")}Editar información</button><button type="button" class="mbtn" data-act="gestionar" data-modo="imagen" data-id="${esc(s.id)}">${glifo("img")}Cambiar imagen</button></div>` : ""}
+      ${S.admin ? `<div class="manage" role="group" aria-label="Gestionar este sistema"><button type="button" class="mbtn" data-act="gestionar" data-modo="info" data-id="${esc(s.id)}">${glifo("edit")}Editar información</button><button type="button" class="mbtn" data-act="gestionar" data-modo="imagen" data-id="${esc(s.id)}">${glifo("img")}Cambiar imagen</button><button type="button" class="mbtn" data-act="ren-sis" data-id="${esc(s.id)}">${glifo("edit")}Cambiar nombre</button><button type="button" class="mbtn" data-act="del-sistema" data-id="${esc(s.id)}">${glifo("trash")}Eliminar</button></div>${prim ? "" : `<div class="note warn" style="margin-top:12px">${glifo("warn")}<div>Este sistema aún no tiene enlace para «Abrir sistema». <a href="#/admin/editar/${enc(s.id)}">Agregar el enlace</a></div></div>`}` : ""}
     </div></section>
   <section class="stats" aria-label="Datos del sistema">
     <div class="stat"><span class="l">${plural(n, "Dependencia", "Dependencias")}</span><b>${n}</b><span class="s">${n ? plural(n, "lo utiliza", "lo utilizan") : "aún sin registro"}</span></div>
@@ -1603,7 +1741,6 @@ function vSolicitar(id) {
         <div class="selchips">${sel.map((s) => `<div class="selchip">${icono(s, "s34")}<b>${esc(s.nombre)}</b><button type="button" class="iconbtn" data-act="quitar-sel" data-id="${esc(s.id)}" aria-label="Quitar ${esc(s.nombre)}">${glifo("x")}</button></div>`).join("")}</div>
         ${e.sel ? `<span class="err" role="alert" id="err-sel">${esc(e.sel)}</span>` : ""}
         ${disp.length ? `<div style="margin-top:${sel.length ? 12 : 0}px"><label class="sr" for="addsel">Agregar sistema</label><select class="select" id="addsel" data-sel="addsis"><option value="">${sel.length ? "Agregar otro sistema…" : "Elige un sistema…"}</option>${disp.map((x) => `<option value="${esc(x.id)}">${esc(x.nombre)}</option>`).join("")}</select></div>` : ""}
-        ${sug.length ? `<div class="card" style="margin-top:16px"><div class="lbl" style="margin-bottom:4px">Te podría interesar también</div><ul class="sugg">${sug.map(({ x, s }) => `<li>${icono(x, "s40")}<div class="t"><b>${esc(x.nombre)}</b><small>${esc(motivo(s, x))}</small></div><button type="button" class="get sm" data-act="add-sel" data-id="${esc(x.id)}">Agregar</button></li>`).join("")}</ul></div>` : ""}
       </section>
       <section class="grp"><h2>Tus datos</h2><p class="hint">Los usaremos para contactarte.</p>
         <div class="fields">
@@ -1623,6 +1760,7 @@ function vSolicitar(id) {
           ${campo("participantes", "Personas que lo usarían", { tipo: "number", ph: "Aproximado", extra: 'min="1" inputmode="numeric"' })}
           <div class="field full ${e.mensaje ? "bad" : ""}"><label for="f-mensaje">¿Qué necesitas? <span class="req" aria-hidden="true">*</span></label><textarea id="f-mensaje" data-form="mensaje" placeholder="Describe brevemente el evento, la reunión o el proceso donde lo usarías.">${esc(v.mensaje || "")}</textarea>${e.mensaje ? `<span class="err" role="alert">${esc(e.mensaje)}</span>` : ""}</div>
         </div></section>
+      ${sug.length ? `<section class="grp"><h2>Te podría interesar también</h2><p class="hint">Sistemas relacionados con lo que elegiste. Agrégalos si los necesitas.</p><div class="card"><ul class="sugg">${sug.map(({ x, s }) => `<li>${icono(x, "s40")}<div class="t"><b>${esc(x.nombre)}</b><small>${esc(motivo(s, x))}</small></div><button type="button" class="get sm" data-act="add-sel" data-id="${esc(x.id)}">Agregar</button></li>`).join("")}</ul></div></section>` : ""}
       <div class="hp" aria-hidden="true"><label for="f-web">No llenar este campo</label><input id="f-web" type="text" tabindex="-1" autocomplete="off" data-form="web"></div>
       <section class="grp"><label class="chk ${e.acepto ? "bad" : ""}"><input type="checkbox" id="f-acepto" data-form="acepto" ${v.acepto ? "checked" : ""}><span>${esc(cfg().privacidad)}</span></label>${e.acepto ? `<span class="err" role="alert" id="err-acepto">${esc(e.acepto)}</span>` : ""}</section>
       <button class="get big" type="submit" id="btn-enviar" style="padding:14px 34px;font-size:17px">Enviar solicitud</button>
@@ -1678,7 +1816,8 @@ async function enviarSolicitud() {
   const d = new Date(), v = F.vals, c = cfg();
   const sol = {
     id: uid("sol"), folio: folioNuevo(), fecha: hoyISO(), hora: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-    sistemas: F.sel.map((id) => { const s = byId(id); return { id, nombre: s.nombre, version: s.version }; }),
+    sistemas: F.sel.map((id) => { const s = byId(id); return { id, nombre: s.nombre, version: s.version, requisitos: s.requisitos.map((x) => String(x).trim()).filter(Boolean) }; }),
+    base: baseReqs(), checks: {}, listo: false,
     datos: { dependencia: v.dependencia.trim(), area: (v.area || "").trim(), nombre: v.nombre.trim(), cargo: v.cargo.trim(), correo: v.correo.trim(), telefono: v.telefono.trim(), contactoPref: v.contactoPref, horario: (v.horario || "").trim(), tipoUso: v.tipoUso, fechaUso: v.fechaUso || "", participantes: v.participantes || "", mensaje: v.mensaje.trim() },
     estado: c.correoDestino ? "pendiente" : "guardada", canal: ""
   };
@@ -1687,6 +1826,10 @@ async function enviarSolicitud() {
       const r = await fetch(urlOk(c.endpoint), { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(Object.assign({ folio: sol.folio, asunto: asuntoSol(sol), _subject: asuntoSol(sol), mensaje: armarMensaje(sol), email: sol.datos.correo, sistemas: sol.sistemas.map((s) => s.nombre).join(", ") }, sol.datos)) });
       if (r.ok) { sol.estado = "enviada"; sol.canal = "automático"; }
     } catch (err) { /* se queda en pendiente o guardada */ }
+  }
+  if (sol.estado !== "enviada") {
+    const para = (c.correoDestino || c.correoAdmin || "").trim();
+    if (para && (await enviarAvisoCorreo(para, asuntoSol(sol), { Folio: sol.folio, Dependencia: sol.datos.dependencia, Contacto: sol.datos.nombre, Correo: sol.datos.correo, Teléfono: sol.datos.telefono, Sistemas: sol.sistemas.map((s) => s.nombre).join(", "), Mensaje: armarMensaje(sol) }))) { sol.estado = "enviada"; sol.canal = "automático"; }
   }
   S.sols.unshift(sol); await guardarSolicitudes();
   F.ini = null; F.sel = []; F.errs = {}; F.enviando = false; F.vals.mensaje = ""; F.vals.acepto = false;
@@ -1709,9 +1852,43 @@ function vGracias(folio) {
     ${estado}
     <div class="card"><div class="lbl" style="margin-bottom:8px">Sistemas solicitados</div>${sol.sistemas.map((s) => { const x = byId(s.id); return `<div style="display:flex;gap:12px;align-items:center;padding:6px 0">${x ? icono(x, "s40") : ""}<b>${esc(s.nombre)}</b></div>`; }).join("")}
       <div class="kv" style="margin-top:8px"><div><span class="k">Dependencia</span><span class="v">${esc(sol.datos.dependencia)}</span></div><div><span class="k">Contacto</span><span class="v">${esc(sol.datos.nombre)}</span></div><div><span class="k">Correo</span><span class="v">${esc(sol.datos.correo)}</span></div><div><span class="k">Fecha</span><span class="v">${esc(fmtFecha(sol.fecha))}</span></div></div></div>
+    <div class="card"><div class="lbl" style="margin-bottom:6px">Siguiente paso</div><p class="muted" style="margin-bottom:12px">Revisa la lista de verificación para confirmar que ya cumples los requisitos. Cuando estén completos, avisa y se da por listo el uso del sistema.</p><a class="btn" href="#/solicitudes">Verificar requisitos</a></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn sec" href="#/solicitudes">Ver mis solicitudes</a><a class="btn ghost" href="#/sistemas">Seguir explorando</a></div>
   </div>
   ${sug.length ? `<section class="sec" style="max-width:680px;margin-inline:auto"><h2 class="sec-h">Otros sistemas que podrían interesarte</h2><div class="rows" style="grid-template-columns:1fr">${sug.map((x) => fila(x, base ? motivo(base, x) : x.subtitulo)).join("")}</div></section>` : ""}`;
+}
+
+/* ---------- Lista de verificación de requisitos ---------- */
+const baseReqs = () => String(cfg().requisitosBase || "").split("\n").map((x) => x.trim()).filter(Boolean);
+const baseDe = (sol) => (Array.isArray(sol.base) ? sol.base : baseReqs());
+const propiosDe = (si) => { if (Array.isArray(si.requisitos)) return si.requisitos; const s = byId(si.id); return s ? s.requisitos.map((x) => String(x).trim()).filter(Boolean) : []; };
+function progreso(sol) {
+  let t = 0, h = 0; const ch = sol.checks || {};
+  baseDe(sol).forEach((_, i) => { t++; if ((ch._base || [])[i]) h++; });
+  sol.sistemas.forEach((si) => propiosDe(si).forEach((_, i) => { t++; if ((ch[si.id] || [])[i]) h++; }));
+  return { t, h, ok: h === t };
+}
+function vChecklist(sol) {
+  const p = progreso(sol), pct = p.t ? Math.round((p.h / p.t) * 100) : 100, ch = sol.checks || {};
+  const grupo = (clave, titulo, items) => items.length ? `<div class="chkgrp"><b>${esc(titulo)}</b>${items.map((t, i) => `<label class="chk"><input type="checkbox" data-chk="${esc(sol.id)}|${esc(clave)}|${i}" ${(ch[clave] || [])[i] ? "checked" : ""}><span>${esc(t)}</span></label>`).join("")}</div>` : "";
+  const pie = p.ok
+    ? `<div class="note ok">${glifo("check")}<div><b>Requisitos completos.</b> ${sol.listo ? `Ya avisaste el ${esc(fmtFecha(sol.listoFecha || hoyISO()))}: todo está listo para usar el sistema.` : "Avisa para que se pueda implementar el sistema en tu ocasión."}${sol.listo ? "" : `<div style="margin-top:10px"><button class="btn sm" data-act="chk-avisar" data-id="${esc(sol.id)}">Avisar que ya cumplo</button></div>`}</div></div>`
+    : `<div class="note warn">${glifo("warn")}<div>Faltan ${p.t - p.h} ${plural(p.t - p.h, "requisito", "requisitos")} por cumplir antes de implementar el sistema.</div></div>`;
+  return `<div class="chkl"><div class="chkl-h"><b>Lista de verificación de requisitos</b><span class="badge ${p.ok ? "ok" : "warn"}">${p.h}/${p.t}</span></div><div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+    ${grupo("_base", "Generales", baseDe(sol))}${sol.sistemas.map((si) => grupo(si.id, si.nombre, propiosDe(si))).join("")}${p.t === 0 ? '<p class="muted" style="font-size:14px">Estos sistemas no tienen requisitos registrados.</p>' : ""}${pie}</div>`;
+}
+function avisoListo(sol) {
+  const L = ["REQUISITOS COMPLETOS", `Folio: ${sol.folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `Dependencia: ${sol.datos.dependencia}`, `Contacto: ${sol.datos.nombre} (${sol.datos.correo}, ${sol.datos.telefono})`, `Sistemas: ${sol.sistemas.map((s) => s.nombre).join(", ")}`, "", "REQUISITOS VERIFICADOS"];
+  baseDe(sol).forEach((r) => L.push("[x] " + r));
+  sol.sistemas.forEach((si) => propiosDe(si).forEach((r) => L.push(`[x] ${si.nombre}: ${r}`)));
+  L.push("", "Todo está listo para implementar el sistema.");
+  return L.join("\n");
+}
+function marcarRequisito(t) {
+  const [sid, clave, i] = t.dataset.chk.split("|"), sol = S.sols.find((x) => x.id === sid); if (!sol) return;
+  sol.checks = sol.checks || {}; const a = (sol.checks[clave] = sol.checks[clave] || []); a[+i] = t.checked;
+  if (!progreso(sol).ok) sol.listo = false;
+  guardarSolicitudes(); keep(() => render(false));
 }
 
 function vSolicitudes() {
@@ -1719,7 +1896,7 @@ function vSolicitudes() {
   return `${cabecera("Mis solicitudes", "Historial de las solicitudes que hiciste desde este dispositivo.")}
     <div class="sp"></div>
     ${S.sols.length ? S.sols.map((sol) => { const [cl, tx] = est[sol.estado] || ["", sol.estado]; return `<article class="solcard"><header><div><b style="font-size:17px">${esc(sol.sistemas.map((s) => s.nombre).join(", "))}</b><div class="muted" style="font-size:14px">${esc(sol.datos.dependencia)} · ${esc(fmtFecha(sol.fecha))}</div></div><span class="badge ${cl}">${esc(tx)}</span></header>
-      <div class="muted" style="font-size:14px">Folio <span class="folio" style="font-size:13px;padding:2px 8px">${esc(sol.folio)}</span></div>
+      <div class="muted" style="font-size:14px">Folio <span class="folio" style="font-size:13px;padding:2px 8px">${esc(sol.folio)}</span>${sol.listo ? ' <span class="badge ok">Listo para implementar</span>' : ""}</div>${vChecklist(sol)}
       <div class="acts">${sol.estado === "pendiente" ? `<a class="btn sm" href="${esc(mailtoSol(sol))}">${glifo("correo")}Abrir correo</a>` : ""}<button class="btn sm sec" data-act="copiar-sol" data-id="${esc(sol.id)}">${glifo("copy")}Copiar mensaje</button>${sol.estado !== "enviada" ? `<button class="btn sm sec" data-act="marcar-enviada" data-id="${esc(sol.id)}">Marcar como enviada</button>` : ""}<button class="btn sm danger" data-act="del-sol" data-id="${esc(sol.id)}">${glifo("trash")}Eliminar</button></div></article>`; }).join("")
       : vacio("Todavía no has enviado solicitudes", "Cuando solicites un sistema aparecerá aquí con su folio.", `<a class="btn" href="#/sistemas">Explorar sistemas</a>`)}
     ${S.sols.length ? `<p class="muted" style="font-size:13.5px;margin-top:6px">Este historial se guarda solo en este navegador. Las solicitudes llegan al correo de ${esc(cfg().organizacion)}.</p>` : ""}`;
@@ -1738,25 +1915,25 @@ async function hashPin(p) {
 function bannerAdmin() {
   let h = "";
   if (S.memoria) h += `<div class="note warn">${glifo("warn")}<div>Este navegador no permite guardar datos (por ejemplo, ventana privada). Tus cambios se perderán al cerrar la página. Usa «Descargar catálogo» para conservarlos.</div></div>`;
-  if (S.cat.editado) h += `<div class="note warn">${glifo("warn")}<div><b>Tienes cambios sin publicar.</b> Solo tú los ves en este navegador. Para que los vean todas las dependencias, descarga el catálogo y súbelo junto a <b>index.html</b>.<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="exportar">${glifo("download")}Descargar catálogo</button><button class="btn sm sec" data-act="como-publicar">Cómo publicar</button></div></div></div>`;
-  if (S.cat.sistemas.some((s) => s.ejemplo)) h += `<div class="note info">${glifo("info")}<div>Estás viendo sistemas de ejemplo. Cuando tengas los tuyos, puedes quitarlos todos de una vez.<div style="margin-top:10px"><button class="btn sm sec" data-act="quitar-ejemplos">Eliminar sistemas de ejemplo</button></div></div></div>`;
+  if (S.cat.editado) h += `<div class="note warn">${glifo("warn")}<div><b>Tienes cambios sin publicar.</b> Solo tú los ves en este navegador. Para que los vean todas las dependencias, descarga el catálogo y súbelo junto a <b>index.html</b>.${S.super ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm" data-act="exportar">${glifo("download")}Descargar catálogo</button><button class="btn sm sec" data-act="como-publicar">Cómo publicar</button></div>` : '<div style="margin-top:6px">Avisa al superadministrador para que los publique.</div>'}</div></div>`;
+  if (S.cat.sistemas.some((s) => s.ejemplo)) h += `<div class="note info">${glifo("info")}<div>Estás viendo sistemas de ejemplo. Cuando tengas los tuyos, puedes quitarlos${S.super ? ' todos de una vez.<div style="margin-top:10px"><button class="btn sm sec" data-act="quitar-ejemplos">Eliminar sistemas de ejemplo</button></div>' : ". Puedes editarlos o eliminarlos uno por uno."}</div></div>`;
   return h ? `<div style="display:grid;gap:12px;margin-bottom:18px">${h}</div>` : "";
 }
 
 function vAdmin(sub, id) {
   if (!S.admin) return `${cabecera("Administración")}${vacio("Acceso restringido", "Esta sección es solo para administradores del catálogo.", `<a class="btn" href="#/">Ir al inicio</a>`)}`;
   if (sub === "editar") return vEditor(id);
-  const tab = sub === "categorias" || sub === "config" || sub === "usuarios" ? sub : "sistemas";
+  const permitidas = S.super ? ["categorias", "config", "usuarios"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
   const cur = (k) => (tab === k ? ' aria-current="page"' : "");
-  const cab = `${cabecera("Administración", "Edita lo que ven las dependencias en el catálogo.")}
-    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a><a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a></nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
+  const cab = `${cabecera("Administración", S.super ? "Control total del catálogo, usuarios y configuración." : "Como colaborador puedes editar sistemas y categorías.")}
+    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div>${bannerAdmin()}`;
   if (tab === "categorias") return cab + vAdminCategorias();
   if (tab === "usuarios") return cab + vAdminUsuarios();
   if (tab === "config") return cab + vAdminConfig(id);
   const l = S.cat.sistemas;
   return cab + `<div class="admbar" style="margin-top:0"><span class="muted">${l.length} ${plural(l.length, "sistema", "sistemas")} · ${l.filter((s) => s.publicado).length} publicados</span><a class="btn" href="#/admin/editar/nuevo">${glifo("plus")}Agregar sistema</a></div>
     ${l.length ? `<div class="list-card">${l.map((s, i) => `<div class="arow">${icono(s, "s40")}<div class="t"><b>${esc(s.nombre || "Sin nombre")}</b><small><span class="badge ${s.estado === "Disponible" ? "ok" : s.estado === "Requiere validación" ? "warn" : ""}">${esc(s.estado)}</span>${s.publicado ? '<span class="badge acc">Publicado</span>' : '<span class="badge warn">Oculto</span>'}${s.destacado ? '<span class="badge">Destacado</span>' : ""}${s.ejemplo ? '<span class="badge">Ejemplo</span>' : ""}</small></div>
-      <div class="acts"><a class="btn sm" href="#/admin/editar/${enc(s.id)}">${glifo("edit")}Editar</a><button class="btn sm ghost" data-act="toggle-pub" data-id="${esc(s.id)}">${s.publicado ? "Ocultar" : "Publicar"}</button><a class="iconbtn" href="#/sistema/${enc(s.id)}" aria-label="Ver ${esc(s.nombre)}">${glifo("eye")}</a><button class="iconbtn" data-act="mover" data-id="${esc(s.id)}" data-d="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">${glifo("up")}</button><button class="iconbtn" data-act="mover" data-id="${esc(s.id)}" data-d="1" ${i === l.length - 1 ? "disabled" : ""} aria-label="Bajar">${glifo("down")}</button><button class="iconbtn" data-act="duplicar" data-id="${esc(s.id)}" aria-label="Duplicar ${esc(s.nombre)}">${glifo("copy")}</button><button class="iconbtn bad" data-act="del-sistema" data-id="${esc(s.id)}" aria-label="Eliminar ${esc(s.nombre)}">${glifo("trash")}</button></div></div>`).join("")}</div>` : vacio("Aún no hay sistemas", "Agrega el primero para que aparezca en el catálogo.", `<a class="btn" href="#/admin/editar/nuevo">${glifo("plus")}Agregar sistema</a>`)}`;
+      <div class="acts"><a class="btn sm" href="#/admin/editar/${enc(s.id)}">${glifo("edit")}Editar</a><button class="btn sm sec" data-act="ren-sis" data-id="${esc(s.id)}">Renombrar</button><button class="btn sm ghost" data-act="toggle-pub" data-id="${esc(s.id)}">${s.publicado ? "Ocultar" : "Publicar"}</button><a class="iconbtn" href="#/sistema/${enc(s.id)}" aria-label="Ver ${esc(s.nombre)}">${glifo("eye")}</a><button class="iconbtn" data-act="mover" data-id="${esc(s.id)}" data-d="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">${glifo("up")}</button><button class="iconbtn" data-act="mover" data-id="${esc(s.id)}" data-d="1" ${i === l.length - 1 ? "disabled" : ""} aria-label="Bajar">${glifo("down")}</button><button class="iconbtn" data-act="duplicar" data-id="${esc(s.id)}" aria-label="Duplicar ${esc(s.nombre)}">${glifo("copy")}</button><button class="iconbtn bad" data-act="del-sistema" data-id="${esc(s.id)}" aria-label="Eliminar ${esc(s.nombre)}">${glifo("trash")}</button></div></div>`).join("")}</div>` : vacio("Aún no hay sistemas", "Agrega el primero para que aparezca en el catálogo.", `<a class="btn" href="#/admin/editar/nuevo">${glifo("plus")}Agregar sistema</a>`)}`;
 }
 
 function vAdminCategorias() {
@@ -1768,7 +1945,7 @@ function vAdminCategorias() {
     <label class="sr" for="cg-${esc(k.id)}">Icono</label><select class="select" id="cg-${esc(k.id)}" data-catf="glifo" data-id="${esc(k.id)}">${optG(k.glifo)}</select>
     <label class="sr" for="cc-${esc(k.id)}">Color</label><select class="select" id="cc-${esc(k.id)}" data-catf="color" data-id="${esc(k.id)}">${optC(k.color)}</select>
     <span class="muted" style="font-size:13px;min-width:70px">${S.cat.sistemas.filter((s) => s.categorias.includes(k.id)).length} sistemas</span>
-    <button class="iconbtn bad" data-act="del-cat" data-id="${esc(k.id)}" aria-label="Eliminar ${esc(k.nombre)}">${glifo("trash")}</button></div>`).join("")}</div>`;
+    <button class="btn sm sec" data-act="edit-cat" data-id="${esc(k.id)}">Editar</button><button class="iconbtn bad" data-act="del-cat" data-id="${esc(k.id)}" aria-label="Eliminar ${esc(k.nombre)}">${glifo("trash")}</button></div>`).join("")}</div>`;
 }
 
 function vAdminConfig(sec) {
@@ -1786,7 +1963,7 @@ function vAdminConfig(sec) {
     panel = `<section class="grp"><h2>Estado del catálogo</h2><p class="hint">Revisión rápida de lo que falta para que el catálogo funcione completo.</p><div class="card">
       ${g.correoDestino ? item("ok", "Correo de solicitudes", esc(g.correoDestino)) : item("warn", "Correo de solicitudes", "Falta definir a dónde llegan las solicitudes.", `<a class="btn sm sec" href="#/admin/config/solicitudes">Configurar</a>`)}
       ${g.endpoint ? item("ok", "Envío automático", "Activo: las solicitudes se envían sin abrir el correo.") : item("off", "Envío automático", "Opcional. Sin él, el solicitante envía el correo desde su dispositivo.")}
-      ${item(S.cat.usuarios.some((x) => x.rol === "admin" && x.estado === "activo") ? "ok" : "warn", "Usuarios y accesos", `${S.cat.usuarios.length} ${plural(S.cat.usuarios.length, "usuario", "usuarios")} con acceso (RFC y contraseña).`, `<a class="btn sm sec" href="#/admin/usuarios">Administrar</a>`)}
+      ${item(S.cat.usuarios.some((x) => rolDe(x.rol) === "superadmin" && x.estado === "activo") ? "ok" : "warn", "Usuarios y accesos", `${S.cat.usuarios.length} ${plural(S.cat.usuarios.length, "usuario", "usuarios")} con acceso (RFC y contraseña).`, `<a class="btn sm sec" href="#/admin/usuarios">Administrar</a>`)}
       ${S.pub ? item(S.cat.editado ? "warn" : "ok", "Catálogo publicado", S.cat.editado ? "Tienes cambios locales sin publicar." : "La versión publicada está al día.", S.cat.editado ? `<a class="btn sm sec" href="#/admin/config/datos">Publicar</a>` : "") : item("warn", "Catálogo publicado", "Aún no hay archivo catalogo.json junto a index.html.", `<a class="btn sm sec" href="#/admin/config/datos">Cómo publicar</a>`)}
       ${ej ? item("warn", "Sistemas de ejemplo", `${ej} ${plural(ej, "sistema de ejemplo", "sistemas de ejemplo")} visibles para las dependencias.`, `<a class="btn sm sec" href="#/admin/config/datos">Quitar</a>`) : item("ok", "Contenido propio", "No hay sistemas de ejemplo.")}
     </div></section>
@@ -1806,6 +1983,7 @@ function vAdminConfig(sec) {
     <section class="grp"><h2>Seguimiento</h2><p class="hint">Estos textos aparecen en «¿Qué sigue?» cuando alguien llena una solicitud.</p><div class="card"><div class="fields">
       ${f("tiempoRespuesta", "Tiempo de respuesta", { ph: "3 días hábiles", hint: "Ej. «2 días hábiles», «una semana»." })}
       ${ta("reunion", "Qué pasa después de la revisión", "Describe el siguiente paso con la dependencia (reunión, capacitación, accesos…).", 70)}
+      ${ta("requisitosBase", "Requisitos generales para todos los sistemas (uno por línea)", "Aparecen en la lista de verificación de cada solicitud, antes de los requisitos propios de cada sistema.", 130)}
       ${ta("privacidad", "Aviso que acepta el solicitante", "", 80)}
     </div></div></section>
     <section class="grp"><h2>Vista previa de «¿Qué sigue?»</h2><p class="hint">Así lo verá el solicitante. Se actualiza al guardar.</p><div class="card"><ol class="timeline">${pasos}</ol></div></section>` + savebar;
@@ -1819,7 +1997,7 @@ function vAdminConfig(sec) {
   } else if (sec === "seguridad") {
     panel = `<section class="grp"><h2>Mi cuenta</h2><p class="hint">Sesión iniciada como ${esc(S.user.nombre)} (${esc(S.user.rfc)}).</p><div class="card" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec sm" data-act="cambiar-pass">${glifo("candado")}Cambiar mi contraseña</button><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div></section>
     <section class="grp"><h2>Usuarios y accesos</h2><p class="hint">Crea cuentas, restablece contraseñas y bloquea accesos.</p><div class="card"><a class="btn sec sm" href="#/admin/usuarios">Administrar usuarios</a>
-      <ul style="margin:14px 0 0;padding-left:18px;color:var(--label-2);font-size:14px;display:grid;gap:4px"><li>Se entra con RFC y contraseña (mínimo 8 caracteres, con letras y números).</li><li>Tras 5 intentos fallidos, el RFC se bloquea 5 minutos en ese dispositivo.</li><li>Las contraseñas temporales se deben cambiar al primer inicio de sesión.</li><li>Las contraseñas se guardan cifradas, nunca en texto claro.</li></ul></div></section>`;
+      <ul style="margin:14px 0 0;padding-left:18px;color:var(--label-2);font-size:14px;display:grid;gap:4px"><li>Se entra con RFC y contraseña (mínimo 8 caracteres, con letras y números).</li><li>Tras 5 intentos fallidos, el RFC se bloquea 5 minutos en ese dispositivo.</li><li>Las contraseñas temporales se deben cambiar al primer inicio de sesión.</li><li>Las contraseñas se guardan cifradas, nunca en texto claro.</li><li>Tres tipos de acceso: visitante, colaborador y superadministrador. Las cuentas de superadministrador se autorizan con un código enviado por correo al propietario.</li></ul></div></section>`;
   } else {
     panel = `<section class="grp"><h2>Copia y publicación</h2><p class="hint">Descarga una copia, restaura una anterior o vuelve a la versión publicada. El archivo incluye las cuentas de usuario (con contraseñas cifradas): publícalo solo en un sitio con acceso controlado.</p>
       <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -1839,7 +2017,7 @@ function pasosSigue(c) {
   return [
     ["Envías el formulario", "Se genera un folio con el formato SOL-AAAAMMDD-XXXX y la solicitud queda guardada en «Mis solicitudes» de este dispositivo."],
     auto ? ["Llega al área responsable", "Tu solicitud se envía automáticamente; no tienes que hacer nada más."]
-         : ["Confirmas por correo", dest ? `Se abre tu aplicación de correo con el mensaje ya redactado para ${dest}. Solo presiona «Enviar».` : "Se abre tu aplicación de correo con el mensaje ya redactado. Solo presiona «Enviar»."],
+         : ["Llega al área responsable", dest ? `Se envía automáticamente a ${dest}. Si no se pudiera, se abre tu aplicación de correo con el mensaje ya redactado: solo presiona «Enviar».` : "Se envía automáticamente al área responsable. Si no se pudiera, se abre tu aplicación de correo con el mensaje ya redactado."],
     ["Revisamos tu solicitud", `Validamos disponibilidad y requisitos. Te respondemos en ${(c.tiempoRespuesta || "").trim() || "unos días hábiles"} al correo que registraste.`],
     ["Siguiente paso", (c.reunion || "").trim() || "Coordinamos una reunión con tu dependencia para definir accesos y fechas de uso."]
   ];
@@ -1856,6 +2034,8 @@ function vEditor(id) {
     dr = S.drafts[id] = { s: clone(base), nuevo, dirty: false };
   } else if (dr.dirty && navActual) dr.aviso = true;
   const s = dr.s;
+  let iSis = s.enlaces.findIndex((l) => l.tipo === "sistema");
+  if (iSis < 0) { s.enlaces.unshift({ etiqueta: "Abrir el sistema", url: "", tipo: "sistema" }); iSis = 0; }
   const inp = (p, label, o = {}) => `<div class="field ${o.full ? "full" : ""}"><label for="e-${p}">${label}${o.req ? ' <span class="req" aria-hidden="true">*</span>' : ""}</label><input id="e-${p}" type="${o.tipo || "text"}" data-path="${p}" value="${esc(getPath(s, p) ?? "")}" placeholder="${esc(o.ph || "")}" autocomplete="off">${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
   const mini = (path, i, n) => `<div class="line" style="justify-content:flex-end;gap:2px"><button type="button" class="iconbtn" data-act="e-mover" data-path="${path}" data-i="${i}" data-d="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir">${glifo("up")}</button><button type="button" class="iconbtn" data-act="e-mover" data-path="${path}" data-i="${i}" data-d="1" ${i === n - 1 ? "disabled" : ""} aria-label="Bajar">${glifo("down")}</button><button type="button" class="iconbtn bad" data-act="e-del" data-path="${path}" data-i="${i}" aria-label="Quitar">${glifo("trash")}</button></div>`;
   const lista = (path, render, add) => `${s[path].map((it, i) => `<div class="ed-item">${render(it, i)}${mini(path, i, s[path].length)}</div>`).join("")}<button type="button" class="btn sec sm" data-act="e-add" data-path="${path}">${glifo("plus")}${add}</button>`;
@@ -1878,6 +2058,7 @@ function vEditor(id) {
         <div class="swatches" style="margin-top:12px" role="group" aria-label="Color">${Object.keys(COLORES).map((c) => `<button type="button" data-act="e-color" data-c="${c}" style="${colorVars(c)}" aria-pressed="${s.icono.color === c}" aria-label="${c}"></button>`).join("")}</div></div>
       <div class="field full"><span class="lbl">Imagen de portada (opcional)</span><div class="up">${imgOk(s.portada) ? `<img src="${esc(s.portada)}" alt="" style="width:160px;border-radius:12px;aspect-ratio:16/11;object-fit:cover">` : ""}<input type="file" id="up-portada" accept="image/*" data-up="portada"><label class="btn sec sm" for="up-portada">${glifo("upload")}Subir portada</label>${imgOk(s.portada) ? `<button type="button" class="btn ghost sm" data-act="e-quitar-portada">Quitar</button>` : ""}<span class="muted" style="font-size:12.5px">Se usa en la tarjeta grande de la portada.</span></div></div>
     </div>`)}
+  ${grp("Enlace para «Abrir sistema»", "Pega aquí la dirección (URL) donde funciona el sistema. Con ella aparece el botón «Abrir sistema» en la ficha. Si queda vacío, el botón no se muestra.", `<div class="field"><label for="e-sisurl">Dirección (URL) del sistema</label><input id="e-sisurl" type="url" data-path="enlaces.${iSis}.url" value="${esc(s.enlaces[iSis].url || "")}" placeholder="https://" autocomplete="off" inputmode="url"><span class="muted" style="font-size:12.5px">Debe empezar con http:// o https://. Los manuales y videos se agregan abajo, en «Enlaces».</span></div>`)}
   ${grp("Clasificación y estado", "", `<div class="fields">
       <div class="field full"><span class="lbl">Categorías</span><div class="selchips" role="group">${S.cat.categorias.map((k) => `<button type="button" class="chip txt" data-act="e-cat" data-id="${esc(k.id)}" aria-pressed="${s.categorias.includes(k.id)}">${esc(k.nombre)}</button>`).join("") || '<span class="muted">Crea categorías en Administración → Categorías.</span>'}</div></div>
       <div class="field full"><span class="lbl">Ideal para (etiquetas)</span>
@@ -2001,6 +2182,46 @@ async function subirImagenRapida(kind, id, f) {
   } catch (e) { toast("No se pudo leer la imagen."); }
 }
 
+/* ---------- Renombrar sistema y editar categorías ---------- */
+const irA = (p) => { const igual = location.hash === "#/" + p; go(p); if (igual) render(false); };
+function abrirRenombrarSistema(id) {
+  const s = byId(id); if (!s) return;
+  modal({
+    titulo: "Cambiar nombre del sistema",
+    body: `<form id="form-ren" data-id="${esc(s.id)}" novalidate style="display:grid;gap:12px"><div class="field"><label for="rn-nombre">Nombre</label><input id="rn-nombre" type="text" maxlength="80" value="${esc(s.nombre)}" autocomplete="off"></div>
+      <div class="field"><label for="rn-sub">Frase corta (opcional)</label><input id="rn-sub" type="text" maxlength="140" value="${esc(s.subtitulo)}" autocomplete="off"></div><div class="err" id="rn-err" role="alert"></div></form>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-ren">Guardar</button>`
+  });
+}
+function guardarRenombrar() {
+  const f = $("#form-ren"), s = f && byId(f.dataset.id); if (!s || !S.admin) return;
+  const n = val("rn-nombre"); if (n.length < 2) { $("#rn-err").textContent = "Escribe un nombre."; return; }
+  s.nombre = n; s.subtitulo = val("rn-sub"); s.ejemplo = false;
+  if (S.drafts[s.id] && !S.drafts[s.id].dirty) delete S.drafts[s.id];
+  guardarCatalogo(); cerrarModal(); toast("Nombre actualizado"); render(false);
+}
+function abrirCategoria(id) {
+  const k = id ? catById(id) : null; if (id && !k) return;
+  const opG = GLIFOS.map((g) => `<option value="${g}" ${g === (k ? k.glifo : "app") ? "selected" : ""}>${g[0].toUpperCase() + g.slice(1)}</option>`).join("");
+  const opC = Object.keys(COLORES).map((c) => `<option value="${c}" ${c === (k ? k.color : "azul") ? "selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("");
+  modal({
+    titulo: k ? "Editar categoría" : "Nueva categoría",
+    body: `<form id="form-cat" data-id="${esc(id || "")}" novalidate><div class="fields"><div class="field full"><label for="ct-nombre">Nombre</label><input id="ct-nombre" type="text" maxlength="60" value="${esc(k ? k.nombre : "")}" autocomplete="off"></div>
+      <div class="field"><label for="ct-glifo">Icono</label><select class="select" id="ct-glifo">${opG}</select></div><div class="field"><label for="ct-color">Color</label><select class="select" id="ct-color">${opC}</select></div></div>
+      <div class="err" id="ct-err" role="alert" style="margin-top:10px"></div></form>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-cat">Guardar</button>`
+  });
+}
+function guardarCategoria() {
+  if (!S.admin) return;
+  const f = $("#form-cat"), id = f.dataset.id, nombre = val("ct-nombre"), er = $("#ct-err");
+  if (nombre.length < 2) { er.textContent = "Escribe un nombre para la categoría."; return; }
+  if (S.cat.categorias.some((x) => x.id !== id && norm(x.nombre) === norm(nombre))) { er.textContent = "Ya existe una categoría con ese nombre."; return; }
+  const g = $("#ct-glifo").value, c = $("#ct-color").value, d = { nombre, glifo: GLIFOS.includes(g) ? g : "app", color: COLORES[c] ? c : "azul" };
+  if (id) Object.assign(catById(id), d); else S.cat.categorias.push(Object.assign({ id: uid("cat") }, d));
+  guardarCatalogo(); cerrarModal(); toast(id ? "Categoría actualizada" : "Categoría creada"); render(false);
+}
+
 /* ---------- Acciones ---------- */
 function mover(arr, i, d) { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; }
 const PLANTILLAS = {
@@ -2094,12 +2315,6 @@ const ACT = {
     if (u.id === S.user.id) return toast("No puedes bloquear tu propio usuario.");
     u.estado = u.estado === "activo" ? "bloqueado" : "activo"; guardarCatalogo(); toast(u.estado === "activo" ? "Usuario activado" : "Usuario bloqueado"); keep(() => render(false));
   },
-  "usr-rol"(t) {
-    const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
-    if (u.rol === "admin" && esUltimoAdmin(u)) return toast("Debe existir al menos un administrador activo.");
-    if (u.id === S.user.id) return toast("No puedes cambiar tu propio rol.");
-    u.rol = u.rol === "admin" ? "usuario" : "admin"; guardarCatalogo(); toast("Rol actualizado"); keep(() => render(false));
-  },
   async "usr-del"(t) {
     const u = S.cat.usuarios.find((x) => x.id === t.dataset.id); if (!u) return;
     if (u.id === S.user.id) return toast("No puedes eliminar tu propio usuario.");
@@ -2114,17 +2329,17 @@ const ACT = {
   async "del-sistema"(t) {
     const s = byId(t.dataset.id); if (!s) return;
     if (!(await confirmar({ titulo: `Eliminar «${s.nombre}»`, texto: "Se borrará el sistema con todo su contenido y adjuntos. Esta acción no se puede deshacer.", si: "Eliminar", peligro: true }))) return;
-    S.cat.sistemas = S.cat.sistemas.filter((x) => x.id !== s.id); delete S.drafts[s.id]; guardarCatalogo(); toast("Sistema eliminado"); go("admin");
+    S.cat.sistemas = S.cat.sistemas.filter((x) => x.id !== s.id); delete S.drafts[s.id]; guardarCatalogo(); toast("Sistema eliminado"); irA("admin");
   },
   async "quitar-ejemplos"() {
     if (!(await confirmar({ titulo: "Eliminar sistemas de ejemplo", texto: "Se quitarán todos los sistemas marcados como ejemplo. Tus propios sistemas no se tocan.", si: "Eliminar", peligro: true }))) return;
     S.cat.sistemas = S.cat.sistemas.filter((s) => !s.ejemplo); guardarCatalogo(); toast("Ejemplos eliminados"); render(false);
   },
-  "add-cat"() { S.cat.categorias.push({ id: uid("cat"), nombre: "Nueva categoría", glifo: "app", color: "azul" }); guardarCatalogo(); keep(() => render(false)); },
+  "add-cat"() { abrirCategoria(null); },
   async "del-cat"(t) {
     const k = catById(t.dataset.id); if (!k) return;
     if (!(await confirmar({ titulo: `Eliminar «${k.nombre}»`, texto: "Los sistemas de esta categoría no se borran, solo dejan de pertenecer a ella.", si: "Eliminar", peligro: true }))) return;
-    S.cat.categorias = S.cat.categorias.filter((x) => x.id !== k.id); S.cat.sistemas.forEach((s) => (s.categorias = s.categorias.filter((c) => c !== k.id))); guardarCatalogo(); keep(() => render(false));
+    S.cat.categorias = S.cat.categorias.filter((x) => x.id !== k.id); S.cat.sistemas.forEach((s) => (s.categorias = s.categorias.filter((c) => c !== k.id))); guardarCatalogo(); toast("Categoría eliminada"); if (hashParts()[0] === "categoria") go("categorias"); else keep(() => render(false));
   },
   async "guardar-cfg"() {
     const c = S.cfgDraft; if (!c) return;
@@ -2175,14 +2390,35 @@ const ACT = {
     delete S.drafts[id]; go("admin");
   },
   "e-descartar"() { const [, , id] = hashParts(); delete S.drafts[id]; render(false); },
+  "entrar-visitante"() { S.guest = true; try { sessionStorage.setItem("catalogo-visitante", "1"); } catch (e) {} location.hash = "#/"; render(true); },
+  "ir-login"() { cerrarModal(); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} S.authView = "login"; render(false); },
+  "super-reenviar"() { reenviarCodigoSuper(); },
+  "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
+  "ren-sis"(t) { abrirRenombrarSistema(t.dataset.id); },
+  "edit-cat"(t) { abrirCategoria(t.dataset.id); },
+  async "chk-avisar"(t) {
+    const sol = S.sols.find((x) => x.id === t.dataset.id); if (!sol) return;
+    if (!progreso(sol).ok) return toast("Aún faltan requisitos por marcar.");
+    const c = cfg(), para = (c.correoDestino || c.correoAdmin || CORREO_SUPER).trim(), asunto = `Requisitos completos · ${sol.sistemas.map((s) => s.nombre).join(", ")} · ${sol.datos.dependencia} (${sol.folio})`, cuerpo = avisoListo(sol);
+    t.disabled = true; t.textContent = "Enviando…";
+    const ok = await enviarAvisoCorreo(para, asunto, { Folio: sol.folio, Dependencia: sol.datos.dependencia, Contacto: sol.datos.nombre, Correo: sol.datos.correo, Teléfono: sol.datos.telefono, Sistemas: sol.sistemas.map((s) => s.nombre).join(", "), Estado: "Requisitos completos: listo para implementar", Detalle: cuerpo });
+    sol.listo = true; sol.listoFecha = hoyISO(); await guardarSolicitudes();
+    if (ok) toast("Aviso enviado. ¡Todo listo para usar el sistema!");
+    else { toast("No se pudo enviar automáticamente. Se abrirá tu correo."); setTimeout(() => { location.href = `mailto:${para}?subject=${enc(asunto)}&body=${enc(cuerpo)}`; }, 300); }
+    keep(() => render(false));
+  },
   "cerrar-modal": cerrarModal,
   "conf-si"() { if (confFin) confFin(true); },
   "conf-no"() { if (confFin) confFin(false); }
 };
 
+const SOLO_SUPER = new Set(["usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar"]);
+const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act]");
   if (!t || t.disabled) return;
+  if (SOLO_SUPER.has(t.dataset.act) && !S.super) { e.preventDefault(); toast("Esta acción es solo para el superadministrador."); return; }
+  if (SOLO_GESTION.has(t.dataset.act) && !S.admin) { e.preventDefault(); toast("Necesitas ser colaborador o superadministrador."); return; }
   const fn = ACT[t.dataset.act];
   if (fn) { if (t.tagName === "A" && !t.getAttribute("href")) e.preventDefault(); fn(t, e); }
 });
@@ -2208,12 +2444,14 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("change", (e) => {
   const t = e.target;
-  if (t.dataset.sel === "orden") { F2.orden = t.value; render(false); }
+  if (t.dataset.usrRol) cambiarRolUsuario(t);
+  else if (t.dataset.chk) marcarRequisito(t);
+  else if (t.dataset.sel === "orden") { F2.orden = t.value; render(false); }
   else if (t.dataset.sel === "addsis") { if (t.value && !F.sel.includes(t.value)) F.sel.push(t.value); keep(() => render(false)); }
-  else if (t.dataset.up2) { const f = t.files[0], k = t.dataset.up2, id = t.dataset.id; t.value = ""; if (f) subirImagenRapida(k, id, f); }
-  else if (t.dataset.up === "import") { const f = t.files[0]; t.value = ""; if (f) importarCatalogo(f); }
+  else if (t.dataset.up2 && S.admin) { const f = t.files[0], k = t.dataset.up2, id = t.dataset.id; t.value = ""; if (f) subirImagenRapida(k, id, f); }
+  else if (t.dataset.up === "import") { if (!S.super) { t.value = ""; return toast("Solo el superadministrador puede cargar un catálogo."); } const f = t.files[0]; t.value = ""; if (f) importarCatalogo(f); }
   else if (t.dataset.up) { const fs = [...t.files]; t.value = ""; subirArchivos(t.dataset.up, fs); }
-  else if (t.dataset.catf) {
+  else if (t.dataset.catf && S.admin) {
     const k = catById(t.dataset.id); if (!k) return;
     if (t.dataset.catf === "nombre") { k.nombre = t.value.trim() || k.nombre; guardarCatalogo(); renderChrome("admin"); }
     else { k[t.dataset.catf] = t.value; guardarCatalogo(); keep(() => render(false)); }
@@ -2223,7 +2461,10 @@ document.addEventListener("submit", (e) => {
   const f = e.target;
   if (f.id === "form-sol") { e.preventDefault(); enviarSolicitud(); }
   else if (f.id === "form-login") { e.preventDefault(); iniciarSesion(); }
-  else if (f.id === "form-setup") { e.preventDefault(); crearAdminInicial(); }
+  else if (f.id === "form-super") { e.preventDefault(); solicitarSuper(); }
+  else if (f.id === "form-codigo") { e.preventDefault(); verificarCodigoSuper(); }
+  else if (f.id === "form-ren") { e.preventDefault(); guardarRenombrar(); }
+  else if (f.id === "form-cat") { e.preventDefault(); guardarCategoria(); }
   else if (f.id === "form-cambiar") { e.preventDefault(); guardarClaveObligatoria(); }
   else if (f.id === "form-reg") { e.preventDefault(); solicitarUsuario(); }
   else if (f.id === "form-rec") { e.preventDefault(); solicitarRecuperacion(); }
