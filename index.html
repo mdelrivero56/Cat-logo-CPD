@@ -704,9 +704,10 @@ const CONFIG_BASE = {
   pinHash: "",
   correoAdmin: "",   // recibe solicitudes de usuario y de recuperación de contraseña
   logo: "",                   // imagen subida (opcional); si está vacío se usa el diseño de abajo
-  logoMarca: "facetas",       // facetas | mosaico | capas | orbita | cubo | onda | inicial
-  logoColor: "azul",          // color de la paleta
-  logoForma: "squircle",      // squircle | circulo | cuadrado
+  logoMarca: "nodos",         // facetas | mosaico | capas | orbita | cubo | onda | inicial
+  logoColor: "turquesa",      // color de la paleta
+  logoForma: "cuadrado",      // squircle | circulo | cuadrado
+  directorio: [],             // personas responsables: [{nombre, cargo, correo, telefono}]
   horario: "",                // ej. «Lunes a viernes, 9:00 a 17:00»
   tiempoRespuesta: "3 días hábiles",
   reunion: "Coordinamos una reunión con tu dependencia para presentar el sistema, definir accesos y acordar fechas de uso.",
@@ -1073,6 +1074,7 @@ function cabecera(titulo, sub = "", cuando = "") {
 }
 function vacio(titulo, texto, extra = "") { return `<div class="empty">${glifo("search")}<b>${esc(titulo)}</b><p>${esc(texto)}</p>${extra}</div>`; }
 const LOGO_MARCAS = {
+  nodos: { n: "Nodos", d: '<g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".85"><path d="M32 32L18 20M32 32L46 20M32 32L32 48"/></g><circle cx="32" cy="32" r="8.5" fill="#fff"/><circle cx="18" cy="20" r="5" fill="#fff" opacity=".92"/><circle cx="46" cy="20" r="5" fill="#fff" opacity=".92"/><circle cx="32" cy="49" r="5.5" fill="#f2b632"/>' },
   facetas: { n: "Facetas", d: '<g transform="translate(32 32) rotate(45) scale(1.16) translate(-32 -32)"><rect x="18.5" y="18.5" width="12" height="12" rx="3.6" fill="#fff"/><rect x="33.5" y="18.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".7"/><rect x="18.5" y="33.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".5"/><rect x="33.5" y="33.5" width="12" height="12" rx="3.6" fill="#fff" opacity=".3"/></g>' },
   mosaico: { n: "Mosaico", d: '<rect x="17" y="17" width="13" height="13" rx="3.5" fill="#fff"/><circle cx="41" cy="23.5" r="6.5" fill="#fff" opacity=".78"/><rect x="17" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".78"/><rect x="34" y="34" width="13" height="13" rx="3.5" fill="#fff" opacity=".5"/>' },
   capas: { n: "Capas", d: '<path d="M32 15 49 24.5 32 34 15 24.5Z" fill="#fff"/><path d="M15 33 32 42.5 49 33" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/><path d="M15 41.5 32 51 49 41.5" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/>' },
@@ -1563,6 +1565,7 @@ function render(nav) {
       case "gracias": html = vGracias(b); break;
       case "solicitudes": html = vSolicitudes(); break;
       case "ayuda": html = vAyuda(); break;
+      case "contacto": html = vContacto(); break;
       case "admin": html = vAdmin(b, c); break;
       default: html = vNoEncontrado();
     }
@@ -1601,7 +1604,7 @@ function renderChrome(a) {
   $("#tabbar").innerHTML = `<a class="rail-brand${imgOk(c.logo) ? "" : " lg"}" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${logoInner(c)}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
     + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
-  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
+  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}· <a href="#/contacto">Contacto y directorio</a>${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
 }
 
 /* ---------- Vistas públicas ---------- */
@@ -1791,6 +1794,20 @@ function vFicha(id) {
   <div class="cta-end"><div><b>¿Te sirve ${esc(s.nombre)}?</b><p>Envía tu solicitud y nos pondremos en contacto con tu dependencia para coordinar una reunión.${correo ? "" : ""}</p></div>${btnGet(s, "big", true)}</div>`;
 }
 
+function vContacto() {
+  const c = cfg(), dir = Array.isArray(c.directorio) ? c.directorio : [];
+  const tel = (t) => String(t || "").replace(/[^\d+]/g, "");
+  const med = [
+    c.correoDestino && `<a class="ctc" href="mailto:${esc(c.correoDestino)}">${glifo("correo")}<span><b>Correo</b>${esc(c.correoDestino)}</span></a>`,
+    c.telefono && `<a class="ctc" href="tel:${esc(tel(c.telefono))}">${glifo("mensaje")}<span><b>Teléfono</b>${esc(c.telefono)}</span></a>`,
+    c.horario && `<div class="ctc">${glifo("reloj")}<span><b>Horario</b>${esc(c.horario)}</span></div>`
+  ].filter(Boolean).join("");
+  const pers = dir.map((p) => `<li class="dir-p"><span class="dir-av" aria-hidden="true">${esc((p.nombre || "?")[0].toUpperCase())}</span><div><b>${esc(p.nombre)}</b>${p.cargo ? `<small>${esc(p.cargo)}</small>` : ""}${p.correo ? `<a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>` : ""}${p.telefono ? `<a href="tel:${esc(tel(p.telefono))}">${esc(p.telefono)}</a>` : ""}</div></li>`).join("");
+  const ed = S.admin ? `<details class="dir-ed"><summary>Editar directorio</summary><p>Una persona por línea: Nombre | Cargo | Correo | Teléfono</p><textarea id="dir-txt" rows="6" aria-label="Directorio">${esc(dir.map((p) => [p.nombre, p.cargo, p.correo, p.telefono].map((x) => x || "").join(" | ")).join("\n"))}</textarea><button class="btn" data-act="guardar-directorio">Guardar directorio</button></details>` : "";
+  return `${cabecera("Contacto", "Escríbenos o llámanos; respondemos en " + (c.tiempoRespuesta || "unos días") + ".")}
+    <div class="ctcs">${med || vacio("Aún no hay datos de contacto", S.admin ? "Agrégalos en Administración → Configuración." : "Vuelve pronto.")}</div>
+    <h2 class="dir-h">Directorio</h2>${pers ? `<ul class="dir">${pers}</ul>` : vacio("El directorio está vacío", S.admin ? "Agrega a las personas responsables abajo." : "Pronto publicaremos a las personas responsables.")}${ed}`;
+}
 function vAyuda() {
   const c = cfg();
   const faq = [
@@ -2650,6 +2667,7 @@ const ACT = {
   },
   "e-descartar"() { const [, , id] = hashParts(); delete S.drafts[id]; render(false); },
   "entrar-visitante"() { S.guest = true; try { sessionStorage.setItem("catalogo-visitante", "1"); } catch (e) {} location.hash = "#/"; render(true); },
+  "guardar-directorio"() { const t = $("#dir-txt"); if (!t) return; cfg().directorio = t.value.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((a) => a[0]).map((a) => ({ nombre: a[0], cargo: a[1] || "", correo: a[2] || "", telefono: a[3] || "" })); guardarCatalogo(); toast("Directorio guardado"); render(true); },
   "ir-login"() { cerrarModal(); S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
   "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
@@ -2797,6 +2815,24 @@ function vAuthSB() {
   <button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Volver al catálogo</button></div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
 
+
+/* ---------- Accesibilidad: preferencias guardadas en este dispositivo ---------- */
+(function () {
+  const K = "catalogo-acc"; let a = {}; try { a = JSON.parse(localStorage.getItem(K) || "{}"); } catch (e) {}
+  const OP = [["hc", "Alto contraste"], ["big", "Texto más grande"], ["dys", "Letra más espaciada"], ["calm", "Reducir animaciones"]];
+  const ap = () => OP.forEach(([k]) => document.documentElement.classList.toggle("acc-" + k, !!a[k]));
+  ap();
+  const b = document.createElement("button"); b.id = "acc-btn"; b.type = "button"; b.setAttribute("aria-label", "Opciones de accesibilidad"); b.setAttribute("aria-expanded", "false");
+  b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5m0 0l-3 5.5m3-5.5l3 5.5"/></svg>';
+  const pop = document.createElement("div"); pop.id = "acc-pop"; pop.hidden = true; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Accesibilidad");
+  const draw = () => { pop.innerHTML = "<b>Accesibilidad</b>" + OP.map(([k, t]) => `<button type="button" role="switch" aria-checked="${!!a[k]}" data-k="${k}"><span>${t}</span><i></i></button>`).join(""); };
+  draw();
+  pop.onclick = (e) => { const t = e.target.closest("[data-k]"); if (!t) return; a[t.dataset.k] = !a[t.dataset.k]; try { localStorage.setItem(K, JSON.stringify(a)); } catch (x) {} ap(); draw(); };
+  b.onclick = () => { pop.hidden = !pop.hidden; b.setAttribute("aria-expanded", String(!pop.hidden)); };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { pop.hidden = true; b.focus(); } });
+  document.body.append(b, pop);
+})();
+
 async function boot() {
   const okIDB = await IDB.open();
   S.memoria = !okIDB;
@@ -2861,6 +2897,44 @@ boot().catch((err) => { console.error(err); view.innerHTML = vacio("No se pudo i
 .ico{box-shadow:0 3px 8px -2px rgba(14,47,61,.3)}
 @media (prefers-color-scheme:light){.how li,.rev,.empty-card,.tagcard,.selchip,.card,.cta-end{background:#fff;border:1px solid #dfe7ec;box-shadow:0 1px 3px rgba(14,47,61,.06)}}
 @media (max-width:640px){.pagehead{padding:20px 18px 18px;border-radius:14px}}
+
+/* ===== Paleta estructurada (tokens con nombre) ===== */
+:root{--pal-profundo:#0e2f3d;--pal-apoyo:#12475a;--pal-principal:#0f6e8c;--pal-acento:#f2b632;--pal-exito:#12803f;--pal-aviso:#a14a06;--pal-error:#c0262d;--pal-texto:#13232b;--pal-borde:#dfe7ec}
+:focus-visible{outline:3px solid var(--pal-acento);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+html.acc-calm *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+html.acc-big body{zoom:1.14}
+html.acc-dys body{letter-spacing:.04em;word-spacing:.14em;line-height:1.75}
+html.acc-hc{--accent:#00506b;--accent-soft:rgba(0,80,107,.16);--sep:#000}
+html.acc-hc body{background:#fff;color:#000}
+html.acc-hc .sidebar,html.acc-hc .tabbar{background:#00222e}
+html.acc-hc .pagehead{background:#00222e;box-shadow:none}
+html.acc-hc .card,html.acc-hc .how li,html.acc-hc .rev,html.acc-hc .chips a,html.acc-hc .chips button,html.acc-hc .ctc,html.acc-hc .dir-p{border:2px solid #000;box-shadow:none}
+html.acc-hc a{text-decoration:underline}html.acc-hc .get{background:#00506b;border:2px solid #000}
+html.acc-hc *{--label-2:#000}
+/* ===== Botón y panel de accesibilidad ===== */
+#acc-btn{position:fixed;right:14px;bottom:18px;z-index:80;width:46px;height:46px;border-radius:50%;border:2px solid #fff;background:var(--pal-principal);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 8px 20px -6px rgba(14,47,61,.6)}
+#acc-pop{position:fixed;right:14px;bottom:72px;z-index:80;width:min(280px,calc(100vw - 28px));background:#fff;color:var(--pal-texto);border:1px solid var(--pal-borde);border-radius:14px;padding:14px;box-shadow:0 18px 40px -14px rgba(14,47,61,.5);display:grid;gap:6px}
+#acc-pop[hidden]{display:none}
+#acc-pop b{font-size:14px;margin-bottom:4px}
+#acc-pop button{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--pal-borde);border-radius:10px;background:#fff;color:inherit;font:inherit;font-size:14px;cursor:pointer;text-align:left}
+#acc-pop i{width:36px;height:20px;border-radius:99px;background:#b8c4cb;position:relative;flex:none}
+#acc-pop i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+#acc-pop [aria-checked="true"] i{background:var(--pal-principal)}#acc-pop [aria-checked="true"] i::after{transform:translateX(16px)}
+@media (max-width:900px){#acc-btn{bottom:calc(76px + env(safe-area-inset-bottom,0px))}#acc-pop{bottom:calc(130px + env(safe-area-inset-bottom,0px))}}
+.foot{padding-right:76px}
+/* ===== Contacto y directorio ===== */
+.ctcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:22px}
+.ctc{display:flex;gap:12px;align-items:center;padding:14px 16px;background:#fff;border:1px solid var(--pal-borde);border-radius:12px;color:inherit;text-decoration:none}
+.ctc .g{width:26px;height:26px;color:var(--pal-principal);flex:none}.ctc span{display:grid;font-size:14px;word-break:break-word}.ctc b{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--pal-principal)}
+.dir-h{margin:30px 0 12px;font-size:20px}
+.dir{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.dir-p{display:flex;gap:12px;padding:14px;background:#fff;border:1px solid var(--pal-borde);border-radius:12px}
+.dir-av{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--pal-principal),var(--pal-profundo));color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.dir-p div{display:grid;gap:2px;min-width:0;font-size:14px}.dir-p small{opacity:.75}.dir-p a{color:var(--pal-principal);word-break:break-all}
+.dir-ed{margin-top:22px;padding:14px;border:1px dashed var(--pal-borde);border-radius:12px}.dir-ed summary{cursor:pointer;font-weight:600}
+.dir-ed textarea{width:100%;margin:10px 0;padding:10px;border:1px solid var(--pal-borde);border-radius:10px;font:inherit;font-size:14px}
+@media (prefers-color-scheme:dark){.ctc,.dir-p,#acc-pop,#acc-pop button{background:#10222b;color:#e8f4f8;border-color:#27424f}}
 /* Barra inferior (celular) con el mismo estilo del panel azul petróleo */
 @media (max-width:900px){
   .tabbar{background:linear-gradient(180deg,#12475a,#0e2f3d);border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 -8px 24px -10px rgba(14,47,61,.55)}
