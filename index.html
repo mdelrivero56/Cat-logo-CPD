@@ -2130,15 +2130,23 @@ function vAdminBase(sub, id) {
 }
 
 function vAdminCategorias() {
-  const optG = (cur) => GLIFOS.map((g) => `<option value="${g}" ${g === cur ? "selected" : ""}>${g[0].toUpperCase() + g.slice(1)}</option>`).join("");
-  const optC = (cur) => Object.keys(COLORES).map((c) => `<option value="${c}" ${c === cur ? "selected" : ""}>${c[0].toUpperCase() + c.slice(1)}</option>`).join("");
-  return `<div class="admbar" style="margin-top:0"><span class="muted">Las categorías agrupan los sistemas en el catálogo.</span><button class="btn" data-act="add-cat">${glifo("plus")}Agregar categoría</button></div>
-  <div class="list-card">${S.cat.categorias.map((k) => `<div class="arow"><span class="ico s40" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>
-    <div class="field" style="flex:1;min-width:180px"><label class="sr" for="cn-${esc(k.id)}">Nombre</label><input id="cn-${esc(k.id)}" type="text" value="${esc(k.nombre)}" data-catf="nombre" data-id="${esc(k.id)}"></div>
-    <label class="sr" for="cg-${esc(k.id)}">Icono</label><select class="select" id="cg-${esc(k.id)}" data-catf="glifo" data-id="${esc(k.id)}">${optG(k.glifo)}</select>
-    <label class="sr" for="cc-${esc(k.id)}">Color</label><select class="select" id="cc-${esc(k.id)}" data-catf="color" data-id="${esc(k.id)}">${optC(k.color)}</select>
-    <span class="muted" style="font-size:13px;min-width:70px">${S.cat.sistemas.filter((s) => s.categorias.includes(k.id)).length} sistemas</span>
-    <button class="btn sm sec" data-act="edit-cat" data-id="${esc(k.id)}">Editar</button><button class="iconbtn bad" data-act="del-cat" data-id="${esc(k.id)}" aria-label="Eliminar ${esc(k.nombre)}">${glifo("trash")}</button></div>`).join("")}</div>`;
+  const opt = (arr, cur, f) => arr.map((g) => `<option value="${g}" ${g === cur ? "selected" : ""}>${f(g)}</option>`).join("");
+  const cap = (g) => g[0].toUpperCase() + g.slice(1);
+  const tarjeta = (k) => {
+    const n = S.cat.sistemas.filter((x) => x.categorias.includes(k.id)).length, id = esc(k.id);
+    return `<article class="cat-card">
+      <div class="cat-top"><span class="ico s40" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>
+        <div class="field"><label for="cn-${id}">Nombre de la categoría</label><input id="cn-${id}" type="text" value="${esc(k.nombre)}" data-catf="nombre" data-id="${id}" autocomplete="off"></div></div>
+      <div class="cat-opts">
+        <div class="field"><label for="cg-${id}">Ícono</label><select class="select" id="cg-${id}" data-catf="glifo" data-id="${id}">${opt(GLIFOS, k.glifo, cap)}</select></div>
+        <div class="field"><label for="cc-${id}">Color</label><select class="select" id="cc-${id}" data-catf="color" data-id="${id}">${opt(Object.keys(COLORES), k.color, cap)}</select></div>
+      </div>
+      <div class="cat-foot"><span class="cat-n">${n} sistema${n === 1 ? "" : "s"} en esta categoría</span>
+        <button class="btn sm ghost cat-del" data-act="del-cat" data-id="${id}" aria-label="Eliminar la categoría ${esc(k.nombre)}">${glifo("trash")}Eliminar</button></div>
+    </article>`;
+  };
+  return `<div class="admbar" style="margin-top:0"><span class="muted">Las categorías agrupan los sistemas en el catálogo. Los cambios de nombre, ícono y color se guardan solos.</span><button class="btn" data-act="add-cat">${glifo("plus")}Agregar categoría</button></div>
+  <div class="cat-list">${S.cat.categorias.map(tarjeta).join("")}</div>`;
 }
 
 function vAdminConfig(sec) {
@@ -3040,6 +3048,19 @@ html.acc-hc *{--label-2:#000}
 .ban-nota{width:calc(100% - 32px);margin:0 16px 10px;min-height:70px;border:1px solid var(--pal-borde);border-radius:10px;padding:10px;font:inherit;font-size:14px}
 .ban-card>.btn{margin:0 16px 16px}
 @media (prefers-color-scheme:dark){.ban-kpis div,.ban-card{background:#10222b;border-color:#27424f;color:#e8f4f8}.ban-nota{background:#0b1a21;color:#e8f4f8;border-color:#27424f}}
+
+/* ===== Administración › Categorías ===== */
+.cat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:14px}
+.cat-card{background:#fff;border:1px solid var(--pal-borde);border-radius:14px;padding:14px;display:grid;gap:12px}
+.cat-top{display:flex;gap:12px;align-items:flex-end}.cat-top .field{flex:1;min-width:0}
+.cat-top .ico{flex:none;margin-bottom:2px}
+.cat-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cat-card .field>label{font-size:12.5px}
+.cat-card .select,.cat-card input[type=text]{padding:9px 12px;font-size:15px}
+.cat-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--pal-borde);padding-top:10px}
+.cat-n{font-size:13px;opacity:.7}
+.cat-del{color:#c0262d;display:inline-flex;align-items:center;gap:6px}.cat-del .g{width:16px;height:16px}
+@media (prefers-color-scheme:dark){.cat-card{background:#10222b;border-color:#27424f}.cat-foot{border-color:#27424f}}
 /* Barra inferior (celular) con el mismo estilo del panel azul petróleo */
 @media (max-width:900px){
   .tabbar{background:linear-gradient(180deg,#12475a,#0e2f3d);border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 -8px 24px -10px rgba(14,47,61,.55)}
