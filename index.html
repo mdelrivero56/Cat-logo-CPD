@@ -1597,7 +1597,7 @@ function renderChrome(a) {
   $("#sidenav").innerHTML = `
     <a href="#/"${cur("")}>${glifo("hoy")}Descubrir</a>
     <a href="#/sistemas"${cur("sistemas")}>${glifo("capas")}Sistemas</a>
-    <a href="#/solicitudes"${cur("solicitudes")}>${glifo("send")}${S.super ? "Solicitudes" : "Mis solicitudes"}${S.sols.length ? ` <span class="badge acc" style="margin-left:auto">${S.sols.length}</span>` : ""}</a>
+    <a href="#/solicitudes"${cur("solicitudes")}>${glifo("send")}${S.super ? "Solicitudes" : "Mis solicitudes"}${misSols().length && !S.super ? ` <span class="badge acc" style="margin-left:auto">${misSols().length}</span>` : ""}</a>
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
@@ -1859,8 +1859,8 @@ function vSolicitar(id) {
   sug = sug.slice(0, 4);
   const campo = (k, label, o = {}) => `<div class="field ${o.full ? "full" : ""} ${e[k] ? "bad" : ""}"><label for="f-${k}">${label}${o.req ? ' <span class="req" aria-hidden="true">*</span>' : ""}</label><input id="f-${k}" type="${o.tipo || "text"}" data-form="${k}" value="${esc(v[k] || "")}" placeholder="${esc(o.ph || "")}" ${o.req ? 'aria-required="true"' : ""} ${o.extra || ""} autocomplete="${o.ac || "off"}">${e[k] ? `<span class="err" role="alert">${esc(e[k])}</span>` : ""}</div>`;
   const uniq = (a) => [...new Set(a.filter(Boolean))];
-  const depsUsadas = uniq(S.sols.map((x) => x.datos && x.datos.dependencia));
-  const usosUsados = uniq(S.sols.map((x) => { const m = /^Otro: (.+)/.exec((x.datos && x.datos.tipoUso) || ""); return m && m[1]; }));
+  const depsUsadas = uniq(misSols().map((x) => x.datos && x.datos.dependencia));
+  const usosUsados = uniq(misSols().map((x) => { const m = /^Otro: (.+)/.exec((x.datos && x.datos.tipoUso) || ""); return m && m[1]; }));
   F.nuevo = F.nuevo || {};
   const combo = (k, label, lista, o) => {
     if (!lista.length) return campo(k, label, o);
@@ -2078,15 +2078,23 @@ function vBandeja() {
     <div class="chips" role="group" aria-label="Filtrar por estado">${[["todas", "Todas (" + rows.length + ")"], ...Object.entries(ESTADOS_BAN).map(([k, v]) => [k, v[1] + " (" + cuenta(k) + ")"])].map(([k, t]) => `<button type="button" data-act="bandeja-filtro" data-v="${k}" ${S.bf === k ? 'aria-current="true" class="on"' : ""}>${t}</button>`).join("")}<button type="button" data-act="bandeja-recargar">${glifo("reloj")}Actualizar</button><button type="button" data-act="bandeja-exportar">Descargar Excel (.csv)</button></div>
     ${grupos.size ? [...grupos.values()].map((g) => `<section class="ban-dep"><h2>${esc(g.nombre)} <small>${g.items.length} solicitud${g.items.length === 1 ? "" : "es"}</small></h2>${g.items.map(card).join("")}</section>`).join("") : vacio("No hay solicitudes", S.bf === "todas" ? "Cuando una dependencia solicite un sistema aparecerá aquí." : "No hay solicitudes con este estado.")}`;
 }
+function misSols() { return S.user ? S.sols.filter((x) => normCorreo((x.datos || {}).correo || "") === normCorreo(S.user.correo || "")) : []; }
+function vSesionRequerida(titulo, sub, texto) {
+  return `${cabecera(titulo, sub)}<div class="sp"></div>
+    <div class="card" style="max-width:560px"><p style="margin:0 0 10px">${texto}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><a class="btn sec" href="#/sistemas">Seguir explorando</a></div></div>`;
+}
 function vSolicitudes() {
+  if (!S.user) return vSesionRequerida("Mis solicitudes", "Inicia sesión para ver tu historial.", "Tus solicitudes se muestran solo cuando inicias sesión con tu correo, para proteger tu información. Puedes seguir explorando el catálogo sin cuenta.");
+  const lista = misSols();
   const est = { enviada: ["ok", "Enviada"], pendiente: ["warn", "Falta enviar el correo"], guardada: ["", "Guardada en este dispositivo"] };
-  return `${cabecera("Mis solicitudes", "Historial de las solicitudes que hiciste desde este dispositivo.")}
+  return `${cabecera("Mis solicitudes", "Historial de las solicitudes que hiciste con tu cuenta en este dispositivo.")}
     <div class="sp"></div>
-    ${S.sols.length ? S.sols.map((sol) => { const [cl, tx] = est[sol.estado] || ["", sol.estado]; return `<article class="solcard"><header><div><b style="font-size:17px">${esc(sol.sistemas.map((s) => s.nombre).join(", "))}</b><div class="muted" style="font-size:14px">${esc(sol.datos.dependencia)} · ${esc(fmtFecha(sol.fecha))}</div></div><span class="badge ${cl}">${esc(tx)}</span></header>
+    ${lista.length ? lista.map((sol) => { const [cl, tx] = est[sol.estado] || ["", sol.estado]; return `<article class="solcard"><header><div><b style="font-size:17px">${esc(sol.sistemas.map((s) => s.nombre).join(", "))}</b><div class="muted" style="font-size:14px">${esc(sol.datos.dependencia)} · ${esc(fmtFecha(sol.fecha))}</div></div><span class="badge ${cl}">${esc(tx)}</span></header>
       <div class="muted" style="font-size:14px">Folio <span class="folio" style="font-size:13px;padding:2px 8px">${esc(sol.folio)}</span>${sol.listo ? ' <span class="badge ok">Listo para implementar</span>' : ""}</div>${vChecklist(sol)}
       <div class="acts">${sol.estado === "pendiente" ? `<a class="btn sm" href="${esc(mailtoSol(sol))}">${glifo("correo")}Abrir correo</a>` : ""}<button class="btn sm sec" data-act="copiar-sol" data-id="${esc(sol.id)}">${glifo("copy")}Copiar mensaje</button>${sol.estado !== "enviada" ? `<button class="btn sm sec" data-act="marcar-enviada" data-id="${esc(sol.id)}">Marcar como enviada</button>` : ""}<button class="btn sm danger" data-act="del-sol" data-id="${esc(sol.id)}">${glifo("trash")}Eliminar</button></div></article>`; }).join("")
       : vacio("Todavía no has enviado solicitudes", "Cuando solicites un sistema aparecerá aquí con su folio.", `<a class="btn" href="#/sistemas">Explorar sistemas</a>`)}
-    ${S.sols.length ? `<p class="muted" style="font-size:13.5px;margin-top:6px">Este historial se guarda solo en este navegador. Las solicitudes llegan al correo de ${esc(cfg().organizacion)}.</p>` : ""}`;
+    ${lista.length ? `<p class="muted" style="font-size:13.5px;margin-top:6px">Este historial se guarda solo en este navegador. Las solicitudes llegan al correo de ${esc(cfg().organizacion)}.</p>` : ""}`;
 }
 
 /* ---------- Administración ---------- */
