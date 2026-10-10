@@ -20,7 +20,7 @@
   --shadow:0 1px 2px rgba(0,0,0,.05),0 10px 30px rgba(0,0,0,.09);
   --shadow-pop:0 20px 60px rgba(0,0,0,.28);
   --scrim:rgba(0,0,0,.4);
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font:"Segoe UI",Roboto,"Helvetica Neue",Arial,system-ui,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --gutter:40px;
 }
@@ -2160,7 +2160,7 @@ function vEditor(id) {
   <div style="margin-top:22px">
   ${grp("Identidad", "El nombre y el icono son lo primero que ven las dependencias.", `<div class="fields">
       ${inp("nombre", "Nombre del sistema", { req: true, full: true, ph: "Ej. Sistema de Votación" })}
-      ${inp("subtitulo", "Frase corta", { full: true, ph: "Ej. Cuenta quién votó en tus reuniones y eventos", hint: "Aparece bajo el nombre, como en la App Store." })}
+      ${inp("subtitulo", "Frase corta", { full: true, ph: "Ej. Cuenta quién votó en tus reuniones y eventos", hint: "Aparece bajo el nombre del sistema en el catálogo." })}
       <div class="field full"><span class="lbl">Icono</span>
         <div class="up" style="margin:6px 0 10px">${icono(s, "s96")}
           <div style="display:grid;gap:8px"><div class="up"><input type="file" id="up-icono" accept="image/*" data-up="icono"><label class="btn sec sm" for="up-icono">${glifo("upload")}Subir imagen</label>${imgOk(s.icono.imagen) ? `<button type="button" class="btn ghost sm" data-act="e-quitar-icono">Quitar imagen</button>` : ""}</div><span class="muted" style="font-size:12.5px">O elige un símbolo y un color. Mejor una imagen cuadrada.</span></div></div>
@@ -2826,5 +2826,54 @@ async function boot() {
 boot().catch((err) => { console.error(err); view.innerHTML = vacio("No se pudo iniciar el catálogo", "Recarga la página. Si el problema continúa, avisa al equipo responsable."); });
 })();
 </script>
+<style id="identidad">
+/* ===== Identidad visual propia ===== */
+:root{--accent:#0f6e8c;--accent-soft:rgba(15,110,140,.12)}
+@media (prefers-color-scheme:dark){:root{--accent:#4fb8d4;--accent-soft:rgba(79,184,212,.18)}}
+.btn,.chip,.seg,.seg a,.pill,.tag,.badge{border-radius:9px}
+.card{border-radius:12px}
+.sidebar{background:linear-gradient(180deg,#0e2f3d,#12475a);border-right:0}
+.sidebar,.sidebar a,.sidebar h6,.sidebar .brand,.sidebar .brand b,.sidebar small,.sidebar .mode,.sidebar .sidenav-a,.sidebar button{color:#e8f4f8}
+.sidebar h6,.sidebar small,.sidebar .mode{color:#a9cbd6}
+.sidebar a:hover,.sidebar .sidenav-a:hover{background:rgba(255,255,255,.08)}
+.sidebar a[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
+.sidebar .sidenav a .g,.sidebar .sidenav-a .g,.sidebar .side-foot .g{color:#cfe8ef!important;stroke:#cfe8ef!important}
+.sidebar .sidenav-a,.sidebar .side-foot button{color:#e8f4f8!important;opacity:1!important}
+.sidebar a[aria-current="page"] .g{stroke:#fff!important;color:#fff!important}
+.sidebar input,.sidebar .search{background:rgba(255,255,255,.1);color:#fff;border-color:transparent}
+.sidebar input::placeholder{color:#a9cbd6}
+.side-foot{border-top-color:rgba(255,255,255,.16)}
+.ico{border-radius:19%}
+.get{border-radius:9px;background:var(--accent);color:#fff}
+.get.glass{background:rgba(255,255,255,.22);color:#fff}
+.feat-card,.coll{border-radius:14px}.feat-shot{border-radius:8px}
+.how li,.shot,.rev,.empty-card{border-radius:12px}.cta-end{border-radius:16px}.tagcard,.selchip,.note,.bigsearch{border-radius:10px}
+.pagehead .large-title{font-weight:800;letter-spacing:-.03em}
+/* ===== Rediseño visible: banda de encabezado, tarjetas con borde, chips rectangulares ===== */
+.pagehead{background:linear-gradient(120deg,#0e2f3d 0%,#0f6e8c 100%);color:#fff;border-radius:16px;padding:26px 28px 22px;margin-top:calc(18px + env(safe-area-inset-top,0px));box-shadow:0 12px 28px -16px rgba(14,47,61,.6);position:relative;overflow:hidden;align-items:center}
+.pagehead::after{content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(242,182,50,.35),transparent 65%);pointer-events:none}
+.pagehead .large-title,.pagehead .lede,.pagehead .when{color:#fff}
+.pagehead .lede,.pagehead .when{opacity:.82}
+.pagehead .large-title::before{margin-bottom:12px}
+.chips a,.chips button{background:#fff;border:1px solid var(--sep);border-radius:8px;box-shadow:0 1px 2px rgba(14,47,61,.06)}
+.chips a[aria-current="page"],.chips .on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.feat-card{box-shadow:0 14px 30px -14px rgba(14,47,61,.55);border:1px solid rgba(255,255,255,.25)}
+.ico{box-shadow:0 3px 8px -2px rgba(14,47,61,.3)}
+@media (prefers-color-scheme:light){.how li,.rev,.empty-card,.tagcard,.selchip,.card,.cta-end{background:#fff;border:1px solid #dfe7ec;box-shadow:0 1px 3px rgba(14,47,61,.06)}}
+@media (max-width:640px){.pagehead{padding:20px 18px 18px;border-radius:14px}}
+/* Barra inferior (celular) con el mismo estilo del panel azul petróleo */
+@media (max-width:900px){
+  .tabbar{background:linear-gradient(180deg,#12475a,#0e2f3d);border-top:0;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 -8px 24px -10px rgba(14,47,61,.55)}
+  .tabbar a:not(.rail-brand),.rail-admin{color:#a9cbd6}
+  .tabbar .g{color:#cfe8ef;stroke:#cfe8ef}
+  .tabbar a[aria-current="page"]{background:rgba(255,255,255,.16);color:#fff}
+  .tabbar a[aria-current="page"] .g{stroke:#fff;color:#fff}
+  .tabbar a:not(.rail-brand)::before{background:#f2b632}
+  .rail-admin.on{color:#f2b632}
+}
+
+
+.pagehead .large-title::before{width:48px;height:5px;border-radius:2px;background:linear-gradient(90deg,#f2b632,#0f6e8c)}
+</style>
 </body>
 </html>
