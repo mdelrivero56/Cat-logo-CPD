@@ -316,8 +316,8 @@ main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:0 var(--gutter) 72
 .steps li::before{counter-increment:p;content:counter(p);width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:14px}
 .steps li:last-child{border-bottom:0}
 .usedby{display:flex;gap:18px;align-items:stretch;min-width:0}
-.usedby .big{flex:none;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:0;min-width:84px}
-.usedby .big b{font-size:62px;line-height:1;font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.usedby .big{flex:none;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:2px;min-width:96px;padding:6px 10px 6px 8px;overflow:visible}
+.usedby .big b{display:block;font-size:58px;line-height:1.2;padding-top:2px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow:visible}
 .usedby .big span{color:var(--label-2);font-size:14px}
 .revs{display:grid;grid-auto-flow:column;grid-auto-columns:min(78%,320px);gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;flex:1;min-width:0;padding-block:2px 6px}
 .revs::-webkit-scrollbar{display:none}
@@ -616,6 +616,7 @@ button.avatar{font:inherit;font-weight:700}
   <symbol id="g-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
   <symbol id="g-send" viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7z"/><path d="M10 13l11-10"/></symbol>
   <symbol id="g-lista" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+  <symbol id="g-campana" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21.2a2.2 2.2 0 0 0 4 0"/></symbol>
   <symbol id="g-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
   <symbol id="g-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
   <symbol id="g-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
@@ -722,6 +723,8 @@ const CONFIG_BASE = {
 const SUPABASE_URL = "";
 const SUPABASE_KEY = "";
 const SB_ON = !!(SUPABASE_URL && SUPABASE_KEY);
+const URL_RECUP = SB_ON && /[#&?]type=recovery/.test(location.hash + location.search);
+const URL_ERR = SB_ON && /[#&?](error_code|error_description)=/.test(location.hash + location.search);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
 const CORREO_SUPER = "";  // recibe el código para autorizar cuentas de Superadministrador
@@ -901,6 +904,8 @@ function migrar(c) {
   const base = datosEjemplo();
   const out = { formato: 2, editado: !!c.editado, actualizado: c.actualizado || hoyISO(), config: Object.assign({}, CONFIG_BASE, c.config || {}) };
   out.usuarios = Array.isArray(c.usuarios) ? c.usuarios.filter((u) => u && (u.correo || u.rfc) && u.hash).map((u) => Object.assign({}, u, { rol: rolDe(u.rol) })) : [];
+  out.avisos = Array.isArray(c.avisos) ? c.avisos.filter((a) => a && a.id).slice(0, 300) : [];
+  out.notificaciones = Array.isArray(c.notificaciones) ? c.notificaciones.filter((n) => n && n.id).slice(0, 200) : [];
   out.categorias = Array.isArray(c.categorias) ? c.categorias : base.categorias;
   out.sistemas = (Array.isArray(c.sistemas) ? c.sistemas : []).map((s) => {
     const b = sistemaBase({});
@@ -1163,7 +1168,190 @@ const authErr = (t) => { const e = $("#a-err"); if (e) e.textContent = t; };
 function abrirSesion(u, recordar) {
   S.user = u; aplicarRol(u); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} guardarSesion(u, recordar); S.authView = "login";
   if (/^#\/acceso/.test(location.hash)) history.replaceState(null, "", "#/");
-  render(true); if (!u.debeCambiar) toast(`Bienvenido(a), ${u.nombre.split(" ")[0]}`);
+  render(true); if (!u.debeCambiar) toast(nNoLeidas() ? `Bienvenido(a), ${u.nombre.split(" ")[0]} · tienes ${nNoLeidas()} ${nNoLeidas() === 1 ? "notificación nueva" : "notificaciones nuevas"}` : `Bienvenido(a), ${u.nombre.split(" ")[0]}`);
+}
+
+/* ---------- Registro propio y notificaciones (sin códigos ni correos) ---------- */
+function notificar(tipo, titulo, detalle) {
+  if (!Array.isArray(S.cat.notificaciones)) S.cat.notificaciones = [];
+  S.cat.notificaciones.unshift({ id: uid("not"), tipo, titulo, detalle: detalle || {}, fecha: new Date().toISOString(), leida: false });
+  S.cat.notificaciones = S.cat.notificaciones.slice(0, 200);
+}
+const nNoLeidas = () => (S.super && Array.isArray(S.cat.notificaciones) ? S.cat.notificaciones.filter((n) => !n.leida).length : 0);
+async function sbNotifs() {
+  if (!SB) return;
+  try {
+    const { data, error } = await SB.from("notificaciones").select("*").order("creado", { ascending: false }).limit(200);
+    if (!error && data) S.cat.notificaciones = data.map((x) => ({ id: x.id, tipo: x.tipo, titulo: x.titulo, detalle: x.detalle || {}, fecha: x.creado, leida: !!x.leida }));
+  } catch (e) { /* sin avisos */ }
+}
+async function marcarNotifs(id) {
+  const l = (S.cat.notificaciones || []).filter((n) => (id ? n.id === id : !n.leida));
+  l.forEach((n) => (n.leida = true));
+  if (SB && l.length) { try { await SB.from("notificaciones").update({ leida: true }).in("id", l.map((n) => n.id)); } catch (e) {} } else guardarCatalogo();
+}
+async function registrarse() {
+  authErr("");
+  const d = { nombre: val("a-nombre"), dependencia: val("a-dep"), area: val("a-area"), cargo: val("a-cargo"), correo: normCorreo(val("a-correo")), telefono: val("a-tel") };
+  const p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
+  if (d.nombre.length < 3) return authErr("Escribe tu nombre completo.");
+  if (d.dependencia.length < 2) return authErr("Escribe tu dependencia u organización.");
+  if (d.cargo.length < 2) return authErr("Escribe tu cargo.");
+  if (!correoOk(d.correo)) return authErr("Escribe un correo electrónico válido.");
+  if (d.telefono.replace(/\D/g, "").length < 8) return authErr("Escribe un teléfono de al menos 8 dígitos.");
+  if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
+  if (normCorreo(p1) === d.correo) return authErr("La contraseña no puede ser tu correo.");
+  if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
+  if (!$("#a-acepto").checked) return authErr("Acepta el aviso de privacidad para continuar.");
+  const btn = $("#a-reg-btn"); if (btn) { btn.disabled = true; btn.textContent = "Creando tu cuenta…"; }
+  const fin = (m) => { if (btn) { btn.disabled = false; btn.textContent = "Crear mi cuenta"; } authErr(m); };
+  if (SB_ON) return sbRegistro(d, p1, fin);
+  if (buscarPorCorreo(d.correo)) return fin("Ese correo ya está registrado. Inicia sesión.");
+  const salt = nuevoSalt();
+  const u = { id: uid("usr"), nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono, rol: "visitante", estado: "activo", salt, hash: await hashClave(p1, salt), debeCambiar: false, creado: hoyISO(), registro: true };
+  S.cat.usuarios.push(u);
+  notificar("registro", `Se unió ${d.nombre}`, { userId: u.id, nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono });
+  guardarCatalogo(); abrirSesion(u, true);
+}
+async function sbRegistro(d, p1, fin) {
+  if (!SB) return fin("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  const { data, error } = await SB.auth.signUp({ email: d.correo, password: p1, options: { data: { nombre: d.nombre } } });
+  if (error) return fin(/regist|already|exists/i.test(error.message) ? "Ese correo ya está registrado. Inicia sesión." : "No se pudo crear la cuenta: " + error.message);
+  if (!data.session) return fin("Tu cuenta se creó, pero el servicio pide confirmar el correo. El administrador debe desactivar «Confirm email» en Supabase (Authentication → Providers → Email).");
+  const perfil = { id: data.user.id, nombre: d.nombre, correo: d.correo, rol: "visitante", estado: "activo", dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono };
+  const { error: e2 } = await SB.from("perfiles").insert(perfil);
+  if (e2) { await SB.auth.signOut(); return fin("No se pudo guardar tu perfil. Avisa al administrador."); }
+  try { await SB.from("notificaciones").insert({ tipo: "registro", titulo: `Se unió ${d.nombre}`, detalle: { userId: data.user.id, nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono } }); } catch (e) {}
+  const u = await sbPerfil(data.user);
+  if (!u) return fin("Tu cuenta se creó, pero no se pudo iniciar la sesión. Inicia sesión con tu correo y contraseña.");
+  abrirSesion(u, true);
+}
+function solicitarRecuperacion() {
+  if (SB_ON) return sbRecuperar();
+  const correo = normCorreo(val("a-correo"));
+  authErr("");
+  if (!correoOk(correo)) return authErr("Escribe el correo con el que te registraste.");
+  const u = buscarPorCorreo(correo);
+  if (u) notificar("recuperacion", `${u.nombre} pidió restablecer su contraseña`, { userId: u.id, nombre: u.nombre, correo: u.correo, dependencia: u.dependencia || "" });
+  guardarCatalogo(); S.authView = "login"; render(false);
+  toast("Listo: avisamos al administrador para que te genere una contraseña temporal.");
+}
+function vAdminNotif() {
+  const L = Array.isArray(S.cat.notificaciones) ? S.cat.notificaciones : [], nl = L.filter((n) => !n.leida).length;
+  const fecha = (iso) => { try { return new Date(iso).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" }); } catch (e) { return ""; } };
+  const dato = (k, v) => (v ? `<div><span class="k">${k}</span><span class="v">${esc(v)}</span></div>` : "");
+  const sinSB = SB_ON ? "" : `<div class="note warn" style="margin-bottom:14px">${glifo("warn")}<div>Sin servidor conectado, estos avisos solo aparecen cuando la persona se registra <b>en este mismo navegador</b>. Para recibirlos desde cualquier dispositivo, conecta Supabase.</div></div>`;
+  return `<div class="admbar" style="margin-top:0"><span class="muted">${L.length ? `${nl} sin leer · ${L.length} en total` : "Sin notificaciones"}</span>${nl ? `<button class="btn sec sm" data-act="notif-todas">${glifo("check")}Marcar todas como leídas</button>` : ""}</div>${sinSB}
+  ${L.length ? `<div class="list-card">${L.map((n) => { const d = n.detalle || {}, rec = n.tipo === "recuperacion"; return `<div class="arow" style="align-items:flex-start;${n.leida ? "opacity:.72" : ""}"><span class="avatar-i" style="${n.leida ? "" : "background:linear-gradient(145deg,var(--accent),#2bb5a0);color:#fff"}">${glifo(rec ? "candado" : "user")}</span>
+    <div class="t"><b>${esc(n.titulo)}</b> ${n.leida ? "" : '<span class="badge acc">Nueva</span>'}<small>${esc(fecha(n.fecha))}</small>
+      <div class="kv" style="margin-top:8px">${dato("Dependencia", d.dependencia)}${dato("Área", d.area)}${dato("Cargo", d.cargo)}${dato("Correo", d.correo)}${dato("Teléfono", d.telefono)}</div></div>
+    <div class="acts">${rec && d.userId ? `<button class="btn sm" data-act="usr-reset" data-id="${esc(d.userId)}">Restablecer contraseña</button>` : `<a class="btn sm sec" href="#/admin/usuarios">Ver en Usuarios</a>`}${n.leida ? "" : `<button class="btn sm ghost" data-act="notif-leer" data-id="${esc(n.id)}">Marcar leída</button>`}</div></div>`; }).join("")}</div>`
+    : vacio("Todo al día", "Cuando alguien se registre o pida restablecer su contraseña, lo verás aquí.", "")}`;
+}
+
+/* ---------- Avisos para usuarios + campana flotante ---------- */
+const TIPOS_AVISO = { sistema: "Sistema nuevo", recordatorio: "Recordatorio", general: "Aviso" };
+const AUDIENCIAS = { todos: "Todos", usuarios: "Usuarios registrados", visualizadores: "Visualizadores" };
+const leidosKey = () => "catalogo-leidos-" + (S.user ? S.user.id : "visualizador");
+const leidosSet = () => { try { return new Set(JSON.parse(localStorage.getItem(leidosKey()) || "[]")); } catch (e) { return new Set(); } };
+const guardarLeidos = (set) => { try { localStorage.setItem(leidosKey(), JSON.stringify([...set].slice(-300))); } catch (e) {} };
+function avisosVis() {
+  const hoy = hoyISO(), L = Array.isArray(S.cat.avisos) ? S.cat.avisos : [];
+  return L.filter((a) => (a.publicar || "") <= hoy && (!a.vence || a.vence >= hoy) && (a.audiencia === "usuarios" ? !!S.user : a.audiencia === "visualizadores" ? !S.user : true))
+    .sort((x, y) => (y.fijado ? 1 : 0) - (x.fijado ? 1 : 0) || (y.publicar || "").localeCompare(x.publicar || ""));
+}
+const nAvisosNo = () => { const l = leidosSet(); return avisosVis().filter((a) => !l.has(a.id)).length; };
+const nCampana = () => nAvisosNo() + nNoLeidas();
+function marcarAvisos(id) { const l = leidosSet(); (id ? [id] : avisosVis().map((a) => a.id)).forEach((x) => l.add(x)); guardarLeidos(l); }
+function refrescarCampana() { renderChrome(hashParts()[0]); if (S.nOpen) pintarNotif(); }
+const fechaCorta = (iso) => { try { return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" }); } catch (e) { return ""; } };
+function itemAviso(a, leido) {
+  return `<button class="nitem ${leido ? "" : "nuevo"} t-${esc(a.tipo || "general")}" data-act="aviso-ir" data-id="${esc(a.id)}"><span class="ndot" aria-hidden="true"></span><span class="ntxt"><span class="ntipo">${esc(TIPOS_AVISO[a.tipo] || "Aviso")}${a.fijado ? " · Fijado" : ""}</span><b>${esc(a.titulo)}</b>${a.mensaje ? `<small>${esc(a.mensaje)}</small>` : ""}</span><time>${esc(hace(a.publicar))}</time></button>`;
+}
+function itemAcceso(n) {
+  const d = n.detalle || {};
+  return `<div class="nitem ${n.leida ? "" : "nuevo"} t-acceso"><span class="ndot" aria-hidden="true"></span><span class="ntxt"><span class="ntipo">${n.tipo === "recuperacion" ? "Contraseña" : "Nuevo registro"}</span><b>${esc(n.titulo)}</b><small>${esc([d.dependencia, d.cargo].filter(Boolean).join(" · "))}</small></span><span class="nacts">${n.tipo === "recuperacion" && d.userId ? `<button class="nlink" data-act="notif-reset" data-id="${esc(d.userId)}">Restablecer</button>` : `<a class="nlink" href="#/admin/usuarios" data-act="notif-cerrar">Ver</a>`}${n.leida ? "" : `<button class="nlink" data-act="notif-leer" data-id="${esc(n.id)}">Leída</button>`}</span></div>`;
+}
+function htmlNotif() {
+  const A = avisosVis(), l = leidosSet(), an = A.filter((a) => !l.has(a.id)).length, ac = Array.isArray(S.cat.notificaciones) ? S.cat.notificaciones : [], acn = nNoLeidas();
+  const tab = S.super && S.nTab === "accesos" ? "accesos" : "avisos";
+  const tabs = S.super ? `<div class="ntabs" role="tablist"><button role="tab" aria-selected="${tab === "avisos"}" data-act="notif-tab" data-v="avisos">Avisos${an ? ` <i>${an}</i>` : ""}</button><button role="tab" aria-selected="${tab === "accesos"}" data-act="notif-tab" data-v="accesos">Accesos${acn ? ` <i>${acn}</i>` : ""}</button></div>` : "";
+  const lista = tab === "avisos"
+    ? (A.length ? A.slice(0, 12).map((a) => itemAviso(a, l.has(a.id))).join("") : `<div class="nvacio">${glifo("campana")}<b>Todo al día</b><span>No hay avisos por ahora.</span></div>`)
+    : (ac.length ? ac.slice(0, 12).map(itemAcceso).join("") : `<div class="nvacio">${glifo("campana")}<b>Sin novedades</b><span>Aquí verás registros nuevos y cambios de contraseña.</span></div>`);
+  const pie = tab === "avisos"
+    ? `<button class="nlink" data-act="avisos-leer-todo" ${an ? "" : "disabled"}>Marcar todo como leído</button><span class="nsp"></span>${S.super ? `<a class="nlink" href="#/admin/avisos" data-act="notif-cerrar">Administrar</a>` : ""}<a class="nlink fuerte" href="#/avisos" data-act="notif-cerrar">Ver todos</a>`
+    : `<button class="nlink" data-act="notif-todas" ${acn ? "" : "disabled"}>Marcar todo como leído</button><span class="nsp"></span><a class="nlink fuerte" href="#/admin/notificaciones" data-act="notif-cerrar">Ver todo</a>`;
+  return `<header><b>Notificaciones</b><button class="iconbtn" data-act="notif-cerrar" aria-label="Cerrar">${glifo("x")}</button></header>${tabs}<div class="nlist">${lista}</div><footer>${pie}</footer>`;
+}
+function pintarNotif() { const p = $("#notifpop"); if (p) p.innerHTML = htmlNotif(); }
+function abrirNotif() {
+  let p = $("#notifpop");
+  if (!p) { p = document.createElement("div"); p.id = "notifpop"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Notificaciones"); p.tabIndex = -1; document.body.appendChild(p); }
+  if (S.nOpen) return cerrarNotif();
+  S.nOpen = true; if (S.super && !S.nTab) S.nTab = nAvisosNo() || !nNoLeidas() ? "avisos" : "accesos";
+  p.innerHTML = htmlNotif(); p.hidden = false; requestAnimationFrame(() => p.classList.add("on")); document.querySelectorAll('[data-act="notif-abrir"]').forEach((b) => b.setAttribute("aria-expanded", "true")); p.focus({ preventScroll: true });
+}
+function cerrarNotif() {
+  const p = $("#notifpop"); S.nOpen = false; if (!p) return;
+  p.classList.remove("on"); setTimeout(() => { if (!S.nOpen) p.hidden = true; }, 160);
+  document.querySelectorAll('[data-act="notif-abrir"]').forEach((b) => b.setAttribute("aria-expanded", "false"));
+}
+document.addEventListener("click", (e) => { if (S.nOpen && !e.target.closest("#notifpop") && !e.target.closest('[data-act="notif-abrir"]')) cerrarNotif(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.nOpen) { cerrarNotif(); const b = document.querySelector('.sidebar [data-act="notif-abrir"]'); if (b) b.focus(); } });
+window.addEventListener("hashchange", () => { if (S.nOpen) cerrarNotif(); });
+
+function bannerAviso() {
+  const l = leidosSet(), a = avisosVis().find((x) => x.fijado && !l.has(x.id)); if (!a) return "";
+  return `<aside class="aviso-banner t-${esc(a.tipo || "general")}" role="status"><span class="ndot" aria-hidden="true"></span><div><span class="ntipo">${esc(TIPOS_AVISO[a.tipo] || "Aviso")}</span><b>${esc(a.titulo)}</b>${a.mensaje ? `<span class="amsg">${esc(a.mensaje)}</span>` : ""}</div><button class="btn sm" data-act="aviso-ir" data-id="${esc(a.id)}">${a.sistemaId && byId(a.sistemaId) ? "Ver sistema" : "Leer"}</button><button class="iconbtn" data-act="aviso-cerrar" data-id="${esc(a.id)}" aria-label="Descartar aviso">${glifo("x")}</button></aside>`;
+}
+function vAvisos() {
+  const A = avisosVis(), l = leidosSet();
+  return `${cabecera("Avisos", "Novedades y recordatorios del catálogo.")}
+    ${A.length ? `<div class="admbar" style="margin-top:0"><span class="muted">${A.length} ${plural(A.length, "aviso", "avisos")} · ${A.filter((a) => !l.has(a.id)).length} sin leer</span><button class="btn sec sm" data-act="avisos-leer-todo">${glifo("check")}Marcar todo como leído</button></div>
+    <div class="avlist">${A.map((a) => { const s = a.sistemaId && byId(a.sistemaId); return `<article class="avcard t-${esc(a.tipo || "general")} ${l.has(a.id) ? "" : "nuevo"}"><span class="ndot" aria-hidden="true"></span><div><span class="ntipo">${esc(TIPOS_AVISO[a.tipo] || "Aviso")}${a.fijado ? " · Fijado" : ""} · ${esc(fmtFecha(a.publicar))}</span><h3>${esc(a.titulo)}</h3>${a.mensaje ? `<p>${esc(a.mensaje).replace(/\n/g, "<br>")}</p>` : ""}${s ? `<a class="btn sm" href="#/sistema/${enc(s.id)}" data-act="aviso-leer" data-id="${esc(a.id)}">Ver ${esc(s.nombre)}</a>` : ""}</div></article>`; }).join("")}</div>`
+    : vacio("Todo al día", "Cuando haya novedades o recordatorios, aparecerán aquí.", `<a class="btn" href="#/sistemas">Ver sistemas</a>`)}`;
+}
+function vAdminAvisos() {
+  const L = Array.isArray(S.cat.avisos) ? [...S.cat.avisos] : [], hoy = hoyISO();
+  L.sort((x, y) => (y.publicar || "").localeCompare(x.publicar || ""));
+  const est = (a) => (a.publicar > hoy ? ["Programado", "warn"] : a.vence && a.vence < hoy ? ["Vencido", ""] : ["Activo", "ok"]);
+  return `<div class="admbar" style="margin-top:0"><span class="muted">${L.length} ${plural(L.length, "aviso", "avisos")}</span><button class="btn" data-act="aviso-nuevo">${glifo("plus")}Nuevo aviso</button></div>
+  <div class="note info" style="margin-bottom:14px">${glifo("info")}<div>Los usuarios los ven en la campana y en «Avisos». ${SB_ON ? "Se publican con el catálogo." : "Viajan dentro del catálogo publicado: después de crear o editar avisos, descarga el catálogo y súbelo junto a index.html."}</div></div>
+  ${L.length ? `<div class="list-card">${L.map((a) => { const [e, c] = est(a); return `<div class="arow"><span class="avatar-i ndot-lg t-${esc(a.tipo || "general")}"><i></i></span><div class="t"><b>${esc(a.titulo)}</b><small><span class="badge ${c}">${e}</span><span class="badge">${esc(TIPOS_AVISO[a.tipo] || "Aviso")}</span><span class="badge">${esc(AUDIENCIAS[a.audiencia] || "Todos")}</span>${a.fijado ? '<span class="badge acc">Fijado</span>' : ""}<br>Desde ${esc(fmtFecha(a.publicar))}${a.vence ? ` · hasta ${esc(fmtFecha(a.vence))}` : ""}</small></div>
+    <div class="acts"><button class="btn sm sec" data-act="aviso-editar" data-id="${esc(a.id)}">${glifo("edit")}Editar</button><button class="btn sm danger" data-act="aviso-borrar" data-id="${esc(a.id)}" aria-label="Eliminar aviso">${glifo("trash")}Eliminar</button></div></div>`; }).join("")}</div>`
+    : vacio("Aún no hay avisos", "Publica el primero: un sistema nuevo, un recordatorio o un comunicado.", `<button class="btn" data-act="aviso-nuevo">${glifo("plus")}Nuevo aviso</button>`)}`;
+}
+function abrirAviso(id, pre) {
+  if (!S.super) return toast("Solo el superadministrador puede crear avisos.");
+  const a = Object.assign({ tipo: "general", titulo: "", mensaje: "", sistemaId: "", publicar: hoyISO(), vence: "", fijado: false, audiencia: "todos" }, id ? (S.cat.avisos || []).find((x) => x.id === id) : {}, pre || {});
+  const op = (obj, cur) => Object.keys(obj).map((k) => `<option value="${k}" ${k === cur ? "selected" : ""}>${obj[k]}</option>`).join("");
+  modal({
+    titulo: id ? "Editar aviso" : "Nuevo aviso", wide: true,
+    body: `<form id="form-aviso" data-id="${esc(id || "")}" novalidate><div class="fields">
+      <div class="field"><label for="av-tipo">Tipo</label><select class="select" id="av-tipo">${op(TIPOS_AVISO, a.tipo)}</select></div>
+      <div class="field"><label for="av-aud">Para quién</label><select class="select" id="av-aud">${op(AUDIENCIAS, a.audiencia)}</select></div>
+      <div class="field full"><label for="av-titulo">Título</label><input id="av-titulo" type="text" maxlength="90" value="${esc(a.titulo)}" autocomplete="off"></div>
+      <div class="field full"><label for="av-msg">Mensaje</label><textarea id="av-msg" rows="4" maxlength="500">${esc(a.mensaje)}</textarea></div>
+      <div class="field full"><label for="av-sis">Sistema relacionado (opcional)</label><select class="select" id="av-sis"><option value="">Ninguno</option>${S.cat.sistemas.map((x) => `<option value="${esc(x.id)}" ${x.id === a.sistemaId ? "selected" : ""}>${esc(x.nombre || "Sin nombre")}</option>`).join("")}</select></div>
+      <div class="field"><label for="av-pub">Publicar desde</label><input id="av-pub" type="date" value="${esc(a.publicar)}"></div>
+      <div class="field"><label for="av-vence">Vence (opcional)</label><input id="av-vence" type="date" value="${esc(a.vence || "")}"></div>
+      <label class="chk full"><input type="checkbox" id="av-fijado" ${a.fijado ? "checked" : ""}><span>Fijar: mostrarlo como banner en la portada hasta que lo lean</span></label></div>
+      <div class="err" id="av-err" role="alert" style="margin-top:10px"></div></form>`,
+    pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-aviso">${id ? "Guardar cambios" : "Publicar aviso"}</button>`
+  });
+}
+function guardarAviso(f) {
+  if (!S.super) return;
+  const er = $("#av-err"), id = f.dataset.id;
+  const d = { tipo: $("#av-tipo").value, audiencia: $("#av-aud").value, titulo: val("av-titulo"), mensaje: $("#av-msg").value.trim(), sistemaId: $("#av-sis").value, publicar: $("#av-pub").value, vence: $("#av-vence").value, fijado: $("#av-fijado").checked };
+  if (!TIPOS_AVISO[d.tipo]) d.tipo = "general"; if (!AUDIENCIAS[d.audiencia]) d.audiencia = "todos";
+  if (d.titulo.length < 3) { er.textContent = "Escribe un título."; return; }
+  if (!d.publicar) { er.textContent = "Elige la fecha de publicación."; return; }
+  if (d.vence && d.vence < d.publicar) { er.textContent = "La fecha de vencimiento no puede ser anterior a la de publicación."; return; }
+  if (!Array.isArray(S.cat.avisos)) S.cat.avisos = [];
+  if (id) { const a = S.cat.avisos.find((x) => x.id === id); if (a) Object.assign(a, d); } else S.cat.avisos.unshift(Object.assign({ id: uid("avi"), creado: hoyISO() }, d));
+  guardarCatalogo(); cerrarModal(); toast(id ? "Aviso actualizado" : "Aviso publicado"); refrescarCampana(); keep(() => render(false));
 }
 
 async function iniciarSesion() {
@@ -1218,6 +1406,7 @@ const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Aut
   "Instrucciones": "Si autorizas esta cuenta, comparte el código con la persona. Si no la reconoces, ignora este correo."
 });
 async function solicitarSuper() {
+  if (S.cat.usuarios.length) { S.authView = "login"; render(false); return; }
   const nombre = val("a-nombre"), correo = normCorreo(val("a-correo")), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
   authErr("");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
@@ -1251,6 +1440,7 @@ async function reenviarCodigoSuper() {
   pendSuper.guardar(pend); toast("Enviamos un código nuevo al propietario.");
 }
 async function verificarCodigoSuper() {
+  if (S.cat.usuarios.length) { pendSuper.guardar(null); S.authView = "login"; render(false); return; }
   const pend = pendSuper.leer(), cod = normCodigo(val("a-codigo"));
   authErr("");
   if (!pend) { S.authView = "super"; render(false); return; }
@@ -1299,33 +1489,27 @@ function solicitarUsuario() {
     "Para crear el usuario (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Por seguridad la contraseña no viaja por correo: el administrador asignará una contraseña temporal."].join("\n");
   prepararEnvio("usuario", `Solicitud de usuario ${folio} · ${d.nombre}`, cuerpo, folio);
 }
-function solicitarRecuperacion() {
-  const correo = normCorreo(val("a-correo"));
-  authErr("");
-  if (!correoOk(correo)) return authErr("Escribe el correo con el que te registraste.");
-  const folio = folioDe("REC"), q = new URLSearchParams({ reset: correo }).toString();
-  const cuerpo = ["RECUPERACIÓN DE CONTRASEÑA", `Folio: ${folio}`, `Fecha: ${fmtFecha(hoyISO())}`, "", `Correo: ${correo}`, "",
-    "Para restablecer la contraseña (solo administrador), abre este enlace:", `${location.href.split("#")[0]}#/admin/usuarios?${q}`, "", "Confirma la identidad de la persona antes de generar la contraseña temporal."].join("\n");
-  prepararEnvio("recuperacion", `Recuperación de contraseña ${folio} · ${correo}`, cuerpo, folio);
-}
 
 function vAuth() {
   if (SB_ON) return vAuthSB();
   const c = cfg(), forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
   let v = S.authView;
-  if (!hay && (v === "login" || v === "registro" || v === "recuperar")) v = "super";
-  if (v === "codigo" && !pendSuper.leer()) v = hay ? "login" : "super";
+  /* La creación de Superadministrador NO se ofrece al público: solo existe para la instalación inicial (sin cuentas) y únicamente por el enlace privado #/acceso/propietario. */
+  const enlacePropietario = !hay && /^#\/acceso\/propietario/.test(location.hash);
+  if (enlacePropietario && v === "login") v = "super";
+  if (v === "super" && !enlacePropietario) v = "login";
+  if (v === "codigo" && (!pendSuper.leer() || !enlacePropietario)) v = "login";
   const logo = logoInner(c);
   const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
     ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
     : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
   const correoF = (label = "Correo electrónico") => fld("a-correo", label, { tipo: "email", ph: "nombre@dependencia.gob.mx", auto: "username", extra: 'autocapitalize="none" spellcheck="false"' });
   const err = `<div class="err" id="a-err" role="alert"></div>`;
-  const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visitante</button>`;
+  const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visualizador</button>`;
   const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
-    <li><b>Visualizador:</b> solo consulta el catálogo, sin cuenta. No puede solicitar.</li><li><b>Usuario:</b> con su cuenta, consulta y solicita sistemas.</li>
+    <li><b>Visualizador:</b> solo consulta el catálogo, sin cuenta. No puede solicitar.</li><li><b>Usuario:</b> te registras tú mismo con tus datos y puedes consultar y solicitar sistemas.</li>
     <li><b>Colaborador:</b> ayuda a manejar el catálogo (sistemas y categorías). Lo autoriza el administrador.</li>
-    <li><b>Superadministrador:</b> control total (usuarios, configuración y publicación). Requiere un código de autorización.</li></ul></details>`;
+    <li><b>Superadministrador:</b> control total. No se solicita aquí: solo lo asigna el propietario del sistema.</li></ul></details>`;
   let t, sub, body;
   if (forzar) {
     t = "Crea tu nueva contraseña"; sub = "Tu contraseña actual es temporal. Elige una nueva para continuar.";
@@ -1347,12 +1531,12 @@ function vAuth() {
       <div class="note info" style="margin-top:12px">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. La primera vez, el servicio de correo (FormSubmit) pide al propietario confirmar su correo.</div></div>
       <div class="auth-links"><button type="button" data-act="super-reenviar">Reenviar código</button><button type="button" data-act="super-cancelar">Cancelar solicitud</button></div>`;
   } else if (v === "registro") {
-    t = "Solicitar acceso como colaborador"; sub = "Un colaborador ayuda a manejar el catálogo (sistemas y categorías). Llena tus datos: la solicitud llega al administrador, quien te asignará una contraseña temporal.";
-    body = `<form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-dep", "Dependencia u organización")}${fld("a-cargo", "Cargo")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono", { tipo: "tel", auto: "tel" })}
-      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit">Enviar solicitud</button></form>
-      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button><button type="button" data-act="auth-ir" data-v="super">Necesito acceso de Superadministrador</button></div>`;
+    t = "Crea tu cuenta"; sub = "Regístrate con tus datos y entra al instante: no necesitas códigos ni esperar autorización. Después inicias sesión con tu correo y contraseña.";
+    body = `<form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-cargo", "Cargo", { auto: "organization-title" })}${fld("a-dep", "Dependencia u organización", { auto: "organization" })}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx", extra: 'autocapitalize="none" spellcheck="false"' })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
+      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo cuenta</button></div>${visitante}`;
   } else if (v === "recuperar") {
-    t = "Recuperar contraseña"; sub = "Escribe el correo con el que te registraste. El administrador te enviará una contraseña temporal.";
+    t = "Recuperar contraseña"; sub = "Escribe el correo con el que te registraste. Avisaremos al administrador dentro del sistema para que te genere una contraseña temporal.";
     body = `<form id="form-rec" novalidate>${correoF("Correo registrado")}${err}<button class="btn big" type="submit">Solicitar recuperación</button></form>
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else if (v === "enviado" && S.authInfo) {
@@ -1370,10 +1554,12 @@ function vAuth() {
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else {
     t = "Iniciar sesión"; sub = "Entra con tu correo y tu contraseña, o explora el catálogo como visitante.";
+    if (!hay) sub = "Aún no hay cuentas guardadas en este navegador. Si ya tienes cuenta, abre el catálogo desde el mismo enlace o dispositivo donde se creó, o explora como visitante.";
     body = `<form id="form-login" novalidate>${correoF()}${fld("a-pass", "Contraseña", { pw: 1 })}
       <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
+      <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="registro">${glifo("user")}Registrarse</button>
       ${visitante}
-      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Quiero ser colaborador</button><button type="button" data-act="auth-ir" data-v="super">Superadministrador</button></div>${ayudaRoles}`;
+      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Registrarse</button></div>${ayudaRoles}`;
   }
   return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
@@ -1382,15 +1568,15 @@ function vAuth() {
 function abrirMiCuenta() {
   const u = S.user;
   if (!u) {
-    modal({ titulo: "Estás como visitante", body: `<p class="muted">Puedes explorar el catálogo y solicitar sistemas. Si eres colaborador o superadministrador, inicia sesión para administrar.</p>`,
-      pie: `<button class="btn sec" data-act="cerrar-modal">Seguir explorando</button><button class="btn" data-act="ir-login">${glifo("user")}Iniciar sesión</button>` });
+    modal({ titulo: "Estás como visitante", body: `<p class="muted">Puedes explorar el catálogo y solicitar sistemas. Para solicitar sistemas, crea tu cuenta con tus datos o inicia sesión.</p>`,
+      pie: `<button class="btn sec" data-act="notif-desde-cuenta">${glifo("campana")}Notificaciones${nCampana() ? ` (${nCampana()})` : ""}</button><button class="btn sec" data-act="ir-registro">Registrarse</button><button class="btn" data-act="ir-login">${glifo("user")}Iniciar sesión</button>` });
     return;
   }
   modal({
     titulo: "Mi cuenta",
     body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${ROLES[rolDe(u.rol)]}</div></div></div>
       <div class="kv">${u.correo ? `<div><span class="k">Correo</span><span class="v">${esc(u.correo)}</span></div>` : ""}${u.dependencia ? `<div><span class="k">Dependencia</span><span class="v">${esc(u.dependencia)}</span></div>` : ""}${u.cargo ? `<div><span class="k">Cargo</span><span class="v">${esc(u.cargo)}</span></div>` : ""}</div>`,
-    pie: `<button class="btn sec" data-act="cambiar-pass">${glifo("candado")}Cambiar contraseña</button>${S.admin ? `<a class="btn sec" href="#/admin" data-act="cerrar-modal">${glifo("ajustes")}Administración</a>` : ""}<button class="btn danger" data-act="cerrar-sesion">Cerrar sesión</button>`
+    pie: `<button class="btn sec" data-act="cambiar-pass">${glifo("candado")}Cambiar contraseña</button><button class="btn sec" data-act="notif-desde-cuenta">${glifo("campana")}Notificaciones${nCampana() ? ` (${nCampana()})` : ""}</button>${S.admin ? `<a class="btn sec" href="#/admin" data-act="cerrar-modal">${glifo("ajustes")}Administración</a>` : ""}<button class="btn danger" data-act="cerrar-sesion">Cerrar sesión</button>`
   });
 }
 function abrirCambiarClave() {
@@ -1407,6 +1593,15 @@ function abrirCambiarClave() {
 }
 async function cambiarMiClave() {
   const u = S.user, a = $("#pw0").value, n = $("#pw1").value, n2 = $("#pw2").value, er = $("#pw-err");
+  if (SB_ON && u.sb) {
+    if (!claveOk(n)) { er.textContent = CLAVE_AYUDA; return; }
+    if (n !== n2) { er.textContent = "Las contraseñas nuevas no coinciden."; return; }
+    const { error: e1 } = await SB.auth.signInWithPassword({ email: u.correo, password: a });
+    if (e1) { er.textContent = "La contraseña actual no es correcta."; return; }
+    const { error: e2 } = await SB.auth.updateUser({ password: n });
+    if (e2) { er.textContent = /same|different/i.test(e2.message) ? "La nueva contraseña debe ser distinta a la actual." : "No se pudo actualizar. Inténtalo de nuevo."; return; }
+    cerrarModal(); toast("Contraseña actualizada"); return;
+  }
   if ((await hashClave(a, u.salt)) !== u.hash) { er.textContent = "La contraseña actual no es correcta."; return; }
   if (!claveOk(n)) { er.textContent = CLAVE_AYUDA; return; }
   if (normCorreo(n) === normCorreo(u.correo)) { er.textContent = "La contraseña no puede ser tu correo."; return; }
@@ -1543,7 +1738,7 @@ function centrarPestanas() {
   });
 }
 function render(nav) {
-  const pideAcceso = (hashParts()[0] === "acceso" && !S.user) || (S.user && S.user.debeCambiar);
+  const pideAcceso = (hashParts()[0] === "acceso" && !S.user) || (S.user && S.user.debeCambiar) || S.recup;
   if (pideAcceso) {
     document.body.classList.add("auth"); cerrarLightbox(); aplicarApariencia();
     view.innerHTML = vAuth(); document.title = cfg().nombre; window.scrollTo(0, 0); pestanear(); return;
@@ -1568,6 +1763,7 @@ function render(nav) {
       case "solicitar": if (S.super) { history.replaceState(null, "", "#/solicitudes"); html = vBandeja(); } else html = S.user ? vSolicitar(b) : vAccesoParaSolicitar(b); break;
       case "gracias": html = vGracias(b); break;
       case "solicitudes": html = S.super ? vBandeja() : vSolicitudes(); break;
+      case "avisos": html = vAvisos(); break;
       case "ayuda": html = vAyuda(); break;
       case "contacto": html = vContacto(); break;
       case "admin": html = vAdmin(b, c); break;
@@ -1602,12 +1798,13 @@ function renderChrome(a) {
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
   $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
+    + `<button class="sidenav-a bell" data-act="notif-abrir" aria-haspopup="dialog" aria-expanded="${!!S.nOpen}" aria-label="Notificaciones${nCampana() ? ` (${nCampana()} sin leer)` : ""}"><span class="ic">${glifo("campana")}</span><em>Notificaciones</em>${nCampana() ? `<b class="nbadge">${nCampana()}</b>` : ""}</button>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
   $("#tabbar").innerHTML = `<a class="rail-brand${imgOk(c.logo) ? "" : " lg"}" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${logoInner(c)}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
-    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
+    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span>${nCampana() ? `<b class="nbadge dot">${nCampana()}</b>` : ""}</button>`;
   $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}· <a href="#/contacto">Contacto y directorio</a>${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
 }
 
@@ -1624,6 +1821,7 @@ function vHome() {
   const cats = S.cat.categorias.filter((k) => lista.some((s) => s.categorias.includes(k.id)));
   const usos = todosUsos().slice(0, 4);
   return `${cabecera("Descubrir", "", cuando)}
+    ${bannerAviso()}
     ${cats.length ? `<div class="chips bleed" role="list" aria-label="Categorías">${cats.map((k) => `<a role="listitem" class="chip" href="#/categoria/${enc(k.id)}" style="${colorVars(k.color)}"><span class="cdot">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}</div>` : ""}
     <div class="hscroll feat-row bleed" aria-label="Sistemas destacados">${feats.map(feat).join("")}</div>
     <section class="sec"><h2 class="sec-h"><a href="#/sistemas">Sistemas que no te puedes perder ${glifo("chev")}</a></h2><div class="rows paged">${top.map((s) => fila(s)).join("")}</div></section>
@@ -1839,7 +2037,7 @@ function vAccesoParaSolicitar(id) {
   return `${navbar()}${cabecera("Inicia sesión para solicitar", s0 ? "Quieres solicitar: " + s0.nombre : "Solo las personas con cuenta pueden solicitar un sistema.")}
     <div class="sp"></div>
     <div class="card" style="max-width:560px"><p style="margin:0 0 10px">Para evitar mensajes no deseados, <b>solicitar un sistema requiere iniciar sesión con tu correo</b>. Puedes seguir explorando el catálogo sin cuenta.</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><a class="btn sec" href="#/sistemas">Seguir explorando</a></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><button class="btn sec" data-act="ir-registro">Registrarse</button><a class="btn ghost" href="#/sistemas">Seguir explorando</a></div>
     <p class="muted" style="font-size:13.5px;margin:16px 0 0">¿No tienes cuenta? ${c.correoDestino ? `Escribe a <a href="mailto:${esc(c.correoDestino)}">${esc(c.correoDestino)}</a> o ` : ""}consulta la página de <a href="#/contacto">contacto</a> para que te la creemos.</p></div>`;
 }
 function vSolicitar(id) {
@@ -2082,7 +2280,7 @@ function misSols() { return S.user ? S.sols.filter((x) => normCorreo((x.datos ||
 function vSesionRequerida(titulo, sub, texto) {
   return `${cabecera(titulo, sub)}<div class="sp"></div>
     <div class="card" style="max-width:560px"><p style="margin:0 0 10px">${texto}</p>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><a class="btn sec" href="#/sistemas">Seguir explorando</a></div></div>`;
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><button class="btn sec" data-act="ir-registro">Registrarse</button><a class="btn ghost" href="#/sistemas">Seguir explorando</a></div></div>`;
 }
 function vSolicitudes() {
   if (!S.user) return vSesionRequerida("Mis solicitudes", "Inicia sesión para ver tu historial.", "Tus solicitudes se muestran solo cuando inicias sesión con tu correo, para proteger tu información. Puedes seguir explorando el catálogo sin cuenta.");
@@ -2123,11 +2321,13 @@ function vAdmin(sub, id) {
 function vAdminBase(sub, id) {
   if (!S.admin) return `${cabecera("Administración")}${vacio("Acceso restringido", "Esta sección es solo para administradores del catálogo.", `<a class="btn" href="#/">Ir al inicio</a>`)}`;
   if (sub === "editar") return vEditor(id);
-  const permitidas = S.super ? ["categorias", "config", "usuarios", "qa"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
+  const permitidas = S.super ? ["categorias", "config", "usuarios", "notificaciones", "avisos", "qa"] : ["categorias"], tab = permitidas.includes(sub) ? sub : "sistemas";
   const cur = (k) => (tab === k ? ' aria-current="page"' : "");
   const cab = `${cabecera("Administración", S.super ? "Control total del catálogo, usuarios y configuración." : "Como colaborador puedes editar sistemas y categorías.")}
-    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a><a href="#/admin/qa"${cur("qa")}>Pruebas QA${S.qa ? " ●" : ""}</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div><!--panel-->`;
+    <div class="admbar"><nav class="seg" aria-label="Secciones de administración"><a href="#/admin"${cur("sistemas")}>Sistemas</a><a href="#/admin/categorias"${cur("categorias")}>Categorías</a>${S.super ? `<a href="#/admin/notificaciones"${cur("notificaciones")}>Notificaciones${nNoLeidas() ? ` <span class="badge acc">${nNoLeidas()}</span>` : ""}</a><a href="#/admin/avisos"${cur("avisos")}>Avisos</a><a href="#/admin/usuarios"${cur("usuarios")}>Usuarios</a><a href="#/admin/config"${cur("config")}>Configuración</a><a href="#/admin/qa"${cur("qa")}>Pruebas QA${S.qa ? " ●" : ""}</a>` : ""}</nav><button class="btn sec sm" data-act="cerrar-sesion">${glifo("unlock")}Cerrar sesión</button></div><!--panel-->`;
   if (tab === "categorias") return cab + vAdminCategorias();
+  if (tab === "notificaciones") return cab + vAdminNotif();
+  if (tab === "avisos") return cab + vAdminAvisos();
   if (tab === "usuarios") return cab + vAdminUsuarios();
   if (tab === "qa") return cab + vAdminQA();
   if (tab === "config") return cab + vAdminConfig(id);
@@ -2402,7 +2602,7 @@ async function subirImagenRapida(kind, id, f) {
 const QA_MANUAL = [
   ["q1", "Entrar como visitante: ver el catálogo, buscar y solicitar un sistema"],
   ["q2", "El visitante no puede abrir Administración"],
-  ["q3", "Pedir acceso de Superadministrador: llega el correo con el código (fuera del modo pruebas)"],
+  ["q3", "Solicitar acceso: la solicitud llega al administrador (fuera del modo pruebas)"],
   ["q4", "Un código incorrecto o vencido es rechazado"],
   ["q5", "Crear un colaborador, entrar con su contraseña temporal y cambiarla"],
   ["q6", "El colaborador edita sistemas y categorías, pero no ve Usuarios ni Configuración"],
@@ -2685,7 +2885,8 @@ const ACT = {
     S.cat.usuarios = S.cat.usuarios.filter((x) => x.id !== u.id); guardarCatalogo(); toast("Usuario eliminado"); keep(() => render(false));
   },
 
-  "toggle-pub"(t) { const s = byId(t.dataset.id); if (!s) return; s.publicado = !s.publicado; guardarCatalogo(); toast(s.publicado ? "Sistema publicado" : "Sistema oculto"); keep(() => render(false)); },
+  "toggle-pub"(t) { const s = byId(t.dataset.id); if (!s) return; s.publicado = !s.publicado; guardarCatalogo(); toast(s.publicado ? "Sistema publicado" : "Sistema oculto"); keep(() => render(false));
+    if (s.publicado && S.super) setTimeout(async () => { if (await confirmar({ titulo: "¿Avisar a los usuarios?", texto: `Crea un aviso «Ya está disponible» para ${s.nombre}.`, si: "Crear aviso" })) abrirAviso(null, { tipo: "sistema", sistemaId: s.id, titulo: `Ya está disponible: ${s.nombre}`, mensaje: s.subtitulo || "", fijado: true }); }, 350); },
   mover(t) { const i = S.cat.sistemas.findIndex((s) => s.id === t.dataset.id); mover(S.cat.sistemas, i, +t.dataset.d); guardarCatalogo(); keep(() => render(false)); },
   duplicar(t) { const s = byId(t.dataset.id); if (!s) return; const c = clone(s); c.id = uid("sis"); c.nombre += " (copia)"; c.publicado = false; c.destacado = false; c.archivos.forEach((a) => (a.id = uid("arc"))); const i = S.cat.sistemas.indexOf(s); S.cat.sistemas.splice(i + 1, 0, c); guardarCatalogo(); toast("Sistema duplicado (oculto)"); keep(() => render(false)); },
   async "del-sistema"(t) {
@@ -2762,6 +2963,22 @@ const ACT = {
   async "bandeja-estado"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id); if (!r || !SB) return; const { error } = await SB.from("solicitudes").update({ estado: t.dataset.v }).eq("id", r.id); if (error) return toast("No se pudo actualizar el estado."); r.estado = t.dataset.v; keep(() => render(true)); },
   async "bandeja-nota"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id), n = $("#nota-" + t.dataset.id); if (!r || !n || !SB) return; const { error } = await SB.from("solicitudes").update({ nota: n.value }).eq("id", r.id); if (error) return toast("No se pudo guardar la nota."); r.nota = n.value; toast("Nota guardada"); },
   "guardar-directorio"() { const t = $("#dir-txt"); if (!t) return; cfg().directorio = t.value.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((a) => a[0]).map((a) => ({ nombre: a[0], cargo: a[1] || "", correo: a[2] || "", telefono: a[3] || "" })); guardarCatalogo(); toast("Directorio guardado"); render(true); },
+  "recup-cancelar"() { S.recup = false; if (SB) SB.auth.signOut(); S.authView = "login"; location.hash = "#/acceso"; render(true); },
+  "ir-registro"() { cerrarModal(); S.authView = "registro"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
+  "notif-leer"(t) { marcarNotifs(t.dataset.id).then(() => { refrescarCampana(); keep(() => render(false)); }); },
+  "notif-todas"() { marcarNotifs().then(() => { refrescarCampana(); keep(() => render(false)); }); },
+  "notif-abrir"() { abrirNotif(); },
+  "notif-desde-cuenta"() { cerrarModal(); setTimeout(abrirNotif, 60); },
+  "notif-cerrar"() { cerrarNotif(); },
+  "notif-tab"(t) { S.nTab = t.dataset.v; pintarNotif(); },
+  "notif-reset"(t) { cerrarNotif(); location.hash = "#/admin/usuarios"; setTimeout(() => abrirReset(t.dataset.id), 250); },
+  "aviso-ir"(t) { const a = (S.cat.avisos || []).find((x) => x.id === t.dataset.id); marcarAvisos(t.dataset.id); cerrarNotif(); refrescarCampana(); if (a && a.sistemaId && byId(a.sistemaId)) location.hash = "#/sistema/" + enc(a.sistemaId); else if (location.hash === "#/avisos") keep(() => render(false)); else if (!t.closest(".aviso-banner")) location.hash = "#/avisos"; else keep(() => render(false)); },
+  "aviso-leer"(t) { marcarAvisos(t.dataset.id); refrescarCampana(); },
+  "aviso-cerrar"(t) { marcarAvisos(t.dataset.id); refrescarCampana(); keep(() => render(false)); },
+  "avisos-leer-todo"() { marcarAvisos(); refrescarCampana(); keep(() => render(false)); },
+  "aviso-nuevo"() { abrirAviso(); },
+  "aviso-editar"(t) { abrirAviso(t.dataset.id); },
+  async "aviso-borrar"(t) { const a = (S.cat.avisos || []).find((x) => x.id === t.dataset.id); if (!a) return; if (!(await confirmar({ titulo: "Eliminar aviso", texto: `Se borrará «${a.titulo}» para todas las personas.`, si: "Eliminar", peligro: true }))) return; S.cat.avisos = S.cat.avisos.filter((x) => x.id !== a.id); guardarCatalogo(); toast("Aviso eliminado"); refrescarCampana(); keep(() => render(false)); },
   "ir-login"() { cerrarModal(); S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
   "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
@@ -2789,7 +3006,7 @@ const ACT = {
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const SOLO_SUPER = new Set(["aviso-nuevo", "aviso-editar", "aviso-borrar", "notif-leer", "notif-todas", "notif-reset", "usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
 const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
@@ -2853,8 +3070,10 @@ document.addEventListener("submit", (e) => {
   else if (f.id === "form-ren") { e.preventDefault(); guardarRenombrar(); }
   else if (f.id === "form-cat") { e.preventDefault(); guardarCategoria(); }
   else if (f.id === "form-cambiar") { e.preventDefault(); guardarClaveObligatoria(); }
-  else if (f.id === "form-reg") { e.preventDefault(); solicitarUsuario(); }
+  else if (f.id === "form-reg") { e.preventDefault(); registrarse(); }
   else if (f.id === "form-rec") { e.preventDefault(); solicitarRecuperacion(); }
+  else if (f.id === "form-nueva") { e.preventDefault(); sbGuardarNueva(); }
+  else if (f.id === "form-aviso") { e.preventDefault(); guardarAviso(f); }
   else if (f.id === "form-usr") { e.preventDefault(); crearUsuarioAdmin(); }
   else if (f.id === "form-pass") { e.preventDefault(); cambiarMiClave(); }
 });
@@ -2875,19 +3094,19 @@ window.addEventListener("scroll", () => { const nb = $("#nb"); if (nb) nb.classL
 /* ---------- Supabase: catálogo público + acceso real (Auth + RLS) ---------- */
 let SB = null;
 const cargarScript = (src) => new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
-const catPublico = () => { const o = JSON.parse(JSON.stringify(Object.assign({}, S.cat, { editado: false }))); delete o.usuarios; if (o.config) { delete o.config.pinHash; delete o.config.correoAdmin; } return o; };
+const catPublico = () => { const o = JSON.parse(JSON.stringify(Object.assign({}, S.cat, { editado: false }))); delete o.usuarios; delete o.notificaciones; if (o.config) { delete o.config.pinHash; delete o.config.correoAdmin; } return o; };
 async function sbIniciar() {
   if (!SB_ON) return;
   try { await cargarScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"); SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } }); } catch (e) { SB = null; }
 }
 async function sbCatalogo() { if (!SB) return null; try { const { data } = await SB.from("catalogo").select("data").eq("id", 1).maybeSingle(); return data && catValido(data.data) ? data.data : null; } catch (e) { return null; } }
-const sbUsuario = (p, au) => ({ id: p.id, nombre: p.nombre || (au && au.email) || p.correo, correo: p.correo || (au && au.email) || "", rol: rolDe(p.rol), estado: p.estado || "activo", sb: true, salt: "", hash: "" });
+const sbUsuario = (p, au) => ({ id: p.id, nombre: p.nombre || (au && au.email) || p.correo, correo: p.correo || (au && au.email) || "", rol: rolDe(p.rol), estado: p.estado || "activo", dependencia: p.dependencia || "", area: p.area || "", cargo: p.cargo || "", telefono: p.telefono || "", sb: true, salt: "", hash: "" });
 async function sbPerfil(au) {
   const { data: p } = await SB.from("perfiles").select("*").eq("id", au.id).maybeSingle();
   if (!p || p.estado !== "activo") { await SB.auth.signOut(); return null; }
   const u = sbUsuario(p, au); let lista = [u];
   if (rolDe(p.rol) === "superadmin") { const { data } = await SB.from("perfiles").select("*"); if (data) lista = data.map((x) => sbUsuario(x)); }
-  S.cat.usuarios = lista; return lista.find((x) => x.id === u.id) || u;
+  S.cat.usuarios = lista; if (rolDe(p.rol) === "superadmin") await sbNotifs(); return lista.find((x) => x.id === u.id) || u;
 }
 async function sbLogin() {
   const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value; authErr("");
@@ -2900,6 +3119,37 @@ async function sbLogin() {
   if (!u) return authErr("Tu usuario no está activo. Contacta al administrador.");
   abrirSesion(u, true);
 }
+/* ---------- Recuperar contraseña por enlace al correo (Supabase) ---------- */
+async function sbRecuperar() {
+  const correo = normCorreo(val("a-correo")); authErr("");
+  if (!correoOk(correo)) return authErr("Escribe el correo con el que te registraste.");
+  if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  let ult = 0; try { ult = +localStorage.getItem("catalogo-rec-ts") || 0; } catch (e) {}
+  if (Date.now() - ult < 60000) return authErr(`Espera ${Math.ceil((60000 - (Date.now() - ult)) / 1000)} s antes de pedir otro enlace.`);
+  const btn = $("#a-rec-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando…"; }
+  try { localStorage.setItem("catalogo-rec-ts", String(Date.now())); } catch (e) {}
+  let limite = false;
+  try { const { error } = await SB.auth.resetPasswordForEmail(correo, { redirectTo: location.origin + location.pathname }); if (error && /rate|second|too many|limit/i.test(error.message)) limite = true; } catch (e) { /* respuesta neutra */ }
+  if (limite) { if (btn) { btn.disabled = false; btn.textContent = "Enviarme el enlace"; } return authErr("Se pidieron demasiados enlaces. Espera unos minutos e inténtalo de nuevo."); }
+  S.authView = "revisa"; S.authCorreo = correo; render(false);
+}
+async function sbGuardarNueva() {
+  authErr("");
+  const p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
+  if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
+  if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
+  if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  const btn = $("#a-nueva-btn"); if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+  const { error } = await SB.auth.updateUser({ password: p1 });
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = "Guardar contraseña"; }
+    return authErr(/same|different|igual/i.test(error.message) ? "La nueva contraseña debe ser distinta a la anterior." : "No se pudo guardar. Es posible que el enlace haya vencido: pide uno nuevo.");
+  }
+  try { await SB.auth.signOut(); } catch (e) {}
+  S.recup = false; S.authView = "login"; location.hash = "#/acceso"; render(true);
+  toast("Contraseña actualizada. Inicia sesión con la nueva.");
+}
+
 let sbPend = null;
 async function sbPublicar() {
   if (!SB || !S.admin || S.qa) return;
@@ -2908,12 +3158,28 @@ async function sbPublicar() {
 }
 const sbEnCola = () => { clearTimeout(sbPend); sbPend = setTimeout(sbPublicar, 1200); };
 function vAuthSB() {
-  const c = cfg(), logo = logoInner(c);
-  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>Acceso de administración</h1><p class="lede">Solo para colaboradores y superadministradores. El catálogo es público y no requiere cuenta.</p>
-  <form id="form-login" novalidate><div class="field"><label for="a-correo">Correo electrónico</label><input id="a-correo" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nombre@dependencia.gob.mx"></div>
-  <div class="field"><label for="a-pass">Contraseña</label><div class="pwrow"><input id="a-pass" type="password" autocomplete="current-password"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">${glifo("eye")}</button></div></div>
-  <div class="err" id="a-err" role="alert"></div><button class="btn big" type="submit">Iniciar sesión</button></form>
-  <button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Volver al catálogo</button></div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  const c = cfg(), logo = logoInner(c), reg = S.authView === "registro", err = `<div class="err" id="a-err" role="alert"></div>`;
+  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>` : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}">`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
+  const cab = `<div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div>`;
+  const vis = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visualizador</button>`;
+  const marco = (h1, lede, body) => `<div class="authwrap"><div class="authcard">${cab}<h1>${h1}</h1><p class="lede">${lede}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  if (S.authView === "nueva") return marco("Elige tu nueva contraseña", "Escribe una contraseña nueva para tu cuenta. Después inicias sesión con ella.",
+    `<form id="form-nueva" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit" id="a-nueva-btn">Guardar contraseña</button></form>
+     <div class="auth-links"><button type="button" data-act="recup-cancelar">Cancelar</button></div>`);
+  if (S.authView === "recuperar") return marco("Recuperar contraseña", "Escribe el correo con el que te registraste y te enviaremos un enlace para elegir una contraseña nueva.",
+    `<form id="form-rec" novalidate>${fld("a-correo", "Correo registrado", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx" })}${err}<button class="btn big" type="submit" id="a-rec-btn">Enviarme el enlace</button></form>
+     <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`);
+  if (S.authView === "revisa") return marco("Revisa tu correo", `Si <b>${esc(S.authCorreo || "ese correo")}</b> tiene una cuenta, te enviamos un enlace para elegir tu nueva contraseña. Vence en poco tiempo y solo se puede usar una vez.`,
+    `<div class="note info">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. ¿Ya no tienes acceso a ese correo? Pide ayuda al administrador del catálogo.</div></div>
+     <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">Pedir otro enlace</button><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`);
+  if (reg) return `<div class="authwrap"><div class="authcard">${cab}<h1>Crea tu cuenta</h1><p class="lede">Regístrate con tus datos y entra al instante. Después inicias sesión con tu correo y contraseña.</p>
+    <form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-cargo", "Cargo")}${fld("a-dep", "Dependencia u organización")}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
+    <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
+    <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo cuenta</button></div>${vis}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  return `<div class="authwrap"><div class="authcard">${cab}<h1>Iniciar sesión</h1><p class="lede">Entra con tu correo y contraseña, o explora el catálogo como visualizador.</p>
+  <form id="form-login" novalidate>${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1 })}${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
+  <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button></div>
+  <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="registro">${glifo("user")}Registrarse</button>${vis}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
 
 
@@ -2954,9 +3220,12 @@ async function boot() {
   else if (local && local.editado && catValido(local)) S.cat = migrar(local);
   else if (pub) { S.cat = migrar(pub); S.cat.editado = false; }
   else S.cat = migrar(datosEjemplo());
-  if (SB) { try { const { data } = await SB.auth.getSession(); if (data.session) { const u = await sbPerfil(data.session.user); if (u) { S.user = u; aplicarRol(u); } } } catch (e) {} }
+  if (SB && URL_RECUP) { /* sesión de recuperación: no iniciar sesión, solo pedir la nueva contraseña */ }
+  else if (SB) { try { const { data } = await SB.auth.getSession(); if (data.session) { const u = await sbPerfil(data.session.user); if (u) { S.user = u; aplicarRol(u); } } } catch (e) {} }
   else restaurarSesion();
   S.guest = !S.user;
+  if (URL_RECUP) { S.recup = true; S.authView = "nueva"; history.replaceState(null, "", location.pathname + "#/acceso"); }
+  else if (URL_ERR) { S.authView = "recuperar"; history.replaceState(null, "", location.pathname + "#/acceso"); setTimeout(() => toast("El enlace venció o ya se usó. Pide uno nuevo."), 600); }
   window.addEventListener("hashchange", () => render(true));
   render(true);
 }
@@ -3082,6 +3351,60 @@ html.acc-hc *{--label-2:#000}
 
 
 .pagehead .large-title::before{width:48px;height:5px;border-radius:2px;background:linear-gradient(90deg,#f2b632,#0f6e8c)}
+</style>
+<style id="notif">
+.nbadge{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e5484d;color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center;font-style:normal;line-height:1;margin-left:auto;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.rail-admin .nbadge.dot{position:absolute;top:2px;right:calc(50% - 24px);margin:0}
+.sidebar .side-foot .bell{position:relative}
+.sidebar .side-foot .bell .nbadge{margin-left:2px}
+</style>
+<style id="avisos">
+/* ===== Avisos y campana flotante (minimalista) ===== */
+#notifpop{position:fixed;z-index:90;top:calc(var(--pb-top,14px) + var(--pb-h,0px) + 10px);right:max(14px,calc((100vw - 1240px)/2 + 6px));width:min(392px,calc(100vw - 20px));max-height:min(74vh,600px);display:flex;flex-direction:column;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:saturate(180%) blur(26px);backdrop-filter:saturate(180%) blur(26px);border:1px solid var(--sep);border-radius:20px;box-shadow:0 24px 60px -18px rgba(14,47,61,.42),0 2px 8px rgba(14,47,61,.08);color:var(--label);opacity:0;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:opacity .16s,transform .16s;outline:0;overflow:hidden}
+#notifpop[hidden]{display:none}
+#notifpop.on{opacity:1;transform:none}
+#notifpop header{display:flex;align-items:center;justify-content:space-between;padding:14px 12px 6px 18px}
+#notifpop header b{font-size:16px;letter-spacing:-.015em}
+.ntabs{display:flex;gap:4px;margin:4px 14px 6px;padding:3px;background:var(--sel);border-radius:11px}
+.ntabs button{flex:1;padding:7px 8px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--label-2);display:flex;justify-content:center;align-items:center;gap:6px}
+.ntabs button[aria-selected="true"]{background:var(--bg);color:var(--label);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.ntabs i{font-style:normal;min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;display:inline-grid;place-items:center}
+.nlist{overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column;gap:2px;flex:1;min-height:0}
+.nitem{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:11px;align-items:start;text-align:left;width:100%;padding:11px 10px;border-radius:13px;color:var(--label);transition:background .15s}
+button.nitem:hover{background:var(--sel)}
+.nitem.nuevo{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.ndot{width:9px;height:9px;border-radius:50%;margin-top:6px;background:var(--label-3);opacity:.45}
+.nuevo .ndot{opacity:1;background:var(--tc,var(--accent))}
+.t-sistema{--tc:var(--accent)}.t-recordatorio{--tc:#d98a0b}.t-general{--tc:#6b7f8a}.t-acceso{--tc:#2f9e6e}
+.ntipo{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--tc,var(--label-2))}
+.ntxt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.ntxt b{font-size:14.5px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.ntxt small{font-size:13px;color:var(--label-2);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nitem time{font-size:12px;color:var(--label-3);white-space:nowrap;padding-top:2px}
+.nacts{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.nvacio{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:34px 20px;color:var(--label-2)}
+.nvacio .g{width:30px;height:30px;color:var(--label-3);margin-bottom:6px}
+.nvacio b{color:var(--label);font-size:15px}.nvacio span{font-size:13.5px}
+#notifpop footer{display:flex;align-items:center;gap:14px;padding:10px 18px 13px;border-top:1px solid var(--sep)}
+.nsp{flex:1}
+.nlink{font-size:13px;font-weight:600;color:var(--accent);padding:2px 0}
+.nlink:hover{text-decoration:underline}.nlink[disabled]{opacity:.4;pointer-events:none}
+.nlink.fuerte{color:var(--label)}
+/* banner de portada */
+.aviso-banner{display:flex;align-items:center;gap:14px;margin:14px 0 4px;padding:12px 14px 12px 16px;border:1px solid var(--sep);border-left:3px solid var(--tc,var(--accent));border-radius:14px;background:var(--bg-soft)}
+.aviso-banner .ndot{background:var(--tc,var(--accent));opacity:1;margin:0;flex:none}
+.aviso-banner>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.aviso-banner b{font-size:15px;font-weight:600}
+.aviso-banner .amsg{font-size:13.5px;color:var(--label-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:560px){.aviso-banner{flex-wrap:wrap}.aviso-banner>div{flex-basis:calc(100% - 40px)}}
+/* página de avisos */
+.avlist{display:flex;flex-direction:column;gap:10px;margin-top:14px;max-width:760px}
+.avcard{display:grid;grid-template-columns:10px minmax(0,1fr);gap:14px;padding:16px 18px;border:1px solid var(--sep);border-radius:16px;background:var(--bg)}
+.avcard.nuevo{background:color-mix(in srgb,var(--accent) 6%,var(--bg))}
+.avcard h3{font-size:17px;font-weight:600;letter-spacing:-.015em;margin:2px 0 4px}
+.avcard p{margin:0 0 10px;color:var(--label-2);font-size:15px;line-height:1.5}
+.ndot-lg{background:transparent!important;box-shadow:none!important}.ndot-lg i{width:12px;height:12px;border-radius:50%;background:var(--tc,var(--accent))}
+@media (max-width:560px){#notifpop{right:10px;left:10px;width:auto}}
 </style>
 </body>
 </html>
