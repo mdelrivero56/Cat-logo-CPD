@@ -1777,9 +1777,11 @@ function render(nav) {
   renderChrome(a || "");
   if (post) post();
   const dentro = !!nav && a === "admin" && rutaPrev[0] === "admin" && b !== "editar" && rutaPrev[1] !== "editar";
-  if (nav) { if (!dentro) window.scrollTo(0, 0); pestanear(dentro, dentro && b === "config" && rutaPrev[1] === "config"); }
+  if (nav) { if (!dentro) window.scrollTo(0, 0); pestanear(dentro, dentro && b === "config" && rutaPrev[1] === "config");
+    document.querySelectorAll('.sidenav [aria-current="page"],.tabbar [aria-current="page"]').forEach((e) => { e.classList.remove("flash"); void e.offsetWidth; e.classList.add("flash"); }); }
   rutaPrev = [a || "", b || ""];
   centrarPestanas();
+  if (!nav && Date.now() - (window.__tapT || 0) < 600) softBlink();
   document.title = (S.qa ? "[PRUEBAS] " : "") + (a === "sistema" && byId(b) ? byId(b).nombre + " · " : "") + cfg().nombre;
 }
 
@@ -2296,7 +2298,15 @@ function vSolicitudes() {
 }
 
 /* ---------- Administración ---------- */
-const keep = (fn) => { const y = window.scrollY; fn(); window.scrollTo(0, y); };
+const softBlink = () => { view.classList.remove("blink-soft"); void view.offsetWidth; view.classList.add("blink-soft"); setTimeout(() => view.classList.remove("blink-soft"), 420); };
+const keep = (fn) => { const y = window.scrollY; fn(); window.scrollTo(0, y); if (Date.now() - (window.__tapT || 0) < 600) softBlink(); };
+/* Pulso visual al tocar cualquier botón o enlace */
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button,a.btn,.chip,.seg a,.cfg-nav a,.sidenav a,.tabbar a,.get,.iconbtn,.row-main,.coll,.feat-txt,.nlink,.nitem,.brand,.circ,.opt-row button");
+  if (!t || t.disabled || t.closest(".modal") && t.classList.contains("modal")) return;
+  window.__tapT = Date.now();
+  t.classList.remove("tap"); void t.offsetWidth; t.classList.add("tap"); setTimeout(() => t.classList.remove("tap"), 480);
+}, true);
 const getPath = (o, p) => p.split(".").reduce((a, k) => (a == null ? a : a[k]), o);
 function setPath(o, p, val) { const k = p.split("."); let a = o; for (let i = 0; i < k.length - 1; i++) { a = a[k[i]]; if (a == null) return; } a[k[k.length - 1]] = val; }
 
@@ -3405,6 +3415,19 @@ button.nitem:hover{background:var(--sel)}
 .avcard p{margin:0 0 10px;color:var(--label-2);font-size:15px;line-height:1.5}
 .ndot-lg{background:transparent!important;box-shadow:none!important}.ndot-lg i{width:12px;height:12px;border-radius:50%;background:var(--tc,var(--accent))}
 @media (max-width:560px){#notifpop{right:10px;left:10px;width:auto}}
+</style>
+<style id="pulso">
+/* ===== Pestañeo al cambiar de sección y pulso al tocar botones ===== */
+@keyframes pestanea{0%{opacity:0;transform:translateY(12px);filter:blur(3px)}55%{opacity:1}100%{opacity:1;transform:none;filter:none}}
+.blink{animation:pestanea .46s cubic-bezier(.22,.8,.3,1)}
+@keyframes suave{0%{opacity:.3}100%{opacity:1}}
+.blink-soft{animation:suave .3s ease-out}
+@keyframes tap{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent);transform:scale(.95)}55%{transform:scale(1.015)}100%{box-shadow:0 0 0 12px transparent;transform:none}}
+.tap{animation:tap .46s cubic-bezier(.2,.8,.3,1)}
+@keyframes navflash{0%{background:color-mix(in srgb,var(--accent) 45%,transparent);transform:scale(.93)}60%{transform:scale(1.03)}100%{transform:none}}
+.flash{animation:navflash .55s cubic-bezier(.2,.8,.3,1)}
+@media (prefers-reduced-motion:reduce){.blink,.blink-soft,.tap,.flash{animation:none!important}}
+html.acc-calm .blink,html.acc-calm .blink-soft,html.acc-calm .tap,html.acc-calm .flash{animation:none!important}
 </style>
 </body>
 </html>
