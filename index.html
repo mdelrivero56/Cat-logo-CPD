@@ -809,91 +809,46 @@ function sistemaBase(o) {
 }
 
 function datosEjemplo() {
+  /* Catálogo real del Área de Desarrollo de Software. Cada ficha se completa después desde Administración
+     (descripción, enlace al sistema, manual, requisitos, capturas y dependencias que lo usan). */
   const area = "Área de Desarrollo de Software";
-  const contacto = { correo: "sistemas@ejemplo.gob.mx", telefono: "" };
-  const S = (o) => sistemaBase(Object.assign({ ejemplo: true, area, contacto: clone(contacto) }, o));
+  const S = (o) => sistemaBase(Object.assign({ area, ejemplo: false, categorias: ["desarrollo"], plataforma: "Web", version: "1.0" }, o));
   return {
-    formato: 2, editado: false, actualizado: "2026-10-01",
+    formato: 2, editado: false, actualizado: hoyISO(),
     config: clone(CONFIG_BASE),
     categorias: [
-      { id: "participacion", nombre: "Participación", glifo: "votacion", color: "azul" },
-      { id: "organizacion", nombre: "Organización", glifo: "calendario", color: "naranja" },
-      { id: "documentos", nombre: "Documentos", glifo: "documento", color: "verde" },
-      { id: "seguridad", nombre: "Seguridad", glifo: "candado", color: "rojo" },
-      { id: "atencion", nombre: "Atención y soporte", glifo: "ayuda", color: "morado" }
+      { id: "desarrollo", nombre: "Desarrollo de Software", glifo: "app", color: "azul" }
     ],
     sistemas: [
       S({
-        id: "sis-votacion", nombre: "Sistema de Votación", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
-        icono: { glifo: "votacion", color: "azul", imagen: "" }, categorias: ["participacion", "organizacion"], usos: ["Eventos", "Reuniones", "Votaciones"],
-        destacado: true, etiqueta: "Ideal para tu próximo evento", version: "2.1", actualizado: "2026-08-20", plataforma: "Web · Tablets · Teléfonos",
-        descripcion: "Registra y cuenta los votos de cada persona asistente en sesiones, asambleas y eventos. Cada participante vota desde una tablet o su teléfono y los resultados aparecen al instante en pantalla.\n\nAl cerrar la votación se genera un acta con el total de votos, la participación y la hora de cierre.\n\nIdeal para:\n- Sesiones de consejos y comités\n- Eventos con consulta al público\n- Reuniones donde se necesita dejar constancia del resultado",
-        requisitos: ["Tablets o teléfonos para las personas votantes", "Conexión a internet estable en la sala", "Lista de personas con derecho a voto"],
-        pasos: ["Configura la sesión y los puntos que se van a votar.", "Entrega una tablet a cada persona o comparte el enlace de acceso.", "Abre cada votación desde el panel de control.", "Cierra la votación y descarga el acta con los resultados."],
-        enlaces: [{ etiqueta: "Abrir el sistema", url: "https://example.com/votacion", tipo: "sistema" }, { etiqueta: "Manual de usuario en línea", url: "https://example.com/votacion/manual", tipo: "manual" }],
-        tecnica: [{ k: "Capacidad", v: "Hasta 500 personas por sesión" }, { k: "Conectividad", v: "Wi-Fi o datos móviles" }, { k: "Idioma", v: "Español" }, { k: "Soporte", v: "Lunes a viernes, 9:00 a 18:00" }, { k: "Implementación", v: "3 a 5 días hábiles" }],
-        dependencias: [{ nombre: "Dependencia de ejemplo A", desde: "Marzo 2026", nota: "Usado en la sesión ordinaria del consejo. Los resultados quedaron listos al cerrar la votación." }, { nombre: "Dependencia de ejemplo B", desde: "Mayo 2026", nota: "Se utilizó en un foro con más de 200 asistentes." }, { nombre: "Dependencia de ejemplo C", desde: "Junio 2026", nota: "" }],
-        novedades: [{ version: "2.1", fecha: "2026-08-20", notas: "- Nuevo acta de resultados en PDF\n- Mejoras de velocidad con más de 300 votantes" }, { version: "2.0", fecha: "2026-05-12", notas: "- Votación desde teléfono sin instalar nada\n- Panel de control rediseñado" }],
-        capturas: capturas("azul", "Votación")
+        id: "sis-votaciones", nombre: "Votaciones", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
+        icono: { glifo: "votacion", color: "azul", imagen: "" }, usos: ["Votaciones", "Eventos", "Reuniones"], destacado: true,
+        descripcion: "Sistema de votaciones para llevar la cuenta de quién votó en una reunión o en un evento.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-eventos", nombre: "Sistema de Eventos", subtitulo: "Registro, acreditación y reportes de asistencia",
-        icono: { glifo: "calendario", color: "naranja", imagen: "" }, categorias: ["organizacion"], usos: ["Eventos", "Registro de asistentes"],
-        destacado: true, etiqueta: "Nuevo", version: "3.0", actualizado: "2026-09-15", plataforma: "Web · Teléfonos",
-        descripcion: "Organiza un evento de principio a fin: crea la página de registro, envía invitaciones, acredita a las personas con un código QR y consulta cuántas asistieron.\n\nAl terminar obtienes un reporte de asistencia listo para compartir.",
-        requisitos: ["Correo institucional de la persona responsable", "Fecha y sede del evento"],
-        pasos: ["Crea el evento con nombre, fecha y sede.", "Comparte el enlace de registro o carga la lista de invitados.", "El día del evento, escanea el código QR de cada asistente.", "Descarga el reporte de asistencia."],
-        enlaces: [{ etiqueta: "Abrir el sistema", url: "https://example.com/eventos", tipo: "sistema" }],
-        tecnica: [{ k: "Capacidad", v: "Eventos de hasta 2,000 asistentes" }, { k: "Acreditación", v: "Código QR" }, { k: "Soporte", v: "Lunes a viernes, 9:00 a 18:00" }],
-        dependencias: [{ nombre: "Dependencia de ejemplo A", desde: "Enero 2026", nota: "Dos foros con registro previo y acreditación en sitio." }, { nombre: "Dependencia de ejemplo D", desde: "Abril 2026", nota: "" }],
-        novedades: [{ version: "3.0", fecha: "2026-09-15", notas: "- Acreditación con QR\n- Reporte de asistencia por hora" }],
-        capturas: capturas("naranja", "Eventos")
+        id: "sis-elecciones", nombre: "Elecciones", subtitulo: "Procesos de elección con resultados al instante",
+        icono: { glifo: "calendario", color: "naranja", imagen: "" }, usos: ["Votaciones", "Eventos"], destacado: true,
+        descripcion: "Sistema para llevar a cabo procesos de elección.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-encuestas", nombre: "Encuestas y Consulta", subtitulo: "Mide la satisfacción después de cada evento",
-        icono: { glifo: "mensaje", color: "rosa", imagen: "" }, categorias: ["participacion"], usos: ["Eventos", "Reuniones"],
-        version: "1.2", actualizado: "2026-07-08", plataforma: "Web · Teléfonos",
-        descripcion: "Crea encuestas cortas y compártelas con un enlace o un código QR. Consulta las respuestas en tiempo real y descarga los resultados.\n\nFunciona muy bien como complemento de un evento para saber qué opinaron las personas asistentes.",
-        requisitos: ["Definir las preguntas de la encuesta"],
-        pasos: ["Crea la encuesta y elige el tipo de pregunta.", "Comparte el enlace o el código QR.", "Consulta los resultados y descárgalos."],
-        tecnica: [{ k: "Tipos de pregunta", v: "Opción múltiple, escala y texto libre" }, { k: "Exportación", v: "Excel y PDF" }],
-        dependencias: [{ nombre: "Dependencia de ejemplo B", desde: "Julio 2026", nota: "" }],
-        novedades: [{ version: "1.2", fecha: "2026-07-08", notas: "- Escala de satisfacción\n- Exportar a Excel" }],
-        capturas: capturas("rosa", "Encuestas")
+        id: "sis-minuta", nombre: "Minuta y Lista de Asistencia", subtitulo: "Minutas y registro de asistencia de tus reuniones",
+        icono: { glifo: "documento", color: "verde", imagen: "" }, usos: ["Reuniones"], categorias: ["desarrollo"],
+        descripcion: "Sistema para elaborar la minuta y llevar la lista de asistencia de una reunión.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-documental", nombre: "Gestión Documental", subtitulo: "Documentos con folio, versiones y seguimiento",
-        icono: { glifo: "documento", color: "verde", imagen: "" }, categorias: ["documentos"], usos: ["Trámites", "Documentos"],
-        version: "1.4", actualizado: "2026-06-10", plataforma: "Web",
-        descripcion: "Centraliza los documentos de tu dependencia, controla sus versiones y da seguimiento a su revisión y firma.\n\nCada documento tiene folio y un historial de cambios que se puede consultar en cualquier momento.",
-        requisitos: ["Catálogo de tipos de documento", "Visto bueno del área de TI"],
-        pasos: ["Da de alta el tipo de documento.", "Carga el archivo y asígnale un folio.", "Envía a revisión a las personas responsables.", "Consulta el historial de cambios."],
-        tecnica: [{ k: "Búsqueda", v: "Por folio, asunto o fecha" }, { k: "Versiones", v: "Historial completo" }],
-        dependencias: [{ nombre: "Dependencia de ejemplo C", desde: "Febrero 2026", nota: "Reemplazó el control de oficios en hojas de cálculo." }],
-        novedades: [{ version: "1.4", fecha: "2026-06-10", notas: "- Búsqueda por asunto\n- Mejoras de rendimiento" }],
-        capturas: capturas("verde", "Documentos")
+        id: "sis-denuncias-etica", nombre: "Denuncias del Comité de Ética e Igualdad de Género", subtitulo: "Denuncias del comité de ética e igualdad de género",
+        icono: { glifo: "candado", color: "morado", imagen: "" },
+        descripcion: "Sistema de denuncias del Comité de Ética e Igualdad de Género.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-accesos", nombre: "Control de Accesos", subtitulo: "Permisos, bitácora y revocación inmediata",
-        icono: { glifo: "candado", color: "rojo", imagen: "" }, categorias: ["seguridad"], usos: ["Seguridad"], estado: "Requiere validación",
-        version: "1.3", actualizado: "2026-02-02", plataforma: "Web",
-        descripcion: "Administra permisos, registra entradas y salidas y revoca accesos de inmediato.\n\nRequiere una revisión previa del área de TI para confirmar que se cumplen los requisitos de seguridad.",
-        requisitos: ["Visto bueno del área de TI", "Persona responsable de seguridad designada"],
-        pasos: ["Define los perfiles de acceso.", "Asigna perfiles a cada persona usuaria.", "Consulta la bitácora cuando la necesites."],
-        tecnica: [{ k: "Bitácora", v: "Entradas, salidas y cambios de permisos" }],
-        dependencias: [], novedades: [{ version: "1.3", fecha: "2026-02-02", notas: "- Revocación inmediata de accesos" }],
-        capturas: capturas("rojo", "Accesos")
+        id: "sis-cpd-academy", nombre: "CPD ACADEMY", subtitulo: "Plataforma CPD ACADEMY",
+        icono: { glifo: "estrella", color: "indigo", imagen: "" },
+        descripcion: "Plataforma CPD ACADEMY.\n\nDesarrollada por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-ayuda", nombre: "Mesa de Ayuda", subtitulo: "Soporte técnico con seguimiento hasta el cierre",
-        icono: { glifo: "ayuda", color: "morado", imagen: "" }, categorias: ["atencion"], usos: ["Soporte"],
-        version: "1.0", actualizado: "2026-07-01", plataforma: "Web",
-        descripcion: "Recibe solicitudes de soporte, asígnalas al personal técnico y da seguimiento hasta que se resuelven.\n\nLas personas usuarias reciben avisos de cada avance.",
-        requisitos: ["Lista del personal de soporte"],
-        pasos: ["Registra la incidencia con una descripción clara.", "El área de soporte la asigna y te notifica.", "Confirma la solución para cerrarla."],
-        tecnica: [], dependencias: [{ nombre: "Dependencia de ejemplo D", desde: "Agosto 2026", nota: "" }],
-        novedades: [{ version: "1.0", fecha: "2026-07-01", notas: "- Primera versión" }],
-        capturas: capturas("morado", "Mesa de ayuda")
+        id: "sis-sigta", nombre: "SIGTA", subtitulo: "Versión 3.1", version: "3.1",
+        icono: { glifo: "chart", color: "turquesa", imagen: "" },
+        descripcion: "SIGTA, versión 3.1.\n\nDesarrollado por el Área de Desarrollo de Software."
       })
     ]
   };
@@ -1166,8 +1121,9 @@ function setIntentos(rfc, v) { try { const o = JSON.parse(localStorage.getItem("
 const val = (id) => { const e = $("#" + id); return e ? e.value.trim() : ""; };
 const authErr = (t) => { const e = $("#a-err"); if (e) e.textContent = t; };
 function abrirSesion(u, recordar) {
+  const volver = S.retorno && !/^#\/acceso/.test(S.retorno) ? S.retorno : ""; S.retorno = null;
   S.user = u; aplicarRol(u); S.guest = false; try { sessionStorage.removeItem("catalogo-visitante"); } catch (e) {} guardarSesion(u, recordar); S.authView = "login";
-  if (/^#\/acceso/.test(location.hash)) history.replaceState(null, "", "#/");
+  if (/^#\/acceso/.test(location.hash)) history.replaceState(null, "", volver || "#/");
   render(true); if (!u.debeCambiar) toast(nNoLeidas() ? `Bienvenido(a), ${u.nombre.split(" ")[0]} · tienes ${nNoLeidas()} ${nNoLeidas() === 1 ? "notificación nueva" : "notificaciones nuevas"}` : `Bienvenido(a), ${u.nombre.split(" ")[0]}`);
 }
 
@@ -1263,6 +1219,21 @@ function avisosVis() {
 const nAvisosNo = () => { const l = leidosSet(); return avisosVis().filter((a) => !l.has(a.id)).length; };
 const nCampana = () => nAvisosNo() + nNoLeidas();
 function marcarAvisos(id) { const l = leidosSet(); (id ? [id] : avisosVis().map((a) => a.id)).forEach((x) => l.add(x)); guardarLeidos(l); }
+let nPrev = 0;
+function iniciarCampana() {
+  if ($("#campana")) return;
+  const b = document.createElement("button"); b.id = "campana"; b.type = "button"; b.dataset.act = "notif-abrir"; b.setAttribute("aria-haspopup", "dialog"); b.setAttribute("aria-expanded", "false");
+  document.body.appendChild(b);
+  window.addEventListener("scroll", () => b.classList.toggle("scrolled", window.scrollY > 8), { passive: true });
+}
+function actualizarCampana() {
+  iniciarCampana();
+  const b = $("#campana"), n = nCampana();
+  b.setAttribute("aria-label", "Notificaciones" + (n ? ` (${n} sin leer)` : "")); b.setAttribute("aria-expanded", String(!!S.nOpen));
+  b.innerHTML = glifo("campana") + (n ? `<b class="nbadge">${n > 9 ? "9+" : n}</b>` : "");
+  if (n > nPrev) { b.classList.remove("ring"); void b.offsetWidth; b.classList.add("ring"); }
+  nPrev = n;
+}
 function refrescarCampana() { renderChrome(hashParts()[0]); if (S.nOpen) pintarNotif(); }
 const fechaCorta = (iso) => { try { return new Date(iso).toLocaleDateString("es-MX", { day: "numeric", month: "short" }); } catch (e) { return ""; } };
 function itemAviso(a, leido) {
@@ -1298,7 +1269,7 @@ function cerrarNotif() {
   document.querySelectorAll('[data-act="notif-abrir"]').forEach((b) => b.setAttribute("aria-expanded", "false"));
 }
 document.addEventListener("click", (e) => { if (S.nOpen && !e.target.closest("#notifpop") && !e.target.closest('[data-act="notif-abrir"]')) cerrarNotif(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.nOpen) { cerrarNotif(); const b = document.querySelector('.sidebar [data-act="notif-abrir"]'); if (b) b.focus(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && S.nOpen) { cerrarNotif(); const b = $("#campana"); if (b) b.focus(); } });
 window.addEventListener("hashchange", () => { if (S.nOpen) cerrarNotif(); });
 
 function bannerAviso() {
@@ -1621,7 +1592,7 @@ function vAdminUsuarios() {
   const n = (r) => U.filter((u) => rolDe(u.rol) === r).length;
   const opt = (cur) => Object.keys(ROLES).map((r) => `<option value="${r}" ${r === cur ? "selected" : ""}>${ROLES[r]}</option>`).join("");
   return `<div class="admbar" style="margin-top:0"><span class="muted">${U.length} ${plural(U.length, "usuario", "usuarios")} · ${n("superadmin")} ${plural(n("superadmin"), "superadministrador", "superadministradores")} · ${n("gestor")} ${plural(n("gestor"), "colaborador", "colaboradores")}</span><button class="btn" data-act="usr-nuevo">${glifo("plus")}Crear usuario</button></div>
-  <div class="note info">${glifo("info")}<div>Como superadministrador creas los usuarios aquí mismo, al instante y sin códigos de verificación. Las solicitudes de colaborador y de recuperación llegan a <b>${esc(c.correoAdmin || "(sin correo configurado)")}</b>.
+  <div class="note info">${glifo("info")}<div>Como superadministrador creas los usuarios aquí mismo, al instante y sin códigos de verificación. Las demás personas se registran solas como Usuario; desde aquí subes su nivel (Colaborador o Superadministrador) cuando haga falta.
     <ul class="rolhelp"><li><b>Usuario:</b> con sesión, consulta y solicita sistemas.</li><li><b>Colaborador:</b> edita sistemas y categorías, pero no usuarios, configuración ni publicación.</li><li><b>Superadministrador:</b> control total.</li></ul></div></div>
   <div class="list-card" style="margin-top:14px">${U.map((u) => { const r = rolDe(u.rol), yo = u.id === S.user.id; return `<div class="arow"><span class="avatar-i">${esc(iniciales(u.nombre))}</span>
     <div class="t"><b>${esc(u.nombre)}</b><small>${esc(u.correo || u.rfc || "")}${u.dependencia ? " · " + esc(u.dependencia) : ""}<br><span class="badge ${r === "superadmin" ? "acc" : r === "gestor" ? "ok" : ""}">${ROLES[r]}</span><span class="badge ${u.estado === "activo" ? "ok" : "warn"}">${u.estado === "activo" ? "Activo" : "Bloqueado"}</span>${u.debeCambiar ? '<span class="badge warn">Contraseña temporal</span>' : ""}</small></div>
@@ -1787,6 +1758,7 @@ function render(nav) {
 
 function renderChrome(a) {
   const c = cfg();
+  $("#brand").setAttribute("aria-label", `${c.nombre} · inicio`);
   $("#brand").innerHTML = `${logoHtml(c)}<span><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></span>`;
   const act = { "": "", sistema: "sistemas", sistemas: "sistemas", uso: "sistemas", categorias: "categorias", categoria: "categorias", solicitar: "solicitudes", gracias: "solicitudes", solicitudes: "solicitudes", buscar: "buscar", ayuda: "ayuda", admin: "admin" }[a] ?? "";
   const cur = (k) => (act === k ? ' aria-current="page"' : "");
@@ -1800,13 +1772,13 @@ function renderChrome(a) {
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
   $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
-    + `<button class="sidenav-a bell" data-act="notif-abrir" aria-haspopup="dialog" aria-expanded="${!!S.nOpen}" aria-label="Notificaciones${nCampana() ? ` (${nCampana()} sin leer)` : ""}"><span class="ic">${glifo("campana")}</span><em>Notificaciones</em>${nCampana() ? `<b class="nbadge">${nCampana()}</b>` : ""}</button>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
   $("#tabbar").innerHTML = `<a class="rail-brand${imgOk(c.logo) ? "" : " lg"}" href="#/" aria-label="Inicio · ${esc(c.nombre)}">${logoInner(c)}</a>`
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
-    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span>${nCampana() ? `<b class="nbadge dot">${nCampana()}</b>` : ""}</button>`;
+    + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
+  actualizarCampana();
   $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}· <a href="#/contacto">Contacto y directorio</a>${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
 }
 
@@ -2040,7 +2012,7 @@ function vAccesoParaSolicitar(id) {
     <div class="sp"></div>
     <div class="card" style="max-width:560px"><p style="margin:0 0 10px">Para evitar mensajes no deseados, <b>solicitar un sistema requiere iniciar sesión con tu correo</b>. Puedes seguir explorando el catálogo sin cuenta.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="get big" data-act="ir-login">Iniciar sesión</button><button class="btn sec" data-act="ir-registro">Registrarse</button><a class="btn ghost" href="#/sistemas">Seguir explorando</a></div>
-    <p class="muted" style="font-size:13.5px;margin:16px 0 0">¿No tienes cuenta? ${c.correoDestino ? `Escribe a <a href="mailto:${esc(c.correoDestino)}">${esc(c.correoDestino)}</a> o ` : ""}consulta la página de <a href="#/contacto">contacto</a> para que te la creemos.</p></div>`;
+    <p class="muted" style="font-size:13.5px;margin:16px 0 0">¿Primera vez? Regístrate con tus datos: toma un minuto y entras al instante.</p></div>`;
 }
 function vSolicitar(id) {
   if (F.ini !== (id || "")) {
@@ -2236,7 +2208,7 @@ function marcarRequisito(t) {
 }
 
 /* ---------- Superadministrador: bandeja de solicitudes recibidas ---------- */
-const ESTADOS_BAN = { nueva: ["warn", "Nueva"], contacto: ["info", "En contacto"], atendida: ["ok", "Atendida"], archivada: ["", "Archivada"] };
+const ESTADOS_BAN = { nueva: ["warn", "Nueva"], contacto: ["info", "En contacto"], atendida: ["ok", "Atendida"], cancelada: ["bad", "Cancelada"], archivada: ["", "Archivada"] };
 S.bf = "todas";
 function exportarBandeja() {
   const ver = S.bf === "todas" ? filasBandeja() : filasBandeja().filter((r) => r.estado === S.bf);
@@ -2253,14 +2225,34 @@ async function cargarBandeja() {
   const { data, error } = await SB.from("solicitudes").select("*").order("creado", { ascending: false }).limit(500);
   S.inbox = error ? "error" : data;
 }
+async function bandejaEstado(ids, v) {
+  if (!S.super || !ids.length) return;
+  if (SB) {
+    const { error } = await SB.from("solicitudes").update({ estado: v }).in("id", ids);
+    if (error) return toast("No se pudo actualizar el estado.");
+    (S.inbox || []).forEach((r) => { if (ids.includes(r.id)) r.estado = v; });
+  } else { S.sols.forEach((x) => { if (ids.includes(x.id)) x.estadoBan = v; }); await guardarSolicitudes(); }
+  keep(() => render(true));
+}
+async function bandejaBorrar(ids, texto) {
+  if (!S.super || !ids.length) return;
+  if (!(await confirmar({ titulo: ids.length === 1 ? "Eliminar solicitud" : "Eliminar solicitudes", texto, si: "Eliminar", peligro: true }))) return;
+  if (SB) {
+    const { error } = await SB.from("solicitudes").delete().in("id", ids);
+    if (error) return toast("No se pudo eliminar: tu cuenta necesita permiso de borrado en Supabase.");
+    S.inbox = (S.inbox || []).filter((r) => !ids.includes(r.id));
+  } else { S.sols = S.sols.filter((x) => !ids.includes(x.id)); await guardarSolicitudes(); }
+  toast(ids.length === 1 ? "Solicitud eliminada" : `${ids.length} solicitudes eliminadas`); keep(() => render(true));
+}
 function filasBandeja() {
   if (SB) return Array.isArray(S.inbox) ? S.inbox : [];
-  return S.sols.map((x) => ({ id: x.id, folio: x.folio, creado: x.fecha, datos: x.datos, sistemas: x.sistemas, estado: "nueva", nota: "", local: true }));
+  return S.sols.map((x) => ({ id: x.id, folio: x.folio, creado: x.fecha, datos: x.datos, sistemas: x.sistemas, estado: x.estadoBan || "nueva", nota: x.nota || "" }));
 }
 function vBandeja() {
   if (SB && S.inbox === undefined) { cargarBandeja().then(() => { if (/^#\/solicitudes/.test(location.hash)) render(true); }); }
   const rows = filasBandeja(), cuenta = (e) => rows.filter((r) => r.estado === e).length;
-  const vis = S.bf === "todas" ? rows : rows.filter((r) => r.estado === S.bf);
+  const activas = rows.filter((r) => r.estado !== "archivada");
+  const vis = S.bf === "todas" ? activas : rows.filter((r) => r.estado === S.bf);
   const grupos = new Map();
   vis.forEach((r) => { const k = String((r.datos && r.datos.dependencia) || "Sin dependencia").trim(); const g = k.toLowerCase(); if (!grupos.has(g)) grupos.set(g, { nombre: k, items: [] }); grupos.get(g).items.push(r); });
   const nDeps = new Set(rows.map((r) => String((r.datos && r.datos.dependencia) || "").trim().toLowerCase())).size;
@@ -2269,13 +2261,15 @@ function vBandeja() {
     return `<details class="ban-card"><summary><span class="ban-sis">${esc((r.sistemas || []).map((x) => x.nombre).join(", "))}</span><span class="badge ${cl}">${tx}</span><small>${esc(fmtFecha(String(r.creado).slice(0, 10)))} · ${esc(r.folio)}</small></summary>
       <div class="ban-grid">${dato("Nombre", d.nombre)}${dato("Cargo", d.cargo)}${dato("Correo", d.correo, "mailto:" + d.correo + "?subject=" + encodeURIComponent("Seguimiento de tu solicitud " + r.folio))}${dato("Teléfono", d.telefono, tel ? "tel:" + tel : "")}${dato("Prefiere que lo contacten por", d.contactoPref)}${dato("Horario para contactarlo", d.horario)}${dato("Área o unidad", d.area)}${dato("Uso previsto", d.tipoUso)}${dato("Fecha estimada", d.fechaUso ? fmtFecha(d.fechaUso) : "")}${dato("Personas que lo usarían", d.participantes)}</div>
       ${d.mensaje ? `<p class="ban-msg"><small>Lo que necesita</small>${esc(d.mensaje)}</p>` : ""}
-      ${r.local ? "" : `<div class="ban-acts">${Object.entries(ESTADOS_BAN).filter(([k]) => k !== r.estado).map(([k, v]) => `<button class="btn sm sec" data-act="bandeja-estado" data-id="${esc(r.id)}" data-v="${k}">Marcar: ${v[1]}</button>`).join("")}</div>
+      ${`<div class="ban-acts">${Object.entries(ESTADOS_BAN).filter(([k]) => k !== r.estado).map(([k, v]) => `<button class="btn sm sec" data-act="bandeja-estado" data-id="${esc(r.id)}" data-v="${k}">${k === "archivada" ? "Archivar" : r.estado === "archivada" && k === "nueva" ? "Restaurar" : "Marcar: " + v[1]}</button>`).join("")}<button class="btn sm danger" data-act="bandeja-borrar" data-id="${esc(r.id)}">${glifo("trash")}Eliminar</button></div>
       <label class="sr" for="nota-${esc(r.id)}">Nota interna</label><textarea id="nota-${esc(r.id)}" class="ban-nota" placeholder="Nota interna (solo la ves tú)">${esc(r.nota || "")}</textarea><button class="btn sm" data-act="bandeja-nota" data-id="${esc(r.id)}">Guardar nota</button>`}</details>`; };
   const estado = SB ? (S.inbox === "cargando" || S.inbox === undefined ? '<div class="note info">' + glifo("info") + "<div>Cargando solicitudes…</div></div>" : S.inbox === "error" ? '<div class="note warn">' + glifo("warn") + "<div>No se pudieron cargar las solicitudes. Revisa tu conexión y que tu cuenta sea superadministrador.</div></div>" : "") : '<div class="note info">' + glifo("info") + "<div>Aún no está conectado Supabase, así que solo ves las solicitudes hechas desde este dispositivo. Al conectarlo recibirás aquí las de todas las dependencias.</div></div>";
+  const bulk = S.bf === "cancelada" && vis.length ? `<div class="note warn" style="margin:12px 0">${glifo("warn")}<div><b>${vis.length} ${plural(vis.length, "solicitud cancelada", "solicitudes canceladas")}.</b> Archívalas para conservarlas fuera de la lista, o elimínalas definitivamente.<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn sm sec" data-act="bandeja-archivar-canceladas">Archivar todas</button><button class="btn sm danger" data-act="bandeja-borrar-canceladas">${glifo("trash")}Eliminar todas</button></div></div></div>` : "";
   return `${cabecera("Solicitudes recibidas", "Qué sistemas pidió cada dependencia y cómo contactarla.")}
     <div class="sp"></div>${estado}
     <div class="ban-kpis"><div><b>${cuenta("nueva")}</b><span>Nuevas</span></div><div><b>${cuenta("contacto")}</b><span>En contacto</span></div><div><b>${cuenta("atendida")}</b><span>Atendidas</span></div><div><b>${nDeps}</b><span>Dependencias</span></div></div>
-    <div class="chips" role="group" aria-label="Filtrar por estado">${[["todas", "Todas (" + rows.length + ")"], ...Object.entries(ESTADOS_BAN).map(([k, v]) => [k, v[1] + " (" + cuenta(k) + ")"])].map(([k, t]) => `<button type="button" data-act="bandeja-filtro" data-v="${k}" ${S.bf === k ? 'aria-current="true" class="on"' : ""}>${t}</button>`).join("")}<button type="button" data-act="bandeja-recargar">${glifo("reloj")}Actualizar</button><button type="button" data-act="bandeja-exportar">Descargar Excel (.csv)</button></div>
+    <div class="chips" role="group" aria-label="Filtrar por estado">${[["todas", "Todas (" + activas.length + ")"], ...Object.entries(ESTADOS_BAN).map(([k, v]) => [k, v[1] + " (" + cuenta(k) + ")"])].map(([k, t]) => `<button type="button" data-act="bandeja-filtro" data-v="${k}" ${S.bf === k ? 'aria-current="true" class="on"' : ""}>${t}</button>`).join("")}<button type="button" data-act="bandeja-recargar">${glifo("reloj")}Actualizar</button><button type="button" data-act="bandeja-exportar">Descargar Excel (.csv)</button></div>
+    ${bulk}
     ${grupos.size ? [...grupos.values()].map((g) => `<section class="ban-dep"><h2>${esc(g.nombre)} <small>${g.items.length} solicitud${g.items.length === 1 ? "" : "es"}</small></h2>${g.items.map(card).join("")}</section>`).join("") : vacio("No hay solicitudes", S.bf === "todas" ? "Cuando una dependencia solicite un sistema aparecerá aquí." : "No hay solicitudes con este estado.")}`;
 }
 function misSols() { return S.user ? S.sols.filter((x) => normCorreo((x.datos || {}).correo || "") === normCorreo(S.user.correo || "")) : []; }
@@ -2700,9 +2694,8 @@ async function correrQA() {
   });
   await t("Configuración", () => {
     const c = cfg();
-    add(correoOk(c.correoAdmin) ? "ok" : "bad", "Correo del administrador", correoOk(c.correoAdmin) ? c.correoAdmin : "Falta o es inválido.");
+    add(correoOk(c.correoAdmin) ? "ok" : "ok", "Registros de usuarios", "Llegan como notificaciones dentro del sistema (campana); no requieren correo.");
     add(correoOk(c.correoDestino) ? "ok" : "warn", "Correo de solicitudes", correoOk(c.correoDestino) ? c.correoDestino : "Sin definir: se usará el del administrador.");
-    add(correoOk(CORREO_SUPER) ? "ok" : "bad", "Correo del código de superadministrador", maskCorreo(CORREO_SUPER));
     add(baseReqs().length ? "ok" : "warn", "Requisitos generales", baseReqs().length ? `${baseReqs().length} requisitos.` : "No hay requisitos generales.");
   });
   await t("Solicitud simulada", () => {
@@ -2970,11 +2963,19 @@ const ACT = {
   "bandeja-filtro"(t) { S.bf = t.dataset.v; keep(() => render(true)); },
   "bandeja-exportar"() { exportarBandeja(); },
   "bandeja-recargar"() { S.inbox = undefined; render(true); },
-  async "bandeja-estado"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id); if (!r || !SB) return; const { error } = await SB.from("solicitudes").update({ estado: t.dataset.v }).eq("id", r.id); if (error) return toast("No se pudo actualizar el estado."); r.estado = t.dataset.v; keep(() => render(true)); },
-  async "bandeja-nota"(t) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id), n = $("#nota-" + t.dataset.id); if (!r || !n || !SB) return; const { error } = await SB.from("solicitudes").update({ nota: n.value }).eq("id", r.id); if (error) return toast("No se pudo guardar la nota."); r.nota = n.value; toast("Nota guardada"); },
+  async "bandeja-estado"(t) { await bandejaEstado([t.dataset.id], t.dataset.v); if (t.dataset.v === "archivada") toast("Solicitud archivada"); else if (t.dataset.v === "cancelada") toast("Marcada como cancelada"); },
+  async "bandeja-nota"(t) {
+    const n = $("#nota-" + t.dataset.id); if (!n) return;
+    if (SB) { const r = (S.inbox || []).find((x) => x.id === t.dataset.id); if (!r) return; const { error } = await SB.from("solicitudes").update({ nota: n.value }).eq("id", r.id); if (error) return toast("No se pudo guardar la nota."); r.nota = n.value; }
+    else { const x = S.sols.find((y) => y.id === t.dataset.id); if (!x) return; x.nota = n.value; await guardarSolicitudes(); }
+    toast("Nota guardada");
+  },
+  async "bandeja-borrar"(t) { const r = filasBandeja().find((x) => x.id === t.dataset.id); if (r) await bandejaBorrar([r.id], `Se eliminará la solicitud ${r.folio} de ${(r.datos || {}).dependencia || "la dependencia"}. No se puede deshacer; si solo quieres sacarla de la lista, usa «Archivar».`); },
+  async "bandeja-archivar-canceladas"() { await bandejaEstado(filasBandeja().filter((r) => r.estado === "cancelada").map((r) => r.id), "archivada"); toast("Solicitudes canceladas archivadas"); },
+  async "bandeja-borrar-canceladas"() { const ids = filasBandeja().filter((r) => r.estado === "cancelada").map((r) => r.id); await bandejaBorrar(ids, `Se eliminarán ${ids.length} ${plural(ids.length, "solicitud cancelada", "solicitudes canceladas")}. No se puede deshacer; si prefieres conservarlas, usa «Archivar todas».`); },
   "guardar-directorio"() { const t = $("#dir-txt"); if (!t) return; cfg().directorio = t.value.split("\n").map((l) => l.split("|").map((x) => x.trim())).filter((a) => a[0]).map((a) => ({ nombre: a[0], cargo: a[1] || "", correo: a[2] || "", telefono: a[3] || "" })); guardarCatalogo(); toast("Directorio guardado"); render(true); },
   "recup-cancelar"() { S.recup = false; if (SB) SB.auth.signOut(); S.authView = "login"; location.hash = "#/acceso"; render(true); },
-  "ir-registro"() { cerrarModal(); S.authView = "registro"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
+  "ir-registro"() { cerrarModal(); if (!/^#\/acceso/.test(location.hash)) S.retorno = location.hash; S.authView = "registro"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "notif-leer"(t) { marcarNotifs(t.dataset.id).then(() => { refrescarCampana(); keep(() => render(false)); }); },
   "notif-todas"() { marcarNotifs().then(() => { refrescarCampana(); keep(() => render(false)); }); },
   "notif-abrir"() { abrirNotif(); },
@@ -2989,7 +2990,7 @@ const ACT = {
   "aviso-nuevo"() { abrirAviso(); },
   "aviso-editar"(t) { abrirAviso(t.dataset.id); },
   async "aviso-borrar"(t) { const a = (S.cat.avisos || []).find((x) => x.id === t.dataset.id); if (!a) return; if (!(await confirmar({ titulo: "Eliminar aviso", texto: `Se borrará «${a.titulo}» para todas las personas.`, si: "Eliminar", peligro: true }))) return; S.cat.avisos = S.cat.avisos.filter((x) => x.id !== a.id); guardarCatalogo(); toast("Aviso eliminado"); refrescarCampana(); keep(() => render(false)); },
-  "ir-login"() { cerrarModal(); S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
+  "ir-login"() { cerrarModal(); if (!/^#\/acceso/.test(location.hash)) S.retorno = location.hash; S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
   "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
   "ren-sis"(t) { abrirRenombrarSistema(t.dataset.id); },
@@ -3016,7 +3017,7 @@ const ACT = {
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["aviso-nuevo", "aviso-editar", "aviso-borrar", "notif-leer", "notif-todas", "notif-reset", "usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const SOLO_SUPER = new Set(["bandeja-estado", "bandeja-nota", "bandeja-borrar", "bandeja-archivar-canceladas", "bandeja-borrar-canceladas", "aviso-nuevo", "aviso-editar", "aviso-borrar", "notif-leer", "notif-todas", "notif-reset", "usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
 const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
@@ -3370,7 +3371,7 @@ html.acc-hc *{--label-2:#000}
 </style>
 <style id="avisos">
 /* ===== Avisos y campana flotante (minimalista) ===== */
-#notifpop{position:fixed;z-index:90;top:calc(var(--pb-top,14px) + var(--pb-h,0px) + 10px);right:max(14px,calc((100vw - 1240px)/2 + 6px));width:min(392px,calc(100vw - 20px));max-height:min(74vh,600px);display:flex;flex-direction:column;background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:saturate(180%) blur(26px);backdrop-filter:saturate(180%) blur(26px);border:1px solid var(--sep);border-radius:20px;box-shadow:0 24px 60px -18px rgba(14,47,61,.42),0 2px 8px rgba(14,47,61,.08);color:var(--label);opacity:0;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:opacity .16s,transform .16s;outline:0;overflow:hidden}
+#notifpop{position:fixed;z-index:90;top:calc(var(--pb-top,14px) + var(--pb-h,0px) + 10px);right:max(14px,calc((100vw - 1240px)/2 + 6px));width:min(392px,calc(100vw - 20px));max-height:min(74vh,600px);display:flex;flex-direction:column;background:color-mix(in srgb,var(--bg) 96%,transparent);-webkit-backdrop-filter:saturate(180%) blur(26px);backdrop-filter:saturate(180%) blur(26px);border:1px solid var(--sep);border-radius:20px;box-shadow:0 24px 60px -18px rgba(14,47,61,.42),0 2px 8px rgba(14,47,61,.08);color:var(--label);opacity:0;transform:translateY(-8px) scale(.97);transform-origin:top right;transition:opacity .16s,transform .16s;outline:0;overflow:hidden}
 #notifpop[hidden]{display:none}
 #notifpop.on{opacity:1;transform:none}
 #notifpop header{display:flex;align-items:center;justify-content:space-between;padding:14px 12px 6px 18px}
@@ -3417,17 +3418,41 @@ button.nitem:hover{background:var(--sel)}
 @media (max-width:560px){#notifpop{right:10px;left:10px;width:auto}}
 </style>
 <style id="pulso">
-/* ===== Pestañeo al cambiar de sección y pulso al tocar botones ===== */
-@keyframes pestanea{0%{opacity:0;transform:translateY(12px);filter:blur(3px)}55%{opacity:1}100%{opacity:1;transform:none;filter:none}}
-.blink{animation:pestanea .46s cubic-bezier(.22,.8,.3,1)}
-@keyframes suave{0%{opacity:.3}100%{opacity:1}}
-.blink-soft{animation:suave .3s ease-out}
-@keyframes tap{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent);transform:scale(.95)}55%{transform:scale(1.015)}100%{box-shadow:0 0 0 12px transparent;transform:none}}
-.tap{animation:tap .46s cubic-bezier(.2,.8,.3,1)}
-@keyframes navflash{0%{background:color-mix(in srgb,var(--accent) 45%,transparent);transform:scale(.93)}60%{transform:scale(1.03)}100%{transform:none}}
-.flash{animation:navflash .55s cubic-bezier(.2,.8,.3,1)}
+/* ===== Pestañeo suave al cambiar de sección y pulso discreto al tocar botones ===== */
+@keyframes pestanea{0%{opacity:.55;transform:translateY(5px)}100%{opacity:1;transform:none}}
+.blink{animation:pestanea .3s ease-out}
+@keyframes suave{0%{opacity:.75}100%{opacity:1}}
+.blink-soft{animation:suave .2s ease-out}
+@keyframes tap{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 22%,transparent);transform:scale(.985)}100%{box-shadow:0 0 0 6px transparent;transform:none}}
+.tap{animation:tap .3s ease-out}
+@keyframes navflash{0%{background:color-mix(in srgb,var(--accent) 18%,transparent)}}
+.flash{animation:navflash .4s ease-out}
 @media (prefers-reduced-motion:reduce){.blink,.blink-soft,.tap,.flash{animation:none!important}}
 html.acc-calm .blink,html.acc-calm .blink-soft,html.acc-calm .tap,html.acc-calm .flash{animation:none!important}
+</style>
+<style id="campana-css">
+/* ===== Campana flotante (siempre visible al desplazarse) ===== */
+:root{--bell-top:18px;--bell-right:20px}
+#campana{position:fixed;z-index:70;top:var(--bell-top);right:var(--bell-right);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--label);background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border:1px solid var(--sep);box-shadow:0 8px 24px -8px rgba(14,47,61,.35),0 1px 3px rgba(14,47,61,.1);transition:transform .2s,box-shadow .2s,top .25s}
+#campana:hover{transform:translateY(-1px);box-shadow:0 12px 28px -8px rgba(14,47,61,.42)}
+#campana[aria-expanded="true"]{background:var(--accent);color:#fff;border-color:transparent}
+#campana .g{width:22px;height:22px;stroke:currentColor;color:inherit}
+#campana .nbadge{position:absolute;top:-3px;right:-3px;margin:0;min-width:20px;height:20px;box-shadow:0 0 0 2px var(--bg)}
+#campana.scrolled{box-shadow:0 14px 32px -10px rgba(14,47,61,.5)}
+@keyframes campanea{0%,100%{transform:rotate(0)}15%{transform:rotate(16deg)}30%{transform:rotate(-14deg)}45%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(2deg)}}
+#campana.ring .g{animation:campanea .9s ease-in-out;transform-origin:50% 12%}
+body.auth #campana{display:none}
+#notifpop{top:calc(var(--bell-top) + 58px);right:var(--bell-right)}
+@media (max-width:560px){:root{--bell-right:12px}#notifpop{right:10px;left:10px;width:auto}}
+@media (prefers-reduced-motion:reduce){#campana.ring .g{animation:none}}
+html.acc-hc #campana{background:#000;color:#fff;border-color:#fff}
+</style>
+<style id="campana-a">
+@media (max-width:900px){:root{--bell-top:calc(env(safe-area-inset-top,0px) + 74px);--bell-right:12px}#campana{width:44px;height:44px}}
+</style>
+<style id="ajustes-final">
+@media (max-width:380px){.large-title{font-size:27px}.pagehead{gap:10px}.pagehead>div:first-child{min-width:0}}
+.large-title{overflow-wrap:anywhere}
 </style>
 </body>
 </html>
