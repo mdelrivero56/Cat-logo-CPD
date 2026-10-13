@@ -25,6 +25,8 @@
   --gutter:40px;
 }
 @media (prefers-color-scheme: dark){
+  /* Se conserva el tema claro solicitado */
+  :root:not([data-theme="light"]){ color-scheme: light; }
   :root:not([data-theme="light"]){
     --bg:#000000; --bg-soft:#1c1c1e; --bg-card:#1c1c1e; --bg-input:#2c2c2e;
     --label:#f5f5f7; --label-2:#a1a1a6; --label-3:#8e8e93;
@@ -605,6 +607,65 @@ button.avatar{font:inherit;font-weight:700}
 .qa-log{display:grid;gap:8px;margin-top:10px}
 .qa-log details{border:1px solid var(--sep);border-radius:12px;padding:10px 12px;background:var(--bg-soft);font-size:14px}
 .qa-log pre{white-space:pre-wrap;word-break:break-word;margin:8px 0 0;font-size:12.5px}
+
+/* Tema claro fijo: fondo blanco y texto oscuro */
+:root, :root[data-theme="dark"], :root[data-theme="light"]{
+  color-scheme: light !important;
+  --bg:#ffffff !important;
+  --bg-soft:#f4f6f9 !important;
+  --bg-card:#f4f6f9 !important;
+  --bg-input:#ffffff !important;
+  --label:#1d1d1f !important;
+  --label-2:#6e6e73 !important;
+  --label-3:#8e8e93 !important;
+  --sep:rgba(60,60,67,.16) !important;
+  --sep-strong:rgba(60,60,67,.3) !important;
+  --accent:#0a64c8 !important;
+  --accent-ink:#ffffff !important;
+  --accent-soft:rgba(10,100,200,.11) !important;
+  --pill:#eef1f6 !important;
+  --pill-ink:#0a64c8 !important;
+  --glass:rgba(255,255,255,.92) !important;
+  --sidebar:#f4f4f7 !important;
+  --sel:rgba(60,60,67,.1) !important;
+}
+
+/* Pulido visual de acceso e identidad institucional */
+.authwrap{background:radial-gradient(780px 440px at 8% 0%,rgba(20,118,140,.12),transparent 62%),radial-gradient(720px 420px at 100% 100%,rgba(62,190,171,.12),transparent 60%),#f6f9fb!important}
+.authcard{background:rgba(255,255,255,.97)!important;border:1px solid #e3eaf0!important;border-radius:26px!important;box-shadow:0 24px 70px rgba(20,45,65,.12)!important;padding:32px 28px 28px!important}
+.authcard::before{height:5px!important;background:linear-gradient(90deg,#176b83,#36b7a2,#8ad7c9)!important}
+.auth-brand{padding:4px 2px 18px;border-bottom:1px solid #edf1f4;margin-bottom:18px!important}
+.auth-logo{width:54px!important;height:54px!important;border-radius:17px!important;box-shadow:0 7px 18px rgba(23,107,131,.16)}
+.auth-brand b{font-size:17px!important;color:#203543!important}
+.auth-brand small{display:block;margin-top:4px;color:#71818d!important}
+.authcard h1{color:#203543!important;font-size:27px!important;letter-spacing:-.035em!important}
+.authcard .lede{color:#647783!important;line-height:1.55!important;margin-bottom:20px!important}
+.auth-tabs{display:flex;gap:6px;padding:5px;background:#f0f5f7;border:1px solid #e4ecef;border-radius:14px;margin:0 0 22px}
+.auth-tabs button{flex:1;min-height:42px;padding:10px 12px;border-radius:10px;color:#607580;font-weight:650;transition:background .18s,color .18s,box-shadow .18s,transform .18s}
+.auth-tabs button[aria-selected="true"]{background:#fff!important;color:#176b83!important;box-shadow:0 3px 10px rgba(24,58,74,.10),inset 0 0 0 1px #dce8ec!important}
+.auth-tabs button:hover:not([aria-selected="true"]){background:#e4eef1;color:#275a6b}
+.authcard .field input,.authcard .field select{border:1px solid #d8e2e8!important;border-radius:12px!important;background:#fbfdfe!important;transition:border-color .18s,box-shadow .18s,background .18s}
+.authcard .field input:focus,.authcard .field select:focus{border-color:#27869a!important;box-shadow:0 0 0 4px rgba(39,134,154,.13)!important;background:#fff!important;outline:none}
+.authcard .btn.big{border-radius:13px!important;min-height:48px;font-weight:700;letter-spacing:.005em;transition:transform .16s,box-shadow .16s,background .16s}
+.authcard .btn.big:not(.sec){background:linear-gradient(135deg,#176b83,#238da0)!important;color:#fff!important;box-shadow:0 7px 16px rgba(23,107,131,.18)}
+.authcard .btn.big:not(.sec):hover{background:linear-gradient(135deg,#12596e,#1d7c8d)!important;box-shadow:0 9px 20px rgba(23,107,131,.23);transform:translateY(-1px)}
+.authcard .btn.sec{background:#f1f7f8!important;border:1px solid #dbe9ec!important;color:#176b83!important;box-shadow:none!important}
+.authcard .btn.sec:hover{background:#e4f1f3!important;border-color:#c6dfe4!important;transform:translateY(-1px)}
+.authcard button:focus-visible,.authcard a:focus-visible{outline:3px solid rgba(39,134,154,.35);outline-offset:3px}
+.auth-links{margin-top:20px!important}
+.auth-links button{border-radius:8px;padding:5px 7px;transition:background .16s}
+.auth-links button:hover{background:#eef6f7}
+.auth-alt{border-radius:13px!important}
+.logo-prev{display:grid;place-items:center;background:linear-gradient(145deg,#f7fbfc,#edf5f7);border:1px solid #dfe9ed;border-radius:22px;padding:10px;filter:none!important;box-shadow:0 10px 24px rgba(24,58,74,.08)}
+.logo-prev img,.logo-prev .ico{border-radius:16px;overflow:hidden}
+.logo-ed{gap:22px!important}
+.logo-opts button{transition:transform .16s,border-color .16s,background .16s,box-shadow .16s}
+.logo-opts button:hover{transform:translateY(-2px);box-shadow:0 5px 12px rgba(24,58,74,.10)}
+.logo-opts button[aria-pressed="true"]{box-shadow:0 0 0 3px rgba(39,134,154,.12)!important}
+.cfg .up label.btn{border-radius:11px!important;background:#edf6f7!important;color:#176b83!important;border:1px solid #d4e7eb!important}
+.cfg .up label.btn:hover{background:#e0f0f2!important}
+@media(max-width:520px){.authcard{padding:26px 19px 22px!important;border-radius:22px!important}.auth-brand{gap:10px}.auth-logo{width:48px!important;height:48px!important}.authcard h1{font-size:24px!important}.auth-tabs button{font-size:13px;padding:9px 7px}}
+
 </style>
 </head>
 <body>
@@ -717,7 +778,12 @@ const CONFIG_BASE = {
   reunion: "Coordinamos una reunión con tu dependencia para presentar el sistema, definir accesos y acordar fechas de uso.",
   tema: "auto",               // auto | claro | oscuro
   acento: "",                 // vacío = azul institucional; o un color de la paleta
-  requisitosBase: "Persona responsable designada (nombre y contacto)\nConexión a internet estable en el lugar de uso\nDispositivos compatibles disponibles (computadora, tablet o teléfono)\nFecha y lugar de la ocasión confirmados\nAutorización de la dependencia para usar el sistema"
+  requisitosBase: "Persona responsable designada (nombre y contacto)\nConexión a internet estable en el lugar de uso\nDispositivos compatibles disponibles (computadora, tablet o teléfono)\nFecha y lugar de la ocasión confirmados\nAutorización de la dependencia para usar el sistema",
+  dependencias: [],           // registro de dependencias que solicitan sistemas (se llena solo y se administra en Ajustes → Formulario)
+  opcionesUso: "Evento o reunión\nUso institucional recurrente\nPrueba o demostración\nOtro",
+  opcionesContacto: "Correo electrónico\nLlamada telefónica\nVideollamada",
+  avisoPrivacidad: "",        // texto completo del aviso de privacidad (opcional)
+  terminos: ""                // términos y condiciones (opcional)
 };
 /* Supabase: pega aquí la URL y la clave pública (anon) de tu proyecto. Nunca uses la clave service_role. */
 const SUPABASE_URL = "";
@@ -727,7 +793,7 @@ const URL_RECUP = SB_ON && /[#&?]type=recovery/.test(location.hash + location.se
 const URL_ERR = SB_ON && /[#&?](error_code|error_description)=/.test(location.hash + location.search);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
-const CORREO_SUPER = "delrivero25@gmail.com";  // recibe el código para autorizar cuentas de Superadministrador
+const CORREO_SUPER = "mdelrivero56@gmail.com";  // único correo autorizado para Superadministrador
 const ROLES = { visitante: "Usuario", gestor: "Colaborador", superadmin: "Superadministrador" };
 const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
@@ -812,46 +878,41 @@ function datosEjemplo() {
   /* Catálogo real del Área de Desarrollo de Software. Cada ficha se completa después desde Administración
      (descripción, enlace al sistema, manual, requisitos, capturas y dependencias que lo usan). */
   const area = "Área de Desarrollo de Software";
-  const S = (o) => sistemaBase(Object.assign({ area, ejemplo: false, categorias: [], plataforma: "Web", version: "1.0" }, o));
+  const S = (o) => sistemaBase(Object.assign({ area, ejemplo: false, categorias: ["desarrollo"], plataforma: "Web", version: "1.0" }, o));
   return {
     formato: 2, editado: false, actualizado: hoyISO(),
     config: clone(CONFIG_BASE),
     categorias: [
-      { id: "reuniones", nombre: "Reuniones", glifo: "usuarios", color: "azul" },
-      { id: "eventos", nombre: "Eventos y elecciones", glifo: "calendario", color: "naranja" },
-      { id: "documentos", nombre: "Documentos y registros", glifo: "documento", color: "verde" },
-      { id: "etica", nombre: "Ética e integridad", glifo: "escudo", color: "morado" },
-      { id: "capacitacion", nombre: "Capacitación", glifo: "libro", color: "indigo" },
-      { id: "seguimiento", nombre: "Seguimiento y análisis", glifo: "chart", color: "turquesa" }
+      { id: "desarrollo", nombre: "Desarrollo de Software", glifo: "app", color: "azul" }
     ],
     sistemas: [
       S({
-        id: "sis-votaciones", categorias: ["reuniones", "eventos"], nombre: "Votaciones", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
+        id: "sis-votaciones", nombre: "Votaciones", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
         icono: { glifo: "votacion", color: "azul", imagen: "" }, usos: ["Votaciones", "Eventos", "Reuniones"], destacado: true,
         descripcion: "Sistema de votaciones para llevar la cuenta de quién votó en una reunión o en un evento.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-elecciones", categorias: ["eventos"], nombre: "Elecciones", subtitulo: "Procesos de elección con resultados al instante",
+        id: "sis-elecciones", nombre: "Elecciones", subtitulo: "Procesos de elección con resultados al instante",
         icono: { glifo: "calendario", color: "naranja", imagen: "" }, usos: ["Votaciones", "Eventos"], destacado: true,
         descripcion: "Sistema para llevar a cabo procesos de elección.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-minuta", categorias: ["reuniones", "documentos"], nombre: "Minuta y Lista de Asistencia", subtitulo: "Minutas y registro de asistencia de tus reuniones",
-        icono: { glifo: "documento", color: "verde", imagen: "" }, usos: ["Reuniones"],
+        id: "sis-minuta", nombre: "Minuta y Lista de Asistencia", subtitulo: "Minutas y registro de asistencia de tus reuniones",
+        icono: { glifo: "documento", color: "verde", imagen: "" }, usos: ["Reuniones"], categorias: ["desarrollo"],
         descripcion: "Sistema para elaborar la minuta y llevar la lista de asistencia de una reunión.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-denuncias-etica", categorias: ["etica", "documentos"], nombre: "Denuncias del Comité de Ética e Igualdad de Género", subtitulo: "Denuncias del comité de ética e igualdad de género",
+        id: "sis-denuncias-etica", nombre: "Denuncias del Comité de Ética e Igualdad de Género", subtitulo: "Denuncias del comité de ética e igualdad de género",
         icono: { glifo: "candado", color: "morado", imagen: "" },
         descripcion: "Sistema de denuncias del Comité de Ética e Igualdad de Género.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-cpd-academy", categorias: ["capacitacion"], nombre: "CPD ACADEMY", subtitulo: "Plataforma CPD ACADEMY",
+        id: "sis-cpd-academy", nombre: "CPD ACADEMY", subtitulo: "Plataforma CPD ACADEMY",
         icono: { glifo: "estrella", color: "indigo", imagen: "" },
         descripcion: "Plataforma CPD ACADEMY.\n\nDesarrollada por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-sigta", categorias: ["seguimiento"], nombre: "SIGTA", subtitulo: "Versión 3.1", version: "3.1",
+        id: "sis-sigta", nombre: "SIGTA", subtitulo: "Versión 3.1", version: "3.1",
         icono: { glifo: "chart", color: "turquesa", imagen: "" },
         descripcion: "SIGTA, versión 3.1.\n\nDesarrollado por el Área de Desarrollo de Software."
       })
@@ -875,11 +936,6 @@ function migrar(c) {
     ["categorias", "usos", "requisitos", "pasos", "enlaces", "tecnica", "dependencias", "novedades", "capturas", "archivos"].forEach((k) => { if (!Array.isArray(r[k])) r[k] = []; });
     return r;
   });
-  if (out.categorias.length === 1 && out.categorias[0].id === "desarrollo") {
-    const nuevo = base.sistemas.reduce((m, x) => (m[x.id] = x.categorias, m), {});
-    out.categorias = base.categorias;
-    out.sistemas.forEach((x) => { if (nuevo[x.id] && x.categorias.every((k) => k === "desarrollo")) x.categorias = nuevo[x.id].slice(); });
-  }
   return out;
 }
 const catValido = (j) => j && typeof j === "object" && Array.isArray(j.sistemas) && Array.isArray(j.categorias);
@@ -1160,16 +1216,18 @@ async function registrarse() {
   authErr("");
   const d = { nombre: val("a-nombre"), dependencia: val("a-dep"), area: val("a-area"), cargo: val("a-cargo"), correo: normCorreo(val("a-correo")), telefono: val("a-tel") };
   const p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
-  if (d.nombre.length < 3) return authErr("Escribe tu nombre completo.");
-  if (d.dependencia.length < 2) return authErr("Escribe tu dependencia u organización.");
-  if (d.cargo.length < 2) return authErr("Escribe tu cargo.");
-  if (!correoOk(d.correo)) return authErr("Escribe un correo electrónico válido.");
-  if (d.telefono.replace(/\D/g, "").length < 8) return authErr("Escribe un teléfono de al menos 8 dígitos.");
-  if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
-  if (normCorreo(p1) === d.correo) return authErr("La contraseña no puede ser tu correo.");
-  if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
-  if (!$("#a-acepto").checked) return authErr("Acepta el aviso de privacidad para continuar.");
-  const btn = $("#a-reg-btn"); if (btn) { btn.disabled = true; btn.textContent = "Creando tu cuenta…"; }
+  const falta = [], mal = (id, m) => falta.push([id, m]);
+  if (d.nombre.length < 3) mal("a-nombre", "Escribe tu nombre completo.");
+  if (d.cargo.length < 2) mal("a-cargo", "Escribe tu cargo.");
+  if (d.dependencia.length < 2) mal($("#a-depsel") && $("#a-dep-wrap").hidden ? "a-depsel" : "a-dep", "Elige o escribe tu dependencia u organización.");
+  if (!correoOk(d.correo)) mal("a-correo", "Escribe un correo electrónico válido.");
+  else if (d.correo === normCorreo(CORREO_SUPER)) mal("a-correo", "Ese correo está reservado para el superadministrador. Usa la pestaña «Superadministrador».");
+  if (d.telefono.replace(/\D/g, "").length < 8) mal("a-tel", "Escribe un teléfono de al menos 8 dígitos.");
+  if (!claveOk(p1)) mal("a-pass", CLAVE_AYUDA); else if (normCorreo(p1) === d.correo) mal("a-pass", "La contraseña no puede ser tu correo.");
+  if (p1 !== p2) mal("a-pass2", "Las contraseñas no coinciden.");
+  if (!$("#a-acepto").checked) mal("a-acepto", "Acepta el aviso de privacidad para continuar.");
+  if (falta.length) return marcarFaltantes(falta);
+    const btn = $("#a-reg-btn"); if (btn) { btn.disabled = true; btn.textContent = "Creando tu cuenta…"; }
   const fin = (m) => { if (btn) { btn.disabled = false; btn.textContent = "Crear mi cuenta"; } authErr(m); };
   if (SB_ON) return sbRegistro(d, p1, fin);
   if (buscarPorCorreo(d.correo)) return fin("Ese correo ya está registrado. Inicia sesión.");
@@ -1177,6 +1235,7 @@ async function registrarse() {
   const u = { id: uid("usr"), nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono, rol: "visitante", estado: "activo", salt, hash: await hashClave(p1, salt), debeCambiar: false, creado: hoyISO(), registro: true };
   S.cat.usuarios.push(u);
   notificar("registro", `Se unió ${d.nombre}`, { userId: u.id, nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono });
+  depsRegistrar(d.dependencia);
   guardarCatalogo(); abrirSesion(u, true);
 }
 async function sbRegistro(d, p1, fin) {
@@ -1188,6 +1247,7 @@ async function sbRegistro(d, p1, fin) {
   const { error: e2 } = await SB.from("perfiles").insert(perfil);
   if (e2) { await SB.auth.signOut(); return fin("No se pudo guardar tu perfil. Avisa al administrador."); }
   try { await SB.from("notificaciones").insert({ tipo: "registro", titulo: `Se unió ${d.nombre}`, detalle: { userId: data.user.id, nombre: d.nombre, correo: d.correo, dependencia: d.dependencia, area: d.area, cargo: d.cargo, telefono: d.telefono } }); } catch (e) {}
+  try { await depsRegistrar(d.dependencia); } catch (e) {}
   const u = await sbPerfil(data.user);
   if (!u) return fin("Tu cuenta se creó, pero no se pudo iniciar la sesión. Inicia sesión con tu correo y contraseña.");
   abrirSesion(u, true);
@@ -1339,8 +1399,8 @@ async function iniciarSesion() {
   if (SB_ON) return sbLogin();
   const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value, rec = $("#a-rec") && $("#a-rec").checked;
   authErr("");
-  if (!correoOk(correo)) return authErr("Escribe un correo electrónico válido.");
-  if (!pass) return authErr("Escribe tu contraseña.");
+  const fl = []; if (!correoOk(correo)) fl.push(["a-correo", "Escribe un correo electrónico válido."]); if (!pass) fl.push(["a-pass", "Escribe tu contraseña."]);
+  if (fl.length) return marcarFaltantes(fl);
   const it = intentosDe(correo);
   if (it.hasta > Date.now()) return authErr(`Demasiados intentos. Vuelve a intentar en ${Math.ceil((it.hasta - Date.now()) / 60000)} min.`);
   const u = buscarPorCorreo(correo);
@@ -1353,6 +1413,43 @@ async function iniciarSesion() {
   if (u.estado === "bloqueado") return authErr("Tu usuario está bloqueado. Contacta al administrador.");
   setIntentos(correo, null); abrirSesion(u, rec);
 }
+
+/* ---------- Acceso: pestañas, campos obligatorios y dependencia ---------- */
+function authTabs(a) {
+  const correoActual = normCorreo(document.getElementById("a-correo")?.value || "");
+  const flujoSuper = ["super", "codigo", "supercod"].includes(S.authView);
+  const mostrarSuper = correoActual === "mdelrivero56@gmail.com" || flujoSuper;
+  return `<div class="auth-tabs" role="tablist" aria-label="Tipo de acceso"><button type="button" role="tab" aria-selected="${a === "usuario"}" data-act="auth-ir" data-v="login">Usuario</button><button id="tab-superadmin" type="button" role="tab" aria-selected="${a === "super"}" data-act="auth-ir" data-v="super" ${mostrarSuper ? "" : "hidden"}>Superadministrador</button></div>`;
+}
+function marcarFaltantes(lista) {
+  document.querySelectorAll(".authcard .bad").forEach((x) => x.classList.remove("bad"));
+  document.querySelectorAll(".authcard [aria-invalid]").forEach((x) => x.removeAttribute("aria-invalid"));
+  let primero = null;
+  lista.forEach(([id]) => { const el = $("#" + id); if (!el) return; const w = el.closest(".field, .chk"); if (w) w.classList.add("bad"); el.setAttribute("aria-invalid", "true"); if (!primero) primero = el; });
+  if (primero) { primero.scrollIntoView({ block: "center", behavior: "smooth" }); if (primero.focus) primero.focus({ preventScroll: true }); }
+  const extra = lista.length > 1 ? ` Faltan ${lista.length - 1} ${lista.length - 1 === 1 ? "campo más" : "campos más"} marcados con *.` : "";
+  authErr(lista[0][1] + extra);
+}
+document.addEventListener("input", (e) => { const w = e.target.closest && e.target.closest(".authcard .field.bad, .authcard .chk.bad"); if (w) { w.classList.remove("bad"); const i = e.target; if (i.removeAttribute) i.removeAttribute("aria-invalid"); } });
+document.addEventListener("input", (e) => {
+  if (!e.target || e.target.id !== "a-correo") return;
+  const tab = document.getElementById("tab-superadmin");
+  if (tab) tab.hidden = normCorreo(e.target.value) !== "mdelrivero56@gmail.com";
+});
+function depCampoAuth() {
+  const L = depsNombres(), hay = L.length > 0;
+  return `<div class="field"><label for="${hay ? "a-depsel" : "a-dep"}">Dependencia u organización <span class="req" aria-hidden="true">*</span></label>${hay ? `<select class="in select" id="a-depsel" aria-required="true" style="width:100%"><option value="">Selecciona…</option>${L.map((x) => `<option>${esc(x)}</option>`).join("")}<option value="__nuevo">Otra dependencia (escribir)…</option></select>` : ""}<div id="a-dep-wrap" ${hay ? "hidden" : ""} style="${hay ? "margin-top:8px" : ""}"><input id="a-dep" type="text" autocomplete="organization" aria-required="true" placeholder="Nombre de tu dependencia u organización"></div>${hay ? '<span class="muted" style="font-size:12.5px">Si no aparece, elige «Otra» y escríbela: quedará registrada.</span>' : ""}</div>`;
+}
+function depAuthCambio(t) {
+  const w = $("#a-dep-wrap"), i = $("#a-dep"); if (!w || !i) return;
+  if (t.value === "__nuevo") { w.hidden = false; i.value = ""; i.focus(); } else { w.hidden = true; i.value = t.value; }
+}
+const reqMark = ' <span class="req" aria-hidden="true">*</span>';
+const linksLegales = () => {
+  const c = cfg(), p = String(c.avisoPrivacidad || "").trim(), t = String(c.terminos || "").trim();
+  const ap = '<a href="#/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>', at = '<a href="#/terminos" target="_blank" rel="noopener">Términos y condiciones</a>';
+  return p && t ? ` Consulta el ${ap} y los ${at}.` : p ? ` Consulta el ${ap}.` : t ? ` Consulta los ${at}.` : "";
+};
 /* ---------- Superadministrador: autorización con código por correo ---------- */
 const CODIGO_VIDA_MIN = 15, CODIGO_MAX_INTENTOS = 5, CODIGO_ESPERA_MS = 60000;
 const maskCorreo = (e) => { const [u, d] = String(e).split("@"); return (u || "").slice(0, 1) + "•••" + (u || "").slice(-2) + "@" + (d || ""); };
@@ -1368,7 +1465,6 @@ function nuevoCodigo() {
   return r.slice(0, 4) + "-" + r.slice(4);
 }
 async function enviarAvisoCorreo(para, asunto, campos) {
-  S.errCorreo = "";
   if (!correoOk(para)) return false;
   if (S.qa) { S.qaLog.unshift({ fecha: new Date().toLocaleString("es-MX"), para, asunto, campos }); return true; }
   try {
@@ -1379,16 +1475,10 @@ async function enviarAvisoCorreo(para, asunto, campos) {
     });
     clearTimeout(tm);
     const j = await r.json().catch(() => ({}));
-    const ok = r.ok && String(j.success) !== "false";
-    if (!ok) S.errCorreo = String(j.message || "");
-    return ok;
-  } catch (e) { S.errCorreo = "red"; return false; }
+    return r.ok && String(j.success) !== "false";
+  } catch (e) { return false; }
 }
-const msgErrCorreo = () => /activat/i.test(S.errCorreo || "")
-  ? `FormSubmit pide activar tu correo. Te mandó un mensaje a ${CORREO_SUPER}: ábrelo, pulsa «Activate Form» y vuelve a pulsar «Solicitar código de autorización».`
-  : location.protocol === "file:" ? "El código solo se puede enviar desde el sitio publicado (https://…), no abriendo el archivo desde tu computadora."
-  : "No se pudo enviar el código al correo del propietario. Revisa tu conexión e inténtalo de nuevo.";
-const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `${cfg().nombre} · Solicitud de superadministrador`, {
+const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Autorización de Superadministrador · ${pend.nombre}`, {
   "Nombre": pend.nombre, "Usuario": pend.correo, "Tipo de cuenta": "Superadministrador",
   "Código de autorización": codigo, "Fecha": new Date().toLocaleString("es-MX"),
   "Instrucciones": "Si autorizas esta cuenta, comparte el código con la persona. Si no la reconoces, ignora este correo."
@@ -1398,11 +1488,11 @@ async function solicitarSuper() {
   authErr("");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
   if (!correoOk(correo)) return authErr("Escribe un correo válido.");
+  if (correo !== "mdelrivero56@gmail.com") return authErr("El acceso de Superadministrador está reservado al correo autorizado.");
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
   if (normCorreo(p1) === correo) return authErr("La contraseña no puede ser tu correo.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
-  const ex = buscarPorCorreo(correo);
-  if (ex && rolDe(ex.rol) === "superadmin") return authErr("Ese correo ya es Superadministrador. Inicia sesión o recupera tu contraseña.");
+  if (buscarPorCorreo(correo)) return authErr("Ese correo ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
   const prev = pendSuper.leer();
   if (prev && Date.now() - prev.enviado < CODIGO_ESPERA_MS) return authErr(`Espera ${Math.ceil((CODIGO_ESPERA_MS - (Date.now() - prev.enviado)) / 1000)} s antes de pedir otro código.`);
   const btn = $("#a-super-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
@@ -1411,7 +1501,7 @@ async function solicitarSuper() {
   const ok = await enviarCodigoSuper(pend, codigo);
   if (!ok) {
     if (btn) { btn.disabled = false; btn.textContent = "Solicitar código de autorización"; }
-    return authErr(msgErrCorreo());
+    return authErr("No se pudo enviar el código al correo del propietario. Revisa tu conexión e inténtalo de nuevo.");
   }
   pendSuper.guardar(pend); S.authView = "codigo"; render(false);
   const i = $("#a-codigo"); if (i) i.focus();
@@ -1424,7 +1514,7 @@ async function reenviarCodigoSuper() {
   const codigo = nuevoCodigo(); pend.codeSalt = nuevoSalt(); pend.codeHash = await hashClave(normCodigo(codigo), pend.codeSalt);
   pend.exp = Date.now() + CODIGO_VIDA_MIN * 60000; pend.enviado = Date.now(); pend.n = 0;
   const ok = await enviarCodigoSuper(pend, codigo);
-  if (!ok) return authErr(msgErrCorreo());
+  if (!ok) return authErr("No se pudo enviar el código. Revisa tu conexión e inténtalo de nuevo.");
   pendSuper.guardar(pend); toast("Enviamos un código nuevo al propietario.");
 }
 async function verificarCodigoSuper() {
@@ -1438,10 +1528,9 @@ async function verificarCodigoSuper() {
     pend.n++; pendSuper.guardar(pend);
     return authErr(pend.n >= CODIGO_MAX_INTENTOS ? "Demasiados intentos. Usa «Reenviar código» para pedir uno nuevo." : `Código incorrecto. Te quedan ${CODIGO_MAX_INTENTOS - pend.n} intentos.`);
   }
-  let u = buscarPorCorreo(pend.correo);
-  if (u) Object.assign(u, { rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false });
-  else { u = { id: uid("usr"), nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() }; S.cat.usuarios.push(u); }
-  guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
+  if (buscarPorCorreo(pend.correo)) { pendSuper.guardar(null); S.authView = "login"; render(false); return toast("Ese correo ya tiene un usuario."); }
+  const u = { id: uid("usr"), nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() };
+  S.cat.usuarios.push(u); guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
 }
 async function guardarClaveObligatoria() {
   const p1 = $("#a-pass").value, p2 = $("#a-pass2").value, u = S.user;
@@ -1482,43 +1571,43 @@ function vAuth() {
   if (SB_ON) return vAuthSB();
   const c = cfg(), forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
   let v = S.authView;
-  /* Superadministrador: se pide desde «Soy el propietario»; solo se crea si llega el código que se envía al correo del propietario (CORREO_SUPER). */
-  if (!S._propVisto && /^#\/acceso\/propietario/.test(location.hash)) { S._propVisto = true; v = S.authView = "super"; }
+  /* La creación de Superadministrador NO se ofrece al público: solo existe para la instalación inicial (sin cuentas) y únicamente por el enlace privado #/acceso/propietario. */
   if (v === "codigo" && !pendSuper.leer()) v = "login";
   const logo = logoInner(c);
-  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
-    ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
-    : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
-  const correoF = (label = "Correo electrónico") => fld("a-correo", label, { tipo: "email", ph: "nombre@dependencia.gob.mx", auto: "username", extra: 'autocapitalize="none" spellcheck="false"' });
+  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}${o.req ? reqMark : ""}</label>${o.pw
+    ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}" ${o.req ? 'aria-required="true"' : ""}><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
+    : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" value="${esc(o.val || "")}" ${o.extra || ""} ${o.req ? 'aria-required="true"' : ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
+  const correoF = (label = "Correo electrónico") => fld("a-correo", label, { tipo: "email", req: 1, ph: "nombre@dependencia.gob.mx", auto: "username", extra: 'autocapitalize="none" spellcheck="false"' });
   const err = `<div class="err" id="a-err" role="alert"></div>`;
   const visitante = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visualizador</button>`;
   const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
     <li><b>Visualizador:</b> solo consulta el catálogo, sin cuenta. No puede solicitar.</li><li><b>Usuario:</b> te registras tú mismo con tus datos y puedes consultar y solicitar sistemas.</li>
     <li><b>Colaborador:</b> ayuda a manejar el catálogo (sistemas y categorías). Lo autoriza el administrador.</li>
-    <li><b>Superadministrador:</b> control total. Solo el propietario, con un código que llega a su correo.</li></ul></details>`;
+    <li><b>Superadministrador:</b> control total. Se entra desde la pestaña «Superadministrador» con un código que llega al correo del propietario.</li></ul></details>`;
   let t, sub, body;
   if (forzar) {
     t = "Crea tu nueva contraseña"; sub = "Tu contraseña actual es temporal. Elige una nueva para continuar.";
-    body = `<form id="form-cambiar" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password" })}<span class="muted" style="font-size:12.5px;margin-top:-8px">${CLAVE_AYUDA}</span>${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit">Guardar y entrar</button></form>
+    body = `<form id="form-cambiar" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password" })}<span class="muted" style="font-size:12.5px;margin-top:-8px">${CLAVE_AYUDA}</span>${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password", req: 1 })}${err}<button class="btn big" type="submit">Guardar y entrar</button></form>
       <div class="auth-links"><button type="button" data-act="cerrar-sesion">Cerrar sesión</button></div>`;
   } else if (v === "super") {
     const pend = pendSuper.leer();
-    t = "Acceso de Superadministrador";
-    sub = "Solo para el propietario del catálogo. Llena tus datos y te enviaremos un código a tu correo; con ese código se crea tu cuenta con control total.";
-    body = `<form id="form-super" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
-      <div class="note info">${glifo("info")}<div>El código de 8 caracteres llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b> (revisa también spam). Escríbelo en el siguiente paso.</div></div>
+    t = hay ? "Acceso de Superadministrador" : "Crea la cuenta de Superadministrador";
+    sub = hay ? "Accede a la administración del catálogo. Después de iniciar sesión, podrás personalizar la identidad visual y añadir tu propio logotipo en Configuración > General."
+              : "Es el primer acceso. Se enviará un código de autorización al correo del propietario del sistema; sin ese código no se crea la cuenta.";
+    body = `<form id="form-super" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${fld("a-nombre", "Nombre completo", { auto: "name", req: 1 })}${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA, req: 1 })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password", req: 1 })}
+      <div class="note info">${glifo("info")}<div>El código llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Pídeselo a la persona propietaria y escríbelo en el siguiente paso.</div></div>
       ${err}<button class="btn big" type="submit" id="a-super-btn">Solicitar código de autorización</button></form>
-      <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}<button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>${visitante}`;
+      <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}${hay ? `<button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button>` : ""}</div>${visitante}`;
   } else if (v === "codigo") {
     const pend = pendSuper.leer();
-    t = "Escribe el código de autorización"; sub = `Enviamos un código a ${maskCorreo(CORREO_SUPER)} para crear la cuenta de ${pend.nombre}. Vence en ${CODIGO_VIDA_MIN} minutos.`;
+    t = "Escribe el código de autorización"; sub = `Enviamos un código a ${maskCorreo(CORREO_SUPER)} para autorizar la cuenta de ${pend.nombre}. Vence en ${CODIGO_VIDA_MIN} minutos.`;
     body = `<form id="form-codigo" novalidate>${fld("a-codigo", "Código de autorización", { ph: "XXXX-XXXX", extra: 'maxlength="9" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.12em"' })}${err}<button class="btn big" type="submit">Verificar y crear cuenta</button></form>
       <div class="note info" style="margin-top:12px">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. La primera vez, el servicio de correo (FormSubmit) pide al propietario confirmar su correo.</div></div>
       <div class="auth-links"><button type="button" data-act="super-reenviar">Reenviar código</button><button type="button" data-act="super-cancelar">Cancelar solicitud</button></div>`;
   } else if (v === "registro") {
     t = "Crea tu cuenta"; sub = "Regístrate con tus datos y entra al instante: no necesitas códigos ni esperar autorización. Después inicias sesión con tu correo y contraseña.";
-    body = `<form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-cargo", "Cargo", { auto: "organization-title" })}${fld("a-dep", "Dependencia u organización", { auto: "organization" })}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx", extra: 'autocapitalize="none" spellcheck="false"' })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
-      <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
+    body = `<form id="form-reg" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${fld("a-nombre", "Nombre completo", { auto: "name", req: 1 })}${fld("a-cargo", "Cargo", { auto: "organization-title", req: 1 })}${depCampoAuth()}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx", extra: 'autocapitalize="none" spellcheck="false"', req: 1 })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel", req: 1 })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA, req: 1 })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password", req: 1 })}
+      <label class="chk"><input type="checkbox" id="a-acepto" aria-required="true"><span>${reqMark.trim()} ${esc(c.privacidad)}${linksLegales()}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo cuenta</button></div>${visitante}`;
   } else if (v === "recuperar") {
     t = "Recuperar contraseña"; sub = "Escribe el correo con el que te registraste. Avisaremos al administrador dentro del sistema para que te genere una contraseña temporal.";
@@ -1538,16 +1627,15 @@ function vAuth() {
       ${!i.enviando && !i.auto ? `<button class="btn sec big" type="button" data-act="auth-copiar" style="margin-top:10px">${glifo("copy")}Copiar mensaje</button>` : ""}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`;
   } else {
-    t = "Iniciar sesión"; sub = "Entra con tu correo y tu contraseña, o explora el catálogo como visitante.";
+    t = "Iniciar sesión"; sub = "¡Te damos la bienvenida! Inicia sesión con tu correo y contraseña, o explora el catálogo como visitante.";
     if (!hay) sub = "Aún no hay cuentas guardadas en este navegador. Si ya tienes cuenta, abre el catálogo desde el mismo enlace o dispositivo donde se creó, o explora como visitante.";
-    body = `<form id="form-login" novalidate>${correoF()}${fld("a-pass", "Contraseña", { pw: 1 })}
+    body = `<form id="form-login" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${correoF()}${fld("a-pass", "Contraseña", { pw: 1, req: 1 })}
       <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
       <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="registro">${glifo("user")}Registrarse</button>
-      <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="super">${glifo("candado")}Soy el propietario (Superadministrador)</button>
       ${visitante}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Registrarse</button></div>${ayudaRoles}`;
   }
-  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div><h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  return `<div class="authwrap"><div class="authcard"><div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div>${forzar ? "" : v === "super" || v === "codigo" ? authTabs("super") : !["registro", "recuperar", "enviado"].includes(v) ? authTabs("usuario") : ""}<h1>${t}</h1><p class="lede">${sub}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
 
 /* ---- Mi cuenta ---- */
@@ -1748,6 +1836,7 @@ function render(nav) {
       case "avisos": html = vAvisos(); break;
       case "ayuda": html = vAyuda(); break;
       case "contacto": html = vContacto(); break;
+      case "privacidad": case "terminos": html = vLegal(a); break;
       case "admin": html = vAdmin(b, c); break;
       default: html = vNoEncontrado();
     }
@@ -1782,7 +1871,7 @@ function renderChrome(a) {
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
-  $("#sidefoot").innerHTML = (S.user ? `<div class="mode">${esc(S.user.nombre)} · ${ROLES[rolDe(S.user.rol)]}</div>` : "")
+  $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
@@ -1790,7 +1879,7 @@ function renderChrome(a) {
     + tabs.map(([k, g, t]) => `<a href="#/${k}" ${act === k ? 'aria-current="page"' : ""}>${glifo(g)}<span>${t}</span></a>`).join("")
     + `<button class="rail-admin ${S.admin ? "on" : ""}" data-act="mi-cuenta" aria-label="Mi cuenta">${glifo("user")}<span>Cuenta</span></button>`;
   actualizarCampana();
-  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}· <a href="#/contacto">Contacto y directorio</a>${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
+  $("#foot").innerHTML = `<span>${esc(c.organizacion)}</span><span>${c.correoDestino ? `Contacto: ${esc(c.correoDestino)}` : "Catálogo de sistemas digitales"}${c.telefono ? ` · ${esc(c.telefono)}` : ""}· <a href="#/contacto">Contacto y directorio</a>${String(c.avisoPrivacidad || "").trim() ? ' · <a href="#/privacidad">Aviso de privacidad</a>' : ""}${String(c.terminos || "").trim() ? ' · <a href="#/terminos">Términos y condiciones</a>' : ""}${S.user ? "" : ` · <a href="#/acceso" style="opacity:.65">Acceso administrador</a>`}</span>`;
 }
 
 /* ---------- Vistas públicas ---------- */
@@ -2042,7 +2131,7 @@ function vSolicitar(id) {
   sug = sug.slice(0, 4);
   const campo = (k, label, o = {}) => `<div class="field ${o.full ? "full" : ""} ${e[k] ? "bad" : ""}"><label for="f-${k}">${label}${o.req ? ' <span class="req" aria-hidden="true">*</span>' : ""}</label><input id="f-${k}" type="${o.tipo || "text"}" data-form="${k}" value="${esc(v[k] || "")}" placeholder="${esc(o.ph || "")}" ${o.req ? 'aria-required="true"' : ""} ${o.extra || ""} autocomplete="${o.ac || "off"}">${e[k] ? `<span class="err" role="alert">${esc(e[k])}</span>` : ""}</div>`;
   const uniq = (a) => [...new Set(a.filter(Boolean))];
-  const depsUsadas = uniq(misSols().map((x) => x.datos && x.datos.dependencia));
+  const depsUsadas = uniqNombres(depsNombres().concat(misSols().map((x) => x.datos && x.datos.dependencia)));
   const usosUsados = uniq(misSols().map((x) => { const m = /^Otro: (.+)/.exec((x.datos && x.datos.tipoUso) || ""); return m && m[1]; }));
   F.nuevo = F.nuevo || {};
   const combo = (k, label, lista, o) => {
@@ -2051,6 +2140,7 @@ function vSolicitar(id) {
     return `<div class="field ${o.full ? "full" : ""} ${e[k] && !texto ? "bad" : ""}"><label for="f-${k}Sel">${label} <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-${k}Sel" data-form="${k}Sel" style="width:100%"><option value="">Selecciona…</option>${lista.map((x) => `<option ${!texto && x === cur ? "selected" : ""}>${esc(x)}</option>`).join("")}<option value="__nuevo" ${texto ? "selected" : ""}>${o.nuevo}</option></select>${e[k] && !texto ? `<span class="err" role="alert">${esc(e[k])}</span>` : ""}</div>${texto ? campo(k, o.nuevoLabel, o) : ""}`;
   };
   const opts = (arr, cur) => arr.map((o) => `<option ${o === cur ? "selected" : ""}>${esc(o)}</option>`).join("");
+  const ocon = opcionesContacto(); if (!ocon.includes(v.contactoPref)) v.contactoPref = ocon[0];
   return `${navbar()}
   <header class="pagehead" style="padding-top:8px"><div><div class="when">Solicitud</div><h1 class="large-title">Solicitar sistema</h1><p class="lede">Cuéntanos quién eres y qué necesitas. Nos pondremos en contacto con tu dependencia para coordinar una reunión.</p></div></header>
   <form id="form-sol" novalidate class="formgrid">
@@ -2069,12 +2159,12 @@ function vSolicitar(id) {
           ${campo("nombre", "Nombre completo", { req: true, full: true, ac: "name" })}
           ${campo("correo", "Correo institucional", { req: true, tipo: "email", ph: "nombre@dependencia.gob.mx", ac: "email" })}
           ${campo("telefono", "Teléfono", { req: true, tipo: "tel", ph: "10 dígitos", ac: "tel" })}
-          <div class="field"><label for="f-contactoPref">¿Cómo prefieres que te contactemos?</label><select class="in select" id="f-contactoPref" data-form="contactoPref" style="width:100%">${opts(["Correo electrónico", "Llamada telefónica", "Videollamada"], v.contactoPref)}</select></div>
+          <div class="field"><label for="f-contactoPref">¿Cómo prefieres que te contactemos? <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-contactoPref" data-form="contactoPref" style="width:100%">${opts(ocon, v.contactoPref)}</select></div>
           ${campo("horario", "Horario preferido para que te contactemos", { ph: "Ej. lunes a viernes, 10:00 a 14:00" })}
         </div></section>
       <section class="grp"><h2>Uso previsto</h2>
         <div class="fields">
-          <div class="field ${e.tipoUso ? "bad" : ""}"><label for="f-tipoUso">Tipo de uso <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-tipoUso" data-form="tipoUso" style="width:100%"><option value="">Selecciona…</option>${opts(TIPOS_USO, v.tipoUso)}</select>${e.tipoUso ? `<span class="err" role="alert">${esc(e.tipoUso)}</span>` : ""}</div>
+          <div class="field ${e.tipoUso ? "bad" : ""}"><label for="f-tipoUso">Tipo de uso <span class="req" aria-hidden="true">*</span></label><select class="in select" id="f-tipoUso" data-form="tipoUso" style="width:100%"><option value="">Selecciona…</option>${opts(opcionesUso(), v.tipoUso)}</select>${e.tipoUso ? `<span class="err" role="alert">${esc(e.tipoUso)}</span>` : ""}</div>
           ${v.tipoUso === "Otro" ? combo("usoOtro", "¿Cuál será el uso?", usosUsados, { req: true, full: true, ph: "Describe el uso en pocas palabras", nuevo: "Otro uso (escribir)…", nuevoLabel: "¿Cuál será el uso?" }) : ""}
           ${campo("fechaUso", "Fecha estimada de uso", { tipo: "date" })}
           ${campo("participantes", "Personas que lo usarían", { tipo: "number", ph: "Aproximado", extra: 'min="1" inputmode="numeric"' })}
@@ -2082,7 +2172,7 @@ function vSolicitar(id) {
         </div></section>
       ${sug.length ? `<section class="grp"><h2>Te podría interesar también</h2><p class="hint">Sistemas relacionados con lo que elegiste. Agrégalos si los necesitas.</p><div class="card"><ul class="sugg">${sug.map(({ x, s }) => `<li>${icono(x, "s40")}<div class="t"><b>${esc(x.nombre)}</b><small>${esc(motivo(s, x))}</small></div><button type="button" class="get sm" data-act="add-sel" data-id="${esc(x.id)}">Agregar</button></li>`).join("")}</ul></div></section>` : ""}
       <div class="hp" aria-hidden="true"><label for="f-web">No llenar este campo</label><input id="f-web" type="text" tabindex="-1" autocomplete="off" data-form="web"></div>
-      <section class="grp"><label class="chk ${e.acepto ? "bad" : ""}"><input type="checkbox" id="f-acepto" data-form="acepto" ${v.acepto ? "checked" : ""}><span><span class="req" aria-hidden="true">*</span> ${esc(cfg().privacidad)}</span></label>${e.acepto ? `<span class="err" role="alert" id="err-acepto">${esc(e.acepto)}</span>` : ""}</section>
+      <section class="grp"><label class="chk ${e.acepto ? "bad" : ""}"><input type="checkbox" id="f-acepto" data-form="acepto" ${v.acepto ? "checked" : ""}><span><span class="req" aria-hidden="true">*</span> ${esc(cfg().privacidad)}${linksLegales()}</span></label>${e.acepto ? `<span class="err" role="alert" id="err-acepto">${esc(e.acepto)}</span>` : ""}</section>
       <button class="get big" type="submit" id="btn-enviar" style="padding:14px 34px;font-size:17px">Enviar solicitud</button>
     </div>
     <aside class="sticky-side">
@@ -2158,6 +2248,7 @@ async function enviarSolicitud() {
     const para = (c.correoDestino || c.correoAdmin || "").trim();
     if (para && (await enviarAvisoCorreo(para, asuntoSol(sol), { Folio: sol.folio, Dependencia: sol.datos.dependencia, Contacto: sol.datos.nombre, Correo: sol.datos.correo, Teléfono: sol.datos.telefono, Sistemas: sol.sistemas.map((s) => s.nombre).join(", "), Mensaje: armarMensaje(sol) }))) { sol.estado = "enviada"; sol.canal = "automático"; }
   }
+  try { await depsRegistrar(sol.datos.dependencia); } catch (err) {}
   S.sols.unshift(sol); await guardarSolicitudes();
   F.ini = null; F.sel = []; F.errs = {}; F.enviando = false; F.vals.mensaje = ""; F.vals.acepto = false;
   go("gracias/" + enc(sol.folio));
@@ -2375,7 +2466,7 @@ function vAdminCategorias() {
 function vAdminConfig(sec) {
   if (!S.cfgDraft) S.cfgDraft = clone(cfg());
   const c = S.cfgDraft;
-  const SECS = [["general", "General", "building"], ["solicitudes", "Solicitudes", "correo"], ["apariencia", "Apariencia", "estrella"], ["seguridad", "Seguridad", "escudo"], ["datos", "Datos y publicación", "nube"]];
+  const SECS = [["general", "General", "building"], ["solicitudes", "Solicitudes", "correo"], ["formulario", "Formulario y dependencias", "building"], ["legal", "Privacidad y términos", "escudo"], ["apariencia", "Apariencia", "estrella"], ["seguridad", "Seguridad", "escudo"], ["datos", "Datos y publicación", "nube"]];
   if (!SECS.some((x) => x[0] === sec)) sec = "general";
   const f = (k, label, o = {}) => `<div class="field ${o.full ? "full" : ""}"><label for="c-${k}">${label}</label><input id="c-${k}" type="${o.tipo || "text"}" data-cfg="${k}" value="${esc(c[k] || "")}" placeholder="${esc(o.ph || "")}" autocomplete="off"><span class="muted" style="font-size:12.5px">${o.hint || ""}</span></div>`;
   const ta = (k, label, hint = "", h = 80) => `<div class="field full"><label for="c-${k}">${label}</label><textarea id="c-${k}" data-cfg="${k}" style="min-height:${h}px">${esc(c[k] || "")}</textarea><span class="muted" style="font-size:12.5px">${hint}</span></div>`;
@@ -2400,7 +2491,7 @@ function vAdminConfig(sec) {
           <div class="logo-grp"><span class="muted" style="font-size:13px">Símbolo</span><div class="logo-opts" role="group" aria-label="Símbolo">${Object.keys(LOGO_MARCAS).map((k) => `<button type="button" data-act="logo-marca" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoMarca || "facetas") === k}" aria-label="${LOGO_MARCAS[k].n}" title="${LOGO_MARCAS[k].n}">${logoSvg(Object.assign({}, c, { logoMarca: k }))}</button>`).join("")}</div></div>
           <div class="logo-grp"><span class="muted" style="font-size:13px">Color</span><div class="swatches" role="group" aria-label="Color del logotipo">${Object.keys(COLORES).map((k) => `<button type="button" data-act="logo-color" data-c="${k}" style="${colorVars(k)}" aria-pressed="${!imgOk(c.logo) && (c.logoColor || "azul") === k}" aria-label="${k}"></button>`).join("")}</div></div>
           <div class="logo-grp"><span class="muted" style="font-size:13px">Forma</span><div class="logo-opts" role="group" aria-label="Forma">${Object.keys(LOGO_FORMAS).map((k) => `<button type="button" class="txt" data-act="logo-forma" data-v="${k}" aria-pressed="${!imgOk(c.logo) && (c.logoForma || "squircle") === k}">${LOGO_FORMAS[k][0]}</button>`).join("")}</div></div>
-          <div class="up" style="margin-top:6px"><input type="file" id="up-logo" accept="image/*" data-up="logo"><label class="btn sec sm" for="up-logo">${glifo("upload")}Usar mi propia imagen</label>${imgOk(c.logo) ? `<button class="btn ghost sm" data-act="quitar-logo">Volver al diseño</button>` : ""}</div>
+          <div class="up" style="margin-top:6px"><input type="file" id="up-logo" accept="image/*" data-up="logo"><label class="btn sec sm" for="up-logo">${glifo("upload")}Añadir mi propio logotipo</label>${imgOk(c.logo) ? `<button class="btn ghost sm" data-act="quitar-logo">Volver al diseño</button>` : ""}</div>
           <p class="cfg-note">Elige símbolo, color y forma, o sube tu propia imagen. Presiona «Guardar configuración» para aplicarlo.</p>
         </div></div></div>
     </div></div></section>` + savebar;
@@ -2419,6 +2510,10 @@ function vAdminConfig(sec) {
       ${ta("privacidad", "Aviso que acepta el solicitante", "", 80)}
     </div></div></section>
     <section class="grp"><h2>Vista previa de «¿Qué sigue?»</h2><p class="hint">Así lo verá el solicitante. Se actualiza al guardar.</p><div class="card"><ol class="timeline">${pasos}</ol></div></section>` + savebar;
+  } else if (sec === "formulario") {
+    panel = vCfgFormulario(ta, savebar);
+  } else if (sec === "legal") {
+    panel = vCfgLegal(ta, savebar);
   } else if (sec === "apariencia") {
     panel = `<section class="grp"><h2>Tema</h2><p class="hint">Elige cómo se ve el catálogo para todas las personas que lo abren.</p><div class="card"><div class="opt-row" role="group" aria-label="Tema">
       ${[["auto", "Automático"], ["claro", "Claro"], ["oscuro", "Oscuro"]].map(([v, l]) => `<button type="button" data-act="cfg-tema" data-v="${v}" aria-pressed="${(c.tema || "auto") === v}">${l}</button>`).join("")}</div>
@@ -2867,7 +2962,19 @@ const ACT = {
   "mi-cuenta"() { abrirMiCuenta(); },
   "cambiar-pass"() { abrirCambiarClave(); },
   "cerrar-sesion"() { cerrarModal(); limpiarSesion(); location.hash = "#/"; render(false); toast("Sesión cerrada"); },
-  "auth-ir"(t) { S.authView = t.dataset.v; render(false); const i = $("input", view); if (i) i.focus(); },
+  "super-enviar"() { sbSuperEnviar(); },
+  async "dep-add"() { if (!S.super) return; const i = $("#dep-nueva"), n = i ? i.value.trim() : ""; if (n.length < 2) { toast("Escribe el nombre de la dependencia."); return; } if (depsNombres().some((x) => norm(x) === norm(n))) { toast("Esa dependencia ya está en el registro."); return; } await depsRegistrar(n); toast("Dependencia registrada"); keep(() => render(false)); },
+  "dep-ren"(t) { abrirRenDep(t.dataset.n); },
+  async "dep-del"(t) { if (!(await confirmar({ titulo: "Eliminar dependencia", texto: `«${t.dataset.n}» dejará de aparecer en la lista. Las solicitudes y cuentas anteriores no se modifican.`, si: "Eliminar", peligro: true }))) return; if (await depsEliminar(t.dataset.n)) { toast("Dependencia eliminada"); keep(() => render(false)); } else toast("No se pudo eliminar."); },
+  async "dep-reg"(t) { await depsRegistrar(t.dataset.n); keep(() => render(false)); },
+  async "dep-import"() { for (const d of depsResumen().sin) await depsRegistrar(d.nombre); toast("Dependencias registradas"); keep(() => render(false)); },
+  "auth-ir"(t) {
+    const destino = t.dataset.v;
+    if (destino === "super" && normCorreo($("#a-correo")?.value || "") !== "mdelrivero56@gmail.com" && !["super", "codigo", "supercod"].includes(S.authView)) {
+      toast("El acceso de Superadministrador está reservado al correo autorizado."); return;
+    }
+    S.authView = destino; render(false); const i = $("input", view); if (i) i.focus();
+  },
   "auth-copiar"() { if (S.authInfo) copiar(`Para: ${S.authInfo.para}\nAsunto: ${S.authInfo.asunto}\n\n${S.authInfo.cuerpo}`, "Mensaje copiado"); },
   "ver-pass"(t) { const i = $("input", t.closest(".pwrow")); if (!i) return; const ver = i.type === "password"; i.type = ver ? "text" : "password"; t.textContent = ver ? "Ocultar" : "Mostrar"; },
   "usr-nuevo"() { abrirCrearUsuario({}); },
@@ -3003,7 +3110,7 @@ const ACT = {
   async "aviso-borrar"(t) { const a = (S.cat.avisos || []).find((x) => x.id === t.dataset.id); if (!a) return; if (!(await confirmar({ titulo: "Eliminar aviso", texto: `Se borrará «${a.titulo}» para todas las personas.`, si: "Eliminar", peligro: true }))) return; S.cat.avisos = S.cat.avisos.filter((x) => x.id !== a.id); guardarCatalogo(); toast("Aviso eliminado"); refrescarCampana(); keep(() => render(false)); },
   "ir-login"() { cerrarModal(); if (!/^#\/acceso/.test(location.hash)) S.retorno = location.hash; S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
-  "super-cancelar"() { pendSuper.guardar(null); S.authView = "login"; render(false); },
+  "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
   "ren-sis"(t) { abrirRenombrarSistema(t.dataset.id); },
   "edit-cat"(t) { abrirCategoria(t.dataset.id); },
   async "chk-avisar"(t) {
@@ -3028,7 +3135,7 @@ const ACT = {
   "conf-no"() { if (confFin) confFin(false); }
 };
 
-const SOLO_SUPER = new Set(["bandeja-estado", "bandeja-nota", "bandeja-borrar", "bandeja-archivar-canceladas", "bandeja-borrar-canceladas", "aviso-nuevo", "aviso-editar", "aviso-borrar", "notif-leer", "notif-todas", "notif-reset", "usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual"]);
+const SOLO_SUPER = new Set(["bandeja-estado", "bandeja-nota", "bandeja-borrar", "bandeja-archivar-canceladas", "bandeja-borrar-canceladas", "aviso-nuevo", "aviso-editar", "aviso-borrar", "notif-leer", "notif-todas", "notif-reset", "usr-super", "usr-gen", "logo-marca", "logo-color", "logo-forma", "usr-nuevo", "usr-reset", "usr-reset-ok", "usr-toggle", "usr-del", "guardar-cfg", "exportar", "descartar-local", "quitar-ejemplos", "probar-correo", "cfg-tema", "cfg-acento", "quitar-logo", "como-publicar", "qa-activar", "qa-salir", "qa-datos", "qa-reiniciar", "qa-correr", "qa-limpiar-manual", "dep-add", "dep-ren", "dep-del", "dep-reg", "dep-import"]);
 const QA_BLOQ = new Set(["exportar", "como-publicar", "descartar-local"]);
 const SOLO_GESTION = new Set(["toggle-pub", "mover", "duplicar", "del-sistema", "add-cat", "del-cat", "edit-cat", "ren-sis", "img-quitar", "e-guardar", "e-add", "e-del"]);
 document.addEventListener("click", (e) => {
@@ -3069,7 +3176,8 @@ document.addEventListener("input", (e) => {
 });
 document.addEventListener("change", (e) => {
   const t = e.target;
-  if (t.dataset.qa) marcarQA(t);
+  if (t.id === "a-depsel") depAuthCambio(t);
+  else if (t.dataset.qa) marcarQA(t);
   else if (t.dataset.usrRol) cambiarRolUsuario(t);
   else if (t.dataset.chk) marcarRequisito(t);
   else if (t.dataset.sel === "orden") { F2.orden = t.value; render(false); }
@@ -3088,6 +3196,9 @@ document.addEventListener("submit", (e) => {
   if (f.id === "form-sol") { e.preventDefault(); enviarSolicitud(); }
   else if (f.id === "form-login") { e.preventDefault(); iniciarSesion(); }
   else if (f.id === "form-super") { e.preventDefault(); solicitarSuper(); }
+  else if (f.id === "form-depadd") { e.preventDefault(); ACT["dep-add"](); }
+  else if (f.id === "form-depren") { e.preventDefault(); guardarRenDep(); }
+  else if (f.id === "form-supercod") { e.preventDefault(); sbSuperVerificar(); }
   else if (f.id === "form-codigo") { e.preventDefault(); verificarCodigoSuper(); }
   else if (f.id === "form-ren") { e.preventDefault(); guardarRenombrar(); }
   else if (f.id === "form-cat") { e.preventDefault(); guardarCategoria(); }
@@ -3132,13 +3243,43 @@ async function sbPerfil(au) {
 }
 async function sbLogin() {
   const correo = normCorreo(val("a-correo")), pass = $("#a-pass").value; authErr("");
-  if (!correoOk(correo)) return authErr("Escribe un correo electrónico válido.");
-  if (!pass) return authErr("Escribe tu contraseña.");
+  const fl = []; if (!correoOk(correo)) fl.push(["a-correo", "Escribe un correo electrónico válido."]); if (!pass) fl.push(["a-pass", "Escribe tu contraseña."]);
+  if (fl.length) return marcarFaltantes(fl);
   if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
   const { data, error } = await SB.auth.signInWithPassword({ email: correo, password: pass });
   if (error || !data.user) return authErr("Correo o contraseña incorrectos.");
   const u = await sbPerfil(data.user);
   if (!u) return authErr("Tu usuario no está activo. Contacta al administrador.");
+  abrirSesion(u, true);
+}
+
+/* ---------- Superadministrador (Supabase): código de un solo uso al correo del propietario ---------- */
+async function sbSuperEnviar() {
+  authErr("");
+  if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  const espera = 60000 - (Date.now() - (S.supT || 0));
+  if (espera > 0) return authErr(`Espera ${Math.ceil(espera / 1000)} s antes de pedir otro código.`);
+  const btn = $("#a-sup-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
+  const { error } = await SB.auth.signInWithOtp({ email: CORREO_SUPER, options: { shouldCreateUser: true } });
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = "Enviar código a mi correo"; }
+    return authErr(/rate|seconds|too many|limit/i.test(error.message) ? "Se pidieron demasiados códigos. Espera un minuto e inténtalo de nuevo." : "No se pudo enviar el código: " + error.message);
+  }
+  S.supT = Date.now(); const reenvio = S.authView === "supercod"; S.authView = "supercod"; render(false);
+  if (reenvio) toast("Te enviamos un código nuevo.");
+}
+async function sbSuperVerificar() {
+  const tok = val("a-codigo").replace(/\s/g, ""); authErr("");
+  if (!/^\d{6,10}$/.test(tok)) return marcarFaltantes([["a-codigo", "Escribe el código numérico que llegó a tu correo."]]);
+  if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
+  const btn = $("#a-supc-btn"); if (btn) { btn.disabled = true; btn.textContent = "Verificando…"; }
+  const libre = () => { if (btn) { btn.disabled = false; btn.textContent = "Entrar"; } };
+  let r = await SB.auth.verifyOtp({ email: CORREO_SUPER, token: tok, type: "email" });
+  if (r.error || !r.data || !r.data.user) r = await SB.auth.verifyOtp({ email: CORREO_SUPER, token: tok, type: "signup" });
+  if (r.error || !r.data || !r.data.user) { libre(); return authErr("Código incorrecto o vencido. Pide uno nuevo con «Reenviar código»."); }
+  const u = await sbPerfil(r.data.user);
+  if (!u) { libre(); return authErr("El código es correcto, pero esta cuenta aún no está habilitada como superadministrador. Ejecuta el archivo supabase-superadmin-dependencias.sql en Supabase."); }
+  if (rolDe(u.rol) !== "superadmin") { await SB.auth.signOut(); libre(); return authErr("Esta cuenta no tiene permiso de superadministrador."); }
   abrirSesion(u, true);
 }
 /* ---------- Recuperar contraseña por enlace al correo (Supabase) ---------- */
@@ -3181,25 +3322,32 @@ async function sbPublicar() {
 const sbEnCola = () => { clearTimeout(sbPend); sbPend = setTimeout(sbPublicar, 1200); };
 function vAuthSB() {
   const c = cfg(), logo = logoInner(c), reg = S.authView === "registro", err = `<div class="err" id="a-err" role="alert"></div>`;
-  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>` : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}">`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
+  const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}${o.req ? reqMark : ""}</label>${o.pw ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}" ${o.req ? 'aria-required="true"' : ""}><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>` : `<input id="${id}" type="${o.tipo || "text"}" autocomplete="${o.auto || "off"}" placeholder="${esc(o.ph || "")}" ${o.extra || ""} ${o.req ? 'aria-required="true"' : ""}>`}${o.hint ? `<span class="muted" style="font-size:12.5px">${o.hint}</span>` : ""}</div>`;
   const cab = `<div class="auth-brand"><span class="auth-logo${imgOk(c.logo) ? "" : " lg"}">${logo}</span><div><b>${esc(c.nombre)}</b><small>${esc(c.organizacion)}</small></div></div>`;
   const vis = `<button class="btn sec big auth-alt" type="button" data-act="entrar-visitante">${glifo("eye")}Entrar como visualizador</button>`;
-  const marco = (h1, lede, body) => `<div class="authwrap"><div class="authcard">${cab}<h1>${h1}</h1><p class="lede">${lede}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  const marco = (h1, lede, body, tb = "") => `<div class="authwrap"><div class="authcard">${cab}${tb}<h1>${h1}</h1><p class="lede">${lede}</p>${body}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
+  if (S.authView === "super") return marco("Acceso de superadministrador", `Te enviaremos un código de un solo uso a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Lo escribes en el siguiente paso y entras con control total.`,
+    `<div class="note info">${glifo("info")}<div>Solo la persona propietaria recibe el código. Las demás personas deben usar la pestaña <b>Usuario</b>.</div></div>${err}
+     <button class="btn big" type="button" data-act="super-enviar" id="a-sup-btn" style="margin-top:12px">Enviar código a mi correo</button>
+     <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver</button></div>`, authTabs("super"));
+  if (S.authView === "supercod") return marco("Escribe tu código", `Enviamos un código a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Revisa tu bandeja de entrada y también spam.`,
+    `<form id="form-supercod" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${fld("a-codigo", "Código recibido por correo", { req: 1, ph: "123456", extra: 'inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="letter-spacing:.2em"' })}${err}<button class="btn big" type="submit" id="a-supc-btn">Entrar</button></form>
+     <div class="auth-links"><button type="button" data-act="super-enviar">Reenviar código</button><button type="button" data-act="auth-ir" data-v="login">Cancelar</button></div>`, authTabs("super"));
   if (S.authView === "nueva") return marco("Elige tu nueva contraseña", "Escribe una contraseña nueva para tu cuenta. Después inicias sesión con ella.",
-    `<form id="form-nueva" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}${err}<button class="btn big" type="submit" id="a-nueva-btn">Guardar contraseña</button></form>
+    `<form id="form-nueva" novalidate>${fld("a-pass", "Nueva contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA, req: 1 })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password", req: 1 })}${err}<button class="btn big" type="submit" id="a-nueva-btn">Guardar contraseña</button></form>
      <div class="auth-links"><button type="button" data-act="recup-cancelar">Cancelar</button></div>`);
   if (S.authView === "recuperar") return marco("Recuperar contraseña", "Escribe el correo con el que te registraste y te enviaremos un enlace para elegir una contraseña nueva.",
-    `<form id="form-rec" novalidate>${fld("a-correo", "Correo registrado", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx" })}${err}<button class="btn big" type="submit" id="a-rec-btn">Enviarme el enlace</button></form>
+    `<form id="form-rec" novalidate>${fld("a-correo", "Correo registrado", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx", req: 1 })}${err}<button class="btn big" type="submit" id="a-rec-btn">Enviarme el enlace</button></form>
      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`);
   if (S.authView === "revisa") return marco("Revisa tu correo", `Si <b>${esc(S.authCorreo || "ese correo")}</b> tiene una cuenta, te enviamos un enlace para elegir tu nueva contraseña. Vence en poco tiempo y solo se puede usar una vez.`,
     `<div class="note info">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. ¿Ya no tienes acceso a ese correo? Pide ayuda al administrador del catálogo.</div></div>
      <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">Pedir otro enlace</button><button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>`);
   if (reg) return `<div class="authwrap"><div class="authcard">${cab}<h1>Crea tu cuenta</h1><p class="lede">Regístrate con tus datos y entra al instante. Después inicias sesión con tu correo y contraseña.</p>
-    <form id="form-reg" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-cargo", "Cargo")}${fld("a-dep", "Dependencia u organización")}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
-    <label class="chk"><input type="checkbox" id="a-acepto"><span>${esc(c.privacidad)}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
+    <form id="form-reg" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${fld("a-nombre", "Nombre completo", { auto: "name", req: 1 })}${fld("a-cargo", "Cargo", { req: 1 })}${depCampoAuth()}${fld("a-area", "Área o unidad (opcional)")}${fld("a-correo", "Correo institucional", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx", req: 1 })}${fld("a-tel", "Teléfono de contacto", { tipo: "tel", auto: "tel", req: 1 })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA, req: 1 })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password", req: 1 })}
+    <label class="chk"><input type="checkbox" id="a-acepto" aria-required="true"><span>${reqMark.trim()} ${esc(c.privacidad)}${linksLegales()}</span></label>${err}<button class="btn big" type="submit" id="a-reg-btn">Crear mi cuenta</button></form>
     <div class="auth-links"><button type="button" data-act="auth-ir" data-v="login">Ya tengo cuenta</button></div>${vis}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
-  return `<div class="authwrap"><div class="authcard">${cab}<h1>Iniciar sesión</h1><p class="lede">Entra con tu correo y contraseña, o explora el catálogo como visualizador.</p>
-  <form id="form-login" novalidate>${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1 })}${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
+  return `<div class="authwrap"><div class="authcard">${cab}${authTabs("usuario")}<h1>Iniciar sesión</h1><p class="lede">Entra con tu correo y contraseña, o explora el catálogo como visualizador. ¿Aún no tienes cuenta? Usa «Registrarse».</p>
+  <form id="form-login" novalidate><p class="auth-req"><b>*</b> Campo obligatorio</p>${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "username", ph: "nombre@dependencia.gob.mx", req: 1 })}${fld("a-pass", "Contraseña", { pw: 1, req: 1 })}${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
   <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button></div>
   <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="registro">${glifo("user")}Registrarse</button>${vis}</div><p class="auth-foot">${esc(c.organizacion)}</p></div>`;
 }
@@ -3221,6 +3369,76 @@ function vAuthSB() {
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden) { pop.hidden = true; b.focus(); } });
   document.body.append(b, pop);
 })();
+
+
+/* ---------- Registro de dependencias, opciones del formulario y textos legales ---------- */
+const uniqNombres = (a) => { const v = new Map(); a.forEach((x) => { const n = String(x || "").trim().replace(/\s+/g, " "); if (n && !v.has(norm(n))) v.set(norm(n), n); }); return [...v.values()].sort((p, q) => p.localeCompare(q, "es")); };
+S.deps = [];
+const depsNombres = () => uniqNombres(SB ? S.deps.map((d) => d.nombre) : (cfg().dependencias || []));
+async function cargarDeps() { if (!SB) return; try { const { data, error } = await SB.from("dependencias").select("id,nombre").order("nombre"); if (!error && Array.isArray(data)) S.deps = data; } catch (e) {} }
+async function depsRegistrar(nombre) {
+  const n = String(nombre || "").trim().replace(/\s+/g, " "); if (n.length < 2) return "";
+  const ya = depsNombres().find((x) => norm(x) === norm(n)); if (ya) return ya;
+  if (SB) {
+    if (S.qa) S.deps.push({ id: "qa-" + Date.now(), nombre: n });
+    else { try { const { data, error } = await SB.from("dependencias").insert({ nombre: n }).select("id,nombre").maybeSingle(); if (!error && data) S.deps.push(data); else if (error) await cargarDeps(); } catch (e) {} }
+  } else { const c = cfg(); c.dependencias = (c.dependencias || []).concat([n]); guardarCatalogo(); }
+  return n;
+}
+async function depsRenombrar(viejo, nuevo) {
+  const n = String(nuevo || "").trim().replace(/\s+/g, " "); if (n.length < 2) return false;
+  if (depsNombres().some((x) => norm(x) === norm(n) && norm(x) !== norm(viejo))) return false;
+  if (SB) { const d = S.deps.find((x) => norm(x.nombre) === norm(viejo)); if (!d) return false; if (!S.qa) { const { error } = await SB.from("dependencias").update({ nombre: n }).eq("id", d.id); if (error) return false; } d.nombre = n; }
+  else { const c = cfg(); c.dependencias = (c.dependencias || []).map((x) => (norm(x) === norm(viejo) ? n : x)); guardarCatalogo(); }
+  return true;
+}
+async function depsEliminar(nombre) {
+  if (SB) { const d = S.deps.find((x) => norm(x.nombre) === norm(nombre)); if (!d) return false; if (!S.qa) { const { error } = await SB.from("dependencias").delete().eq("id", d.id); if (error) return false; } S.deps = S.deps.filter((x) => x !== d); }
+  else { const c = cfg(); c.dependencias = (c.dependencias || []).filter((x) => norm(x) !== norm(nombre)); guardarCatalogo(); }
+  return true;
+}
+const lineasCfg = (t) => String(t || "").split("\n").map((x) => x.trim()).filter(Boolean);
+function opcionesUso() { const l = lineasCfg(cfg().opcionesUso); if (!l.length) return TIPOS_USO.slice(); return l.some((x) => norm(x) === "otro") ? l.map((x) => (norm(x) === "otro" ? "Otro" : x)) : l.concat(["Otro"]); }
+function opcionesContacto() { const l = lineasCfg(cfg().opcionesContacto); return l.length ? l : ["Correo electrónico", "Llamada telefónica", "Videollamada"]; }
+function depsResumen() {
+  const filas = SB ? (Array.isArray(S.inbox) ? S.inbox : []) : S.sols.map((x) => ({ datos: x.datos })), nSol = {}, nUsr = {};
+  filas.forEach((r) => { const k = norm((r.datos && r.datos.dependencia) || ""); if (k) nSol[k] = (nSol[k] || 0) + 1; });
+  S.cat.usuarios.forEach((u) => { const k = norm(u.dependencia || ""); if (k) nUsr[k] = (nUsr[k] || 0) + 1; });
+  const reg = depsNombres(), rk = new Set(reg.map(norm));
+  const vistos = uniqNombres(filas.map((r) => r.datos && r.datos.dependencia).concat(S.cat.usuarios.map((u) => u.dependencia))).filter((x) => !rk.has(norm(x)));
+  const f = (n, r) => ({ nombre: n, sol: nSol[norm(n)] || 0, usr: nUsr[norm(n)] || 0, reg: r });
+  return { reg: reg.map((n) => f(n, true)), sin: vistos.map((n) => f(n, false)) };
+}
+function vCfgFormulario(ta, savebar) {
+  if (SB && S.super && (S.inbox === undefined || S.inbox === null)) cargarBandeja().then(() => { if (hashParts()[2] === "formulario") render(false); });
+  const R2 = depsResumen(), fila = (d) => `<div class="arow"><span class="avatar-i">${glifo("building")}</span><div class="t"><b>${esc(d.nombre)}</b><small>${d.sol} ${plural(d.sol, "solicitud", "solicitudes")} · ${d.usr} ${plural(d.usr, "usuario", "usuarios")}${d.reg ? "" : ' · <span class="badge warn">Sin registrar</span>'}</small></div>
+    <div class="acts">${d.reg ? `<button class="btn sm sec" data-act="dep-ren" data-n="${esc(d.nombre)}">Renombrar</button><button class="iconbtn bad" data-act="dep-del" data-n="${esc(d.nombre)}" aria-label="Eliminar ${esc(d.nombre)}">${glifo("trash")}</button>` : `<button class="btn sm" data-act="dep-reg" data-n="${esc(d.nombre)}">Registrar</button>`}</div></div>`;
+  return `<section class="grp"><h2>Registro de dependencias</h2><p class="hint">En el registro y en la solicitud, las personas eligen su dependencia de esta lista. Si no aparece, la escriben y queda guardada aquí automáticamente. Así llevas el control de cada dependencia que solicita los sistemas. Los cambios de esta sección se guardan al instante.</p>
+    <div class="card"><form id="form-depadd" class="fields" novalidate><div class="field full"><label for="dep-nueva">Agregar dependencia</label><div style="display:flex;gap:8px"><input id="dep-nueva" type="text" maxlength="120" placeholder="Nombre de la dependencia" autocomplete="off" style="flex:1"><button class="btn" type="submit">${glifo("plus")}Agregar</button></div></div></form>
+    ${R2.sin.length ? `<div class="note info" style="margin-top:12px">${glifo("info")}<div>Hay ${R2.sin.length} ${plural(R2.sin.length, "dependencia", "dependencias")} en solicitudes o usuarios que aún no están en el registro.<div style="margin-top:8px"><button class="btn sm sec" data-act="dep-import">Registrarlas todas</button></div></div></div>` : ""}</div>
+    <div class="list-card" style="margin-top:12px">${R2.reg.concat(R2.sin).map(fila).join("") || '<p class="muted" style="padding:14px">Aún no hay dependencias. Se irán agregando solas cuando alguien se registre o envíe una solicitud.</p>'}</div></section>
+  <section class="grp"><h2>Opciones del formulario</h2><p class="hint">Escribe una opción por línea. Se aplican al guardar la configuración.</p><div class="card"><div class="fields">
+    ${ta("opcionesUso", "Tipo de uso", "«Otro» siempre se agrega al final: permite escribir un uso distinto.", 120)}
+    ${ta("opcionesContacto", "¿Cómo prefieres que te contactemos?", "Opciones que verá la persona al solicitar un sistema.", 100)}
+  </div></div></section>` + savebar;
+}
+function vCfgLegal(ta, savebar) {
+  return `<section class="grp"><h2>Aviso de privacidad y términos y condiciones</h2><p class="hint">Cuando escribas estos textos, aparecerán como enlaces en el registro, en la solicitud (donde se recaban los datos) y al pie de la página. Mientras estén vacíos no se muestran. No hace falta repetirlos al iniciar sesión.</p>
+    <div class="card"><div class="fields">${ta("avisoPrivacidad", "Aviso de privacidad", "Puedes usar párrafos y listas con guion (-).", 240)}${ta("terminos", "Términos y condiciones", "Puedes usar párrafos y listas con guion (-).", 240)}</div></div></section>
+  <section class="grp"><h2>Texto corto de aceptación</h2><p class="hint">Es la frase junto a la casilla que acepta la persona.</p><div class="card"><div class="fields">${ta("privacidad", "Texto de la casilla", "", 80)}</div></div></section>` + savebar;
+}
+function vLegal(k) {
+  const c = cfg(), pr = k === "privacidad", t = pr ? c.avisoPrivacidad : c.terminos, nom = pr ? "Aviso de privacidad" : "Términos y condiciones";
+  return `${navbar()}<header class="pagehead" style="padding-top:8px"><div><div class="when">${esc(c.organizacion)}</div><h1 class="large-title">${nom}</h1></div></header><div class="card legal">${String(t || "").trim() ? rich(t) : '<p class="muted">Este documento aún no se ha publicado.</p>'}</div>`;
+}
+function abrirRenDep(n) {
+  modal({ titulo: "Renombrar dependencia", body: `<form id="form-depren" data-n="${esc(n)}" novalidate><div class="field"><label for="dr-nombre">Nombre</label><input id="dr-nombre" type="text" maxlength="120" value="${esc(n)}" autocomplete="off"></div><p class="cfg-note" style="margin-top:8px">Las solicitudes y cuentas anteriores conservan el nombre que tenían.</p><div class="err" id="dr-err" role="alert"></div></form>`, pie: `<button class="btn sec" data-act="cerrar-modal">Cancelar</button><button class="btn" type="submit" form="form-depren">Guardar</button>` });
+}
+async function guardarRenDep() {
+  if (!S.super) return; const f = $("#form-depren"); if (!f) return;
+  if (!(await depsRenombrar(f.dataset.n, val("dr-nombre")))) { $("#dr-err").textContent = "Escribe un nombre distinto de las demás dependencias."; return; }
+  cerrarModal(); toast("Dependencia actualizada"); keep(() => render(false));
+}
 
 async function boot() {
   const okIDB = await IDB.open();
@@ -3246,6 +3464,7 @@ async function boot() {
   else if (SB) { try { const { data } = await SB.auth.getSession(); if (data.session) { const u = await sbPerfil(data.session.user); if (u) { S.user = u; aplicarRol(u); } } } catch (e) {} }
   else restaurarSesion();
   S.guest = !S.user;
+  await cargarDeps();
   if (URL_RECUP) { S.recup = true; S.authView = "nueva"; history.replaceState(null, "", location.pathname + "#/acceso"); }
   else if (URL_ERR) { S.authView = "recuperar"; history.replaceState(null, "", location.pathname + "#/acceso"); setTimeout(() => toast("El enlace venció o ya se usó. Pide uno nuevo."), 600); }
   window.addEventListener("hashchange", () => render(true));
@@ -3254,6 +3473,16 @@ async function boot() {
 boot().catch((err) => { console.error(err); view.innerHTML = vacio("No se pudo iniciar el catálogo", "Recarga la página. Si el problema continúa, avisa al equipo responsable."); });
 })();
 </script>
+<style id="v2">
+/* ===== v2: pestañas de acceso, obligatorios y dependencias ===== */
+.field .req,.chk .req,.grp h2 .req{color:#d92a2a;font-weight:700}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--sel);margin:2px 0 16px}
+.auth-tabs button{padding:10px 8px;border-radius:9px;font-weight:600;font-size:14.5px;color:var(--label-2);background:none;border:0;cursor:pointer}
+.auth-tabs button[aria-selected="true"]{background:var(--bg-card,#fff);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.16)}
+.auth-req{font-size:13px;color:var(--label-2);margin:0 0 10px}
+.auth-req b{color:#d92a2a}
+.legal{max-width:760px}.legal p,.legal li{line-height:1.6}
+</style>
 <style id="identidad">
 /* ===== Identidad visual propia ===== */
 :root{--accent:#0f6e8c;--accent-soft:rgba(15,110,140,.12)}
