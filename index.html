@@ -727,7 +727,7 @@ const URL_RECUP = SB_ON && /[#&?]type=recovery/.test(location.hash + location.se
 const URL_ERR = SB_ON && /[#&?](error_code|error_description)=/.test(location.hash + location.search);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
-const CORREO_SUPER = "";  // recibe el código para autorizar cuentas de Superadministrador
+const CORREO_SUPER = "delrivero25@gmail.com";  // recibe el código para autorizar cuentas de Superadministrador
 const ROLES = { visitante: "Usuario", gestor: "Colaborador", superadmin: "Superadministrador" };
 const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
@@ -812,41 +812,46 @@ function datosEjemplo() {
   /* Catálogo real del Área de Desarrollo de Software. Cada ficha se completa después desde Administración
      (descripción, enlace al sistema, manual, requisitos, capturas y dependencias que lo usan). */
   const area = "Área de Desarrollo de Software";
-  const S = (o) => sistemaBase(Object.assign({ area, ejemplo: false, categorias: ["desarrollo"], plataforma: "Web", version: "1.0" }, o));
+  const S = (o) => sistemaBase(Object.assign({ area, ejemplo: false, categorias: [], plataforma: "Web", version: "1.0" }, o));
   return {
     formato: 2, editado: false, actualizado: hoyISO(),
     config: clone(CONFIG_BASE),
     categorias: [
-      { id: "desarrollo", nombre: "Desarrollo de Software", glifo: "app", color: "azul" }
+      { id: "reuniones", nombre: "Reuniones", glifo: "usuarios", color: "azul" },
+      { id: "eventos", nombre: "Eventos y elecciones", glifo: "calendario", color: "naranja" },
+      { id: "documentos", nombre: "Documentos y registros", glifo: "documento", color: "verde" },
+      { id: "etica", nombre: "Ética e integridad", glifo: "escudo", color: "morado" },
+      { id: "capacitacion", nombre: "Capacitación", glifo: "libro", color: "indigo" },
+      { id: "seguimiento", nombre: "Seguimiento y análisis", glifo: "chart", color: "turquesa" }
     ],
     sistemas: [
       S({
-        id: "sis-votaciones", nombre: "Votaciones", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
+        id: "sis-votaciones", categorias: ["reuniones", "eventos"], nombre: "Votaciones", subtitulo: "Cuenta quién votó en tus reuniones y eventos",
         icono: { glifo: "votacion", color: "azul", imagen: "" }, usos: ["Votaciones", "Eventos", "Reuniones"], destacado: true,
         descripcion: "Sistema de votaciones para llevar la cuenta de quién votó en una reunión o en un evento.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-elecciones", nombre: "Elecciones", subtitulo: "Procesos de elección con resultados al instante",
+        id: "sis-elecciones", categorias: ["eventos"], nombre: "Elecciones", subtitulo: "Procesos de elección con resultados al instante",
         icono: { glifo: "calendario", color: "naranja", imagen: "" }, usos: ["Votaciones", "Eventos"], destacado: true,
         descripcion: "Sistema para llevar a cabo procesos de elección.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-minuta", nombre: "Minuta y Lista de Asistencia", subtitulo: "Minutas y registro de asistencia de tus reuniones",
-        icono: { glifo: "documento", color: "verde", imagen: "" }, usos: ["Reuniones"], categorias: ["desarrollo"],
+        id: "sis-minuta", categorias: ["reuniones", "documentos"], nombre: "Minuta y Lista de Asistencia", subtitulo: "Minutas y registro de asistencia de tus reuniones",
+        icono: { glifo: "documento", color: "verde", imagen: "" }, usos: ["Reuniones"],
         descripcion: "Sistema para elaborar la minuta y llevar la lista de asistencia de una reunión.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-denuncias-etica", nombre: "Denuncias del Comité de Ética e Igualdad de Género", subtitulo: "Denuncias del comité de ética e igualdad de género",
+        id: "sis-denuncias-etica", categorias: ["etica", "documentos"], nombre: "Denuncias del Comité de Ética e Igualdad de Género", subtitulo: "Denuncias del comité de ética e igualdad de género",
         icono: { glifo: "candado", color: "morado", imagen: "" },
         descripcion: "Sistema de denuncias del Comité de Ética e Igualdad de Género.\n\nDesarrollado por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-cpd-academy", nombre: "CPD ACADEMY", subtitulo: "Plataforma CPD ACADEMY",
+        id: "sis-cpd-academy", categorias: ["capacitacion"], nombre: "CPD ACADEMY", subtitulo: "Plataforma CPD ACADEMY",
         icono: { glifo: "estrella", color: "indigo", imagen: "" },
         descripcion: "Plataforma CPD ACADEMY.\n\nDesarrollada por el Área de Desarrollo de Software."
       }),
       S({
-        id: "sis-sigta", nombre: "SIGTA", subtitulo: "Versión 3.1", version: "3.1",
+        id: "sis-sigta", categorias: ["seguimiento"], nombre: "SIGTA", subtitulo: "Versión 3.1", version: "3.1",
         icono: { glifo: "chart", color: "turquesa", imagen: "" },
         descripcion: "SIGTA, versión 3.1.\n\nDesarrollado por el Área de Desarrollo de Software."
       })
@@ -870,6 +875,11 @@ function migrar(c) {
     ["categorias", "usos", "requisitos", "pasos", "enlaces", "tecnica", "dependencias", "novedades", "capturas", "archivos"].forEach((k) => { if (!Array.isArray(r[k])) r[k] = []; });
     return r;
   });
+  if (out.categorias.length === 1 && out.categorias[0].id === "desarrollo") {
+    const nuevo = base.sistemas.reduce((m, x) => (m[x.id] = x.categorias, m), {});
+    out.categorias = base.categorias;
+    out.sistemas.forEach((x) => { if (nuevo[x.id] && x.categorias.every((k) => k === "desarrollo")) x.categorias = nuevo[x.id].slice(); });
+  }
   return out;
 }
 const catValido = (j) => j && typeof j === "object" && Array.isArray(j.sistemas) && Array.isArray(j.categorias);
@@ -1358,6 +1368,7 @@ function nuevoCodigo() {
   return r.slice(0, 4) + "-" + r.slice(4);
 }
 async function enviarAvisoCorreo(para, asunto, campos) {
+  S.errCorreo = "";
   if (!correoOk(para)) return false;
   if (S.qa) { S.qaLog.unshift({ fecha: new Date().toLocaleString("es-MX"), para, asunto, campos }); return true; }
   try {
@@ -1368,16 +1379,21 @@ async function enviarAvisoCorreo(para, asunto, campos) {
     });
     clearTimeout(tm);
     const j = await r.json().catch(() => ({}));
-    return r.ok && String(j.success) !== "false";
-  } catch (e) { return false; }
+    const ok = r.ok && String(j.success) !== "false";
+    if (!ok) S.errCorreo = String(j.message || "");
+    return ok;
+  } catch (e) { S.errCorreo = "red"; return false; }
 }
-const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Autorización de Superadministrador · ${pend.nombre}`, {
+const msgErrCorreo = () => /activat/i.test(S.errCorreo || "")
+  ? `FormSubmit pide activar tu correo. Te mandó un mensaje a ${CORREO_SUPER}: ábrelo, pulsa «Activate Form» y vuelve a pulsar «Solicitar código de autorización».`
+  : location.protocol === "file:" ? "El código solo se puede enviar desde el sitio publicado (https://…), no abriendo el archivo desde tu computadora."
+  : "No se pudo enviar el código al correo del propietario. Revisa tu conexión e inténtalo de nuevo.";
+const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `${cfg().nombre} · Solicitud de superadministrador`, {
   "Nombre": pend.nombre, "Usuario": pend.correo, "Tipo de cuenta": "Superadministrador",
   "Código de autorización": codigo, "Fecha": new Date().toLocaleString("es-MX"),
   "Instrucciones": "Si autorizas esta cuenta, comparte el código con la persona. Si no la reconoces, ignora este correo."
 });
 async function solicitarSuper() {
-  if (S.cat.usuarios.length) { S.authView = "login"; render(false); return; }
   const nombre = val("a-nombre"), correo = normCorreo(val("a-correo")), p1 = $("#a-pass").value, p2 = $("#a-pass2").value;
   authErr("");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
@@ -1385,7 +1401,8 @@ async function solicitarSuper() {
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
   if (normCorreo(p1) === correo) return authErr("La contraseña no puede ser tu correo.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
-  if (buscarPorCorreo(correo)) return authErr("Ese correo ya tiene un usuario. Inicia sesión o recupera tu contraseña.");
+  const ex = buscarPorCorreo(correo);
+  if (ex && rolDe(ex.rol) === "superadmin") return authErr("Ese correo ya es Superadministrador. Inicia sesión o recupera tu contraseña.");
   const prev = pendSuper.leer();
   if (prev && Date.now() - prev.enviado < CODIGO_ESPERA_MS) return authErr(`Espera ${Math.ceil((CODIGO_ESPERA_MS - (Date.now() - prev.enviado)) / 1000)} s antes de pedir otro código.`);
   const btn = $("#a-super-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
@@ -1394,7 +1411,7 @@ async function solicitarSuper() {
   const ok = await enviarCodigoSuper(pend, codigo);
   if (!ok) {
     if (btn) { btn.disabled = false; btn.textContent = "Solicitar código de autorización"; }
-    return authErr("No se pudo enviar el código al correo del propietario. Revisa tu conexión e inténtalo de nuevo.");
+    return authErr(msgErrCorreo());
   }
   pendSuper.guardar(pend); S.authView = "codigo"; render(false);
   const i = $("#a-codigo"); if (i) i.focus();
@@ -1407,11 +1424,10 @@ async function reenviarCodigoSuper() {
   const codigo = nuevoCodigo(); pend.codeSalt = nuevoSalt(); pend.codeHash = await hashClave(normCodigo(codigo), pend.codeSalt);
   pend.exp = Date.now() + CODIGO_VIDA_MIN * 60000; pend.enviado = Date.now(); pend.n = 0;
   const ok = await enviarCodigoSuper(pend, codigo);
-  if (!ok) return authErr("No se pudo enviar el código. Revisa tu conexión e inténtalo de nuevo.");
+  if (!ok) return authErr(msgErrCorreo());
   pendSuper.guardar(pend); toast("Enviamos un código nuevo al propietario.");
 }
 async function verificarCodigoSuper() {
-  if (S.cat.usuarios.length) { pendSuper.guardar(null); S.authView = "login"; render(false); return; }
   const pend = pendSuper.leer(), cod = normCodigo(val("a-codigo"));
   authErr("");
   if (!pend) { S.authView = "super"; render(false); return; }
@@ -1422,9 +1438,10 @@ async function verificarCodigoSuper() {
     pend.n++; pendSuper.guardar(pend);
     return authErr(pend.n >= CODIGO_MAX_INTENTOS ? "Demasiados intentos. Usa «Reenviar código» para pedir uno nuevo." : `Código incorrecto. Te quedan ${CODIGO_MAX_INTENTOS - pend.n} intentos.`);
   }
-  if (buscarPorCorreo(pend.correo)) { pendSuper.guardar(null); S.authView = "login"; render(false); return toast("Ese correo ya tiene un usuario."); }
-  const u = { id: uid("usr"), nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() };
-  S.cat.usuarios.push(u); guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
+  let u = buscarPorCorreo(pend.correo);
+  if (u) Object.assign(u, { rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false });
+  else { u = { id: uid("usr"), nombre: pend.nombre, correo: pend.correo, dependencia: "", cargo: "", telefono: "", rol: "superadmin", estado: "activo", salt: pend.salt, hash: pend.hash, debeCambiar: false, creado: hoyISO() }; S.cat.usuarios.push(u); }
+  guardarCatalogo(); pendSuper.guardar(null); abrirSesion(u, false);
 }
 async function guardarClaveObligatoria() {
   const p1 = $("#a-pass").value, p2 = $("#a-pass2").value, u = S.user;
@@ -1465,11 +1482,9 @@ function vAuth() {
   if (SB_ON) return vAuthSB();
   const c = cfg(), forzar = !!(S.user && S.user.debeCambiar), hay = S.cat.usuarios.length > 0;
   let v = S.authView;
-  /* La creación de Superadministrador NO se ofrece al público: solo existe para la instalación inicial (sin cuentas) y únicamente por el enlace privado #/acceso/propietario. */
-  const enlacePropietario = !hay && /^#\/acceso\/propietario/.test(location.hash);
-  if (enlacePropietario && v === "login") v = "super";
-  if (v === "super" && !enlacePropietario) v = "login";
-  if (v === "codigo" && (!pendSuper.leer() || !enlacePropietario)) v = "login";
+  /* Superadministrador: se pide desde «Soy el propietario»; solo se crea si llega el código que se envía al correo del propietario (CORREO_SUPER). */
+  if (!S._propVisto && /^#\/acceso\/propietario/.test(location.hash)) { S._propVisto = true; v = S.authView = "super"; }
+  if (v === "codigo" && !pendSuper.leer()) v = "login";
   const logo = logoInner(c);
   const fld = (id, label, o = {}) => `<div class="field"><label for="${id}">${label}</label>${o.pw
     ? `<div class="pwrow"><input id="${id}" type="password" autocomplete="${o.auto || "current-password"}"><button type="button" class="showpw" data-act="ver-pass" aria-label="Mostrar u ocultar contraseña">Mostrar</button></div>`
@@ -1480,7 +1495,7 @@ function vAuth() {
   const ayudaRoles = `<details class="auth-alt"><summary class="muted" style="cursor:pointer;font-size:14px">¿Qué tipo de acceso necesito?</summary><ul class="rolhelp">
     <li><b>Visualizador:</b> solo consulta el catálogo, sin cuenta. No puede solicitar.</li><li><b>Usuario:</b> te registras tú mismo con tus datos y puedes consultar y solicitar sistemas.</li>
     <li><b>Colaborador:</b> ayuda a manejar el catálogo (sistemas y categorías). Lo autoriza el administrador.</li>
-    <li><b>Superadministrador:</b> control total. No se solicita aquí: solo lo asigna el propietario del sistema.</li></ul></details>`;
+    <li><b>Superadministrador:</b> control total. Solo el propietario, con un código que llega a su correo.</li></ul></details>`;
   let t, sub, body;
   if (forzar) {
     t = "Crea tu nueva contraseña"; sub = "Tu contraseña actual es temporal. Elige una nueva para continuar.";
@@ -1488,16 +1503,15 @@ function vAuth() {
       <div class="auth-links"><button type="button" data-act="cerrar-sesion">Cerrar sesión</button></div>`;
   } else if (v === "super") {
     const pend = pendSuper.leer();
-    t = hay ? "Acceso de Superadministrador" : "Crea la cuenta de Superadministrador";
-    sub = hay ? "Tendrás control total del catálogo. Para protegerlo, el propietario debe autorizar tu cuenta con un código."
-              : "Es el primer acceso. Se enviará un código de autorización al correo del propietario del sistema; sin ese código no se crea la cuenta.";
+    t = "Acceso de Superadministrador";
+    sub = "Solo para el propietario del catálogo. Llena tus datos y te enviaremos un código a tu correo; con ese código se crea tu cuenta con control total.";
     body = `<form id="form-super" novalidate>${fld("a-nombre", "Nombre completo", { auto: "name" })}${fld("a-correo", "Correo electrónico", { tipo: "email", auto: "email", ph: "nombre@dependencia.gob.mx" })}${fld("a-pass", "Contraseña", { pw: 1, auto: "new-password", hint: CLAVE_AYUDA })}${fld("a-pass2", "Confirma la contraseña", { pw: 1, auto: "new-password" })}
-      <div class="note info">${glifo("info")}<div>El código llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b>. Pídeselo a la persona propietaria y escríbelo en el siguiente paso.</div></div>
+      <div class="note info">${glifo("info")}<div>El código de 8 caracteres llegará a <b>${esc(maskCorreo(CORREO_SUPER))}</b> (revisa también spam). Escríbelo en el siguiente paso.</div></div>
       ${err}<button class="btn big" type="submit" id="a-super-btn">Solicitar código de autorización</button></form>
-      <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}${hay ? `<button type="button" data-act="auth-ir" data-v="login">Ya tengo usuario</button>` : ""}</div>${visitante}`;
+      <div class="auth-links">${pend ? `<button type="button" data-act="auth-ir" data-v="codigo">Ya tengo un código</button>` : ""}<button type="button" data-act="auth-ir" data-v="login">Volver a iniciar sesión</button></div>${visitante}`;
   } else if (v === "codigo") {
     const pend = pendSuper.leer();
-    t = "Escribe el código de autorización"; sub = `Enviamos un código a ${maskCorreo(CORREO_SUPER)} para autorizar la cuenta de ${pend.nombre}. Vence en ${CODIGO_VIDA_MIN} minutos.`;
+    t = "Escribe el código de autorización"; sub = `Enviamos un código a ${maskCorreo(CORREO_SUPER)} para crear la cuenta de ${pend.nombre}. Vence en ${CODIGO_VIDA_MIN} minutos.`;
     body = `<form id="form-codigo" novalidate>${fld("a-codigo", "Código de autorización", { ph: "XXXX-XXXX", extra: 'maxlength="9" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.12em"' })}${err}<button class="btn big" type="submit">Verificar y crear cuenta</button></form>
       <div class="note info" style="margin-top:12px">${glifo("info")}<div>Si no llega en un par de minutos, revisa spam. La primera vez, el servicio de correo (FormSubmit) pide al propietario confirmar su correo.</div></div>
       <div class="auth-links"><button type="button" data-act="super-reenviar">Reenviar código</button><button type="button" data-act="super-cancelar">Cancelar solicitud</button></div>`;
@@ -1529,6 +1543,7 @@ function vAuth() {
     body = `<form id="form-login" novalidate>${correoF()}${fld("a-pass", "Contraseña", { pw: 1 })}
       <label class="chk"><input type="checkbox" id="a-rec"><span>Mantener la sesión en este dispositivo</span></label>${err}<button class="btn big" type="submit">Iniciar sesión</button></form>
       <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="registro">${glifo("user")}Registrarse</button>
+      <button class="btn sec big auth-alt" type="button" data-act="auth-ir" data-v="super">${glifo("candado")}Soy el propietario (Superadministrador)</button>
       ${visitante}
       <div class="auth-links"><button type="button" data-act="auth-ir" data-v="recuperar">¿Olvidaste tu contraseña?</button><button type="button" data-act="auth-ir" data-v="registro">Registrarse</button></div>${ayudaRoles}`;
   }
@@ -1538,11 +1553,7 @@ function vAuth() {
 /* ---- Mi cuenta ---- */
 function abrirMiCuenta() {
   const u = S.user;
-  if (!u) {
-    modal({ titulo: "Estás como visitante", body: `<p class="muted">Puedes explorar el catálogo y solicitar sistemas. Para solicitar sistemas, crea tu cuenta con tus datos o inicia sesión.</p>`,
-      pie: `<button class="btn sec" data-act="notif-desde-cuenta">${glifo("campana")}Notificaciones${nCampana() ? ` (${nCampana()})` : ""}</button><button class="btn sec" data-act="ir-registro">Registrarse</button><button class="btn" data-act="ir-login">${glifo("user")}Iniciar sesión</button>` });
-    return;
-  }
+  if (!u) { ACT["ir-login"](); return; }
   modal({
     titulo: "Mi cuenta",
     body: `<div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><span class="avatar-i" style="width:52px;height:52px;font-size:18px">${esc(iniciales(u.nombre))}</span><div><b style="font-size:17px">${esc(u.nombre)}</b><div class="muted" style="font-size:14px">${ROLES[rolDe(u.rol)]}</div></div></div>
@@ -1771,7 +1782,7 @@ function renderChrome(a) {
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
     ${cats.length ? `<h6>Categorías</h6>` : ""}
     ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
-  $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
+  $("#sidefoot").innerHTML = (S.user ? `<div class="mode">${esc(S.user.nombre)} · ${ROLES[rolDe(S.user.rol)]}</div>` : "")
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
   const tabs = [["", "hoy", "Descubrir"], ["sistemas", "capas", "Sistemas"], ["categorias", "grid", "Categorías"], ["solicitudes", "send", "Solicitudes"], ["buscar", "search", "Buscar"]];
@@ -2992,7 +3003,7 @@ const ACT = {
   async "aviso-borrar"(t) { const a = (S.cat.avisos || []).find((x) => x.id === t.dataset.id); if (!a) return; if (!(await confirmar({ titulo: "Eliminar aviso", texto: `Se borrará «${a.titulo}» para todas las personas.`, si: "Eliminar", peligro: true }))) return; S.cat.avisos = S.cat.avisos.filter((x) => x.id !== a.id); guardarCatalogo(); toast("Aviso eliminado"); refrescarCampana(); keep(() => render(false)); },
   "ir-login"() { cerrarModal(); if (!/^#\/acceso/.test(location.hash)) S.retorno = location.hash; S.authView = "login"; if (location.hash === "#/acceso") render(true); else location.hash = "#/acceso"; },
   "super-reenviar"() { reenviarCodigoSuper(); },
-  "super-cancelar"() { pendSuper.guardar(null); S.authView = S.cat.usuarios.length ? "login" : "super"; render(false); },
+  "super-cancelar"() { pendSuper.guardar(null); S.authView = "login"; render(false); },
   "ren-sis"(t) { abrirRenombrarSistema(t.dataset.id); },
   "edit-cat"(t) { abrirCategoria(t.dataset.id); },
   async "chk-avisar"(t) {
