@@ -3318,13 +3318,13 @@ async function sbLogin() {
 async function sbSuperEnviar() {
   authErr("");
   if (!SB) return authErr("No se pudo conectar con el servicio de acceso. Revisa tu conexión.");
-  const espera = 60000 - (Date.now() - (S.supT || 0));
+  const espera = 30000 - (Date.now() - (S.supT || 0));
   if (espera > 0) return authErr(`Espera ${Math.ceil(espera / 1000)} s antes de pedir otro código.`);
   const btn = $("#a-sup-btn"); if (btn) { btn.disabled = true; btn.textContent = "Enviando código…"; }
   const { error } = await SB.auth.signInWithOtp({ email: CORREO_SUPER, options: { shouldCreateUser: true } });
   if (error) {
     if (btn) { btn.disabled = false; btn.textContent = "Enviar código a mi correo"; }
-    return authErr(/rate|seconds|too many|limit/i.test(error.message) ? "Se pidieron demasiados códigos. Espera un minuto e inténtalo de nuevo." : "No se pudo enviar el código: " + error.message);
+    return authErr(/rate|seconds|too many|limit/i.test(error.message) ? "Supabase está limitando el envío de correos. Espera 30 segundos y vuelve a intentarlo; si el límite del servidor sigue activo, puede ser necesario esperar más." : "No se pudo enviar el código: " + error.message);
   }
   S.supT = Date.now(); const reenvio = S.authView === "supercod"; S.authView = "supercod"; render(false);
   if (reenvio) toast("Te enviamos un código nuevo.");
