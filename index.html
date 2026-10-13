@@ -826,8 +826,8 @@ const CONFIG_BASE = {
   terminos: ""                // términos y condiciones (opcional)
 };
 /* Supabase: pega aquí la URL y la clave pública (anon) de tu proyecto. Nunca uses la clave service_role. */
-const SUPABASE_URL = "";
-const SUPABASE_KEY = "";
+const SUPABASE_URL = "https://owdeglulxmamvbpbqiog.supabase.co";
+const SUPABASE_KEY = "sb_publishable_33l2WIbJHQ96J7McaPbgXQ_XH3tKmAL";
 const SB_ON = !!(SUPABASE_URL && SUPABASE_KEY);
 const URL_RECUP = SB_ON && /[#&?]type=recovery/.test(location.hash + location.search);
 const URL_ERR = SB_ON && /[#&?](error_code|error_description)=/.test(location.hash + location.search);
