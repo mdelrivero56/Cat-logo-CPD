@@ -144,13 +144,18 @@ main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:0 var(--gutter) 72
 @media (min-width:901px){.avatar{display:none}.pagehead{padding-top:44px}}
 
 .navbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;margin-inline:calc(-1*var(--gutter));padding:calc(10px + env(safe-area-inset-top,0px)) var(--gutter) 10px;background:transparent;border-bottom:1px solid transparent;transition:background .2s,border-color .2s}
-.navbar.scrolled{background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-bottom-color:var(--sep)}
+.navbar.scrolled{background:rgba(248,250,252,.96);color:#172b4d;-webkit-backdrop-filter:saturate(160%) blur(16px);backdrop-filter:saturate(160%) blur(16px);border-bottom-color:#dbe4ef;box-shadow:0 4px 18px rgba(15,35,65,.07)}
+.navbar.scrolled a,.navbar.scrolled button{color:#17365d}
+.navbar.scrolled .btn{background:#174a7e;color:#fff;border-color:#174a7e}
+.navbar.scrolled .btn.sec{background:#fff;color:#174a7e;border-color:#cbd8e7}
 .navbar .mid{flex:1;display:flex;justify-content:center;min-width:0;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;pointer-events:none}
 .navbar.show .mid{opacity:1;transform:none;pointer-events:auto}
 .navbar .mid .ico{--s:34px}
 .navbar .mid .t{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:center}
 .navbar .spacer{flex:1}
 .navbar .right{display:flex;gap:8px;align-items:center}
+.navbar :is(a,button):focus-visible{outline:3px solid #7db7f0;outline-offset:3px}
+.admbar{border:1px solid #dbe4ef;border-radius:14px;background:#f8fafc;padding:12px 14px}
 .circ{width:40px;height:40px;border-radius:50%;background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 0 0 1px var(--sep),0 2px 8px rgba(0,0,0,.06);display:grid;place-items:center;color:var(--accent);flex:none}
 .circ:hover{text-decoration:none;background:var(--bg-soft)}
 .circ .g{width:21px;height:21px}
@@ -793,7 +798,7 @@ const URL_RECUP = SB_ON && /[#&?]type=recovery/.test(location.hash + location.se
 const URL_ERR = SB_ON && /[#&?](error_code|error_description)=/.test(location.hash + location.search);
 const ARCHIVO_PUBLICADO = "catalogo.json";   // catálogo compartido con todos los visitantes
 const LIMITE_ARCHIVO = 10 * 1024 * 1024;      // 10 MB por adjunto
-const CORREO_SUPER = "mdelrivero56@gmail.com";  // único correo autorizado para Superadministrador
+const CORREO_SUPER = "delrivero25@gmail.com";  // único correo autorizado para Superadministrador
 const ROLES = { visitante: "Usuario", gestor: "Colaborador", superadmin: "Superadministrador" };
 const rolDe = (r) => (r === "admin" ? "superadmin" : r === "usuario" ? "visitante" : ROLES[r] ? r : "visitante");
 
@@ -1418,7 +1423,7 @@ async function iniciarSesion() {
 function authTabs(a) {
   const correoActual = normCorreo(document.getElementById("a-correo")?.value || "");
   const flujoSuper = ["super", "codigo", "supercod"].includes(S.authView);
-  const mostrarSuper = correoActual === "mdelrivero56@gmail.com" || flujoSuper;
+  const mostrarSuper = correoActual === "delrivero25@gmail.com" || flujoSuper;
   return `<div class="auth-tabs" role="tablist" aria-label="Tipo de acceso"><button type="button" role="tab" aria-selected="${a === "usuario"}" data-act="auth-ir" data-v="login">Usuario</button><button id="tab-superadmin" type="button" role="tab" aria-selected="${a === "super"}" data-act="auth-ir" data-v="super" ${mostrarSuper ? "" : "hidden"}>Superadministrador</button></div>`;
 }
 function marcarFaltantes(lista) {
@@ -1434,7 +1439,7 @@ document.addEventListener("input", (e) => { const w = e.target.closest && e.targ
 document.addEventListener("input", (e) => {
   if (!e.target || e.target.id !== "a-correo") return;
   const tab = document.getElementById("tab-superadmin");
-  if (tab) tab.hidden = normCorreo(e.target.value) !== "mdelrivero56@gmail.com";
+  if (tab) tab.hidden = normCorreo(e.target.value) !== "delrivero25@gmail.com";
 });
 function depCampoAuth() {
   const L = depsNombres(), hay = L.length > 0;
@@ -1475,7 +1480,7 @@ async function enviarAvisoCorreo(para, asunto, campos) {
     });
     clearTimeout(tm);
     const j = await r.json().catch(() => ({}));
-    return r.ok && String(j.success) !== "false";
+    return r.ok && (j.success === true || String(j.success || "").toLowerCase() === "true" || String(j.success || "").toLowerCase() === "email sent");
   } catch (e) { return false; }
 }
 const enviarCodigoSuper = (pend, codigo) => enviarAvisoCorreo(CORREO_SUPER, `Autorización de Superadministrador · ${pend.nombre}`, {
@@ -1488,7 +1493,7 @@ async function solicitarSuper() {
   authErr("");
   if (nombre.length < 3) return authErr("Escribe tu nombre completo.");
   if (!correoOk(correo)) return authErr("Escribe un correo válido.");
-  if (correo !== "mdelrivero56@gmail.com") return authErr("El acceso de Superadministrador está reservado al correo autorizado.");
+  if (correo !== "delrivero25@gmail.com") return authErr("El acceso de Superadministrador está reservado al correo autorizado.");
   if (!claveOk(p1)) return authErr(CLAVE_AYUDA);
   if (normCorreo(p1) === correo) return authErr("La contraseña no puede ser tu correo.");
   if (p1 !== p2) return authErr("Las contraseñas no coinciden.");
@@ -1868,9 +1873,10 @@ function renderChrome(a) {
     <a href="#/"${cur("")}>${glifo("hoy")}Descubrir</a>
     <a href="#/sistemas"${cur("sistemas")}>${glifo("capas")}Sistemas</a>
     <a href="#/solicitudes"${cur("solicitudes")}>${glifo("send")}${S.super ? "Solicitudes" : "Mis solicitudes"}${misSols().length && !S.super ? ` <span class="badge acc" style="margin-left:auto">${misSols().length}</span>` : ""}</a>
+    <a href="#/categorias"${cur("categorias")}>${glifo("grid")}Categorías</a>
     <a href="#/ayuda"${cur("ayuda")}>${glifo("info")}Cómo solicitar</a>
-    ${cats.length ? `<h6>Categorías</h6>` : ""}
-    ${cats.map((k) => `<a href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
+    ${cats.length ? `<h6 class="cat">Categorías</h6>` : ""}
+    ${cats.map((k) => `<a class="cat" href="#/categoria/${enc(k.id)}" ${catActiva === k.id ? 'aria-current="page"' : ""}><span class="cdot" style="${colorVars(k.color)}">${glifo(k.glifo)}</span>${esc(k.nombre)}</a>`).join("")}`;
   $("#sidefoot").innerHTML = `<div class="mode">${S.user ? esc(S.user.nombre) + " · " + ROLES[rolDe(S.user.rol)] : "Visualizador"}</div>`
     + (S.admin ? `<a class="sidenav-a" href="#/admin" ${cur("admin")} style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label);font-size:15px;${act === "admin" ? "background:var(--sel);font-weight:600" : ""}"><span style="color:var(--accent);display:flex">${glifo("ajustes")}</span>Administración</a>` : "")
     + `<button class="sidenav-a" data-act="mi-cuenta" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:var(--label-2);font-size:14.5px"><span style="display:flex">${glifo("user")}</span>${S.user ? "Mi cuenta" : "Iniciar sesión"}</button>`;
@@ -2970,7 +2976,7 @@ const ACT = {
   async "dep-import"() { for (const d of depsResumen().sin) await depsRegistrar(d.nombre); toast("Dependencias registradas"); keep(() => render(false)); },
   "auth-ir"(t) {
     const destino = t.dataset.v;
-    if (destino === "super" && normCorreo($("#a-correo")?.value || "") !== "mdelrivero56@gmail.com" && !["super", "codigo", "supercod"].includes(S.authView)) {
+    if (destino === "super" && normCorreo($("#a-correo")?.value || "") !== "delrivero25@gmail.com" && !["super", "codigo", "supercod"].includes(S.authView)) {
       toast("El acceso de Superadministrador está reservado al correo autorizado."); return;
     }
     S.authView = destino; render(false); const i = $("input", view); if (i) i.focus();
